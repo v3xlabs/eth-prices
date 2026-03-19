@@ -1,16 +1,16 @@
 pub mod factory;
 pub mod pair;
 
-use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use alloy::{
-    primitives::{address, Address, BlockNumber, U256, U512},
+    primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
 };
+use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 
 use crate::{
-    token::local::LocalTokenOrFiat,
     quoters::{Quoter, RateDirection},
+    token::local::LocalTokenOrFiat,
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -32,9 +32,7 @@ pub enum UniswapV2Selector {
         token_out: Address,
     },
     /// Use an already-known pair contract address.
-    Pair {
-        pair_address: Address,
-    },
+    Pair { pair_address: Address },
 }
 
 /// Quotes spot rates from a Uniswap v2 pair contract at a given block height.

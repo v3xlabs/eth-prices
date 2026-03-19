@@ -1,2 +1,2 @@
-pub mod local;
 pub mod erc20;
+pub mod local;

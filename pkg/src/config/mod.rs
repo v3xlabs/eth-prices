@@ -1,18 +1,16 @@
 use alloy::{primitives::map::HashMap, providers::DynProvider};
 use figment::{
-    providers::{Format, Toml},
     Figment,
+    providers::{Format, Toml},
 };
 use serde::Deserialize;
 
-use crate::trackers::{
+use crate::quoters::{
+    QuoterInstance,
     erc4626::{ERC4626Config, ERC4626Quoter},
     fixed::FixedTracker,
-    uniswap_v2::{
-        quoter::{UniswapV2Config, UniswapV2Quoter},
-    },
-    uniswap_v3::{quoter::UniswapV3Quoter, UniswapV3Config},
-    QuoterInstance,
+    uniswap_v2::{UniswapV2Config, UniswapV2Quoter},
+    uniswap_v3::{UniswapV3Config, UniswapV3Quoter},
 };
 
 #[derive(Debug, Deserialize, PartialEq)]

@@ -1,5 +1,5 @@
 use alloy::{
-    primitives::{aliases::U112, Address, U256},
+    primitives::{Address, U256, aliases::U112},
     providers::DynProvider,
     sol,
 };

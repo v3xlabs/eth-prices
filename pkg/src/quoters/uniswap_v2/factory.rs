@@ -24,9 +24,9 @@ pub fn fetch_all_pairs<'a>(
 
         let mut state = U256::from(0);
         while state < max {
-            
+
             let pair = fr.allPairs(U256::from(state)).call().await.unwrap();
-            
+
             yield pair;
 
             state += U256::from(1);

@@ -24,7 +24,11 @@ impl ERC20Token {
         let erc20 = ERC20::new(address, provider);
         let name = erc20.name().call().await.unwrap();
         let decimals = erc20.decimals().call().await.unwrap();
-        Self { address, name: Mutex::new(name.to_string()), decimals: Mutex::new(decimals) }
+        Self {
+            address,
+            name: Mutex::new(name.to_string()),
+            decimals: Mutex::new(decimals),
+        }
     }
 
     pub async fn nominal_amount(&self) -> U256 {

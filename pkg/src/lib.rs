@@ -9,7 +9,7 @@
 //! - [`trackers::Quoter`] for single-hop quote sources.
 //! - [`trackers::QuoterInstance`] for storing heterogeneous quote sources together.
 //! - [`token::local::LocalTokenOrFiat`] for identifying ERC-20 assets and fiat endpoints.
-//! 
+//!
 //! Currently supported quoters include:
 //! - [`trackers::fixed::FixedTracker`] for static conversion rates.
 //! - [`trackers::uniswap_v2::quoter::UniswapV2Quoter`] for Uniswap v2 pairs.
@@ -20,6 +20,6 @@
 //! foundation for the higher-level router API that will sit on top.
 
 pub mod quoters;
-pub mod token;
 #[cfg(test)]
 pub mod tests;
+pub mod token;

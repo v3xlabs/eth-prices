@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use alloy::{primitives::{Address, U256}, providers::DynProvider};
+use alloy::{
+    primitives::{Address, U256},
+    providers::DynProvider,
+};
 use serde::{Deserialize, Deserializer};
 
 use crate::token::erc20::ERC20Token;
@@ -22,29 +25,50 @@ impl LocalTokenOrFiat {
     /// Returns one nominal unit for this asset in its base precision.
     pub async fn nominal_amount(&self, provider: &DynProvider) -> U256 {
         match self {
-            LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider).await.nominal_amount().await,
-            LocalTokenOrFiat::Fiat {symbol: _} => U256::from(10_u64.pow(FIAT_DECIMALS)),
+            LocalTokenOrFiat::ERC20 { address } => {
+                ERC20Token::new(*address, provider)
+                    .await
+                    .nominal_amount()
+                    .await
+            }
+            LocalTokenOrFiat::Fiat { symbol: _ } => U256::from(10_u64.pow(FIAT_DECIMALS)),
         }
     }
 
     /// Formats a raw integer amount into a human-readable decimal string.
-    pub async fn format_amount(&self, amount: U256, precision: usize, provider: &DynProvider) -> String {
+    pub async fn format_amount(
+        &self,
+        amount: U256,
+        precision: usize,
+        provider: &DynProvider,
+    ) -> String {
         match self {
-            LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider).await.format_amount(amount, precision).await,
+            LocalTokenOrFiat::ERC20 { address } => {
+                ERC20Token::new(*address, provider)
+                    .await
+                    .format_amount(amount, precision)
+                    .await
+            }
             // TODO: verify the f64 math vs u256 math with precision offset exponent
-            LocalTokenOrFiat::Fiat {symbol: _} => {
-                let amount = amount.to_string().parse::<f64>().unwrap() / 10_f64.powf(FIAT_DECIMALS as f64);
+            LocalTokenOrFiat::Fiat { symbol: _ } => {
+                let amount =
+                    amount.to_string().parse::<f64>().unwrap() / 10_f64.powf(FIAT_DECIMALS as f64);
 
                 format!("{:.precision$}", amount)
-            },
+            }
         }
     }
 
     /// Returns a display symbol for this asset.
     pub async fn symbol(&self, provider: &DynProvider) -> String {
         match self {
-            LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider).await.name.lock().await.clone(),
-            LocalTokenOrFiat::Fiat {symbol: _} => "fiat".to_string(),
+            LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider)
+                .await
+                .name
+                .lock()
+                .await
+                .clone(),
+            LocalTokenOrFiat::Fiat { symbol: _ } => "fiat".to_string(),
         }
     }
 }

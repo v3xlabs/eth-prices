@@ -1,12 +1,17 @@
-use alloy::{primitives::{Address, BlockNumber, U256, U512}, providers::DynProvider};
-use serde::Deserialize;
+use alloy::{
+    primitives::{Address, BlockNumber, U256, U512},
+    providers::DynProvider,
+};
 use pool::UniswapV3Pool;
+use serde::Deserialize;
 
-use crate::{quoters::{Quoter, RateDirection}, token::local::LocalTokenOrFiat};
+use crate::{
+    quoters::{Quoter, RateDirection},
+    token::local::LocalTokenOrFiat,
+};
 
-pub mod pool;
 pub mod factory;
-
+pub mod pool;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct UniswapV3Config {

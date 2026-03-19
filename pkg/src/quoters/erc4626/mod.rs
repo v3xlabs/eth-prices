@@ -9,8 +9,8 @@ use alloy::providers::DynProvider;
 use alloy::sol;
 use serde::Deserialize;
 
-use crate::token::local::LocalTokenOrFiat;
 use crate::quoters::{Quoter, RateDirection};
+use crate::token::local::LocalTokenOrFiat;
 
 sol! {
     #[sol(rpc)]
@@ -121,7 +121,15 @@ mod tests {
         assert_eq!(reverse_rate, U256::from(979608427435069667u64));
 
         let precision = 4;
-        println!("forward_rate: {:?} = {:?}", token_a.format_amount(token_a_amount, precision).await, token_b.format_amount(forward_rate, precision).await);
-        println!("reverse_rate: {:?} = {:?}", token_b.format_amount(token_b_amount, precision).await, token_a.format_amount(reverse_rate, precision).await);
+        println!(
+            "forward_rate: {:?} = {:?}",
+            token_a.format_amount(token_a_amount, precision).await,
+            token_b.format_amount(forward_rate, precision).await
+        );
+        println!(
+            "reverse_rate: {:?} = {:?}",
+            token_b.format_amount(token_b_amount, precision).await,
+            token_a.format_amount(reverse_rate, precision).await
+        );
     }
 }

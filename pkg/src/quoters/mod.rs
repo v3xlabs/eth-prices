@@ -3,14 +3,20 @@
 //! A tracker is a single-hop pricing primitive. Examples include a fixed fiat peg,
 //! an on-chain Uniswap pool, or an ERC-4626 vault conversion.
 
-use alloy::{primitives::{BlockNumber, U256}};
+use alloy::primitives::{BlockNumber, U256};
 
-use crate::{token::local::LocalTokenOrFiat, quoters::{erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::UniswapV2Quoter, uniswap_v3::UniswapV3Quoter}};
+use crate::{
+    quoters::{
+        erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::UniswapV2Quoter,
+        uniswap_v3::UniswapV3Quoter,
+    },
+    token::local::LocalTokenOrFiat,
+};
 
+pub mod erc4626;
 pub mod fixed;
 pub mod uniswap_v2;
 pub mod uniswap_v3;
-pub mod erc4626;
 
 /// The direction to quote along a tracker edge.
 ///
@@ -32,7 +38,8 @@ pub trait Quoter: Send + Sync {
     /// Quotes `amount_in` at the provided block height.
     ///
     /// The output asset is determined by `direction` relative to [`Quoter::get_tokens`].
-    async fn get_rate(&self, amount_in: U256, direction: RateDirection, block: BlockNumber) -> U256;
+    async fn get_rate(&self, amount_in: U256, direction: RateDirection, block: BlockNumber)
+    -> U256;
 
     /// Returns a stable, human-readable identifier for this quoter.
     fn get_slug(&self) -> String;
@@ -66,7 +73,12 @@ impl Quoter for QuoterInstance {
         }
     }
 
-    async fn get_rate(&self, amount_in: U256, direction: RateDirection, block: BlockNumber) -> U256 {
+    async fn get_rate(
+        &self,
+        amount_in: U256,
+        direction: RateDirection,
+        block: BlockNumber,
+    ) -> U256 {
         match self {
             QuoterInstance::Fixed(tracker) => tracker.get_rate(amount_in, direction, block).await,
             QuoterInstance::UniswapV2(quoter) => quoter.get_rate(amount_in, direction, block).await,
