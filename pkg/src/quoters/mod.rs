@@ -9,8 +9,7 @@ use crate::{
     quoters::{
         erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::UniswapV2Quoter,
         uniswap_v3::UniswapV3Quoter,
-    },
-    token::local::LocalTokenOrFiat,
+    }, token::identity::TokenIdentifier,
 };
 
 pub mod erc4626;
@@ -33,7 +32,7 @@ pub enum RateDirection {
 /// specific block height.
 pub trait Quoter: Send + Sync {
     /// Returns the pair of assets connected by this quoter.
-    fn get_tokens(&self) -> (LocalTokenOrFiat, LocalTokenOrFiat);
+    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier);
 
     /// Quotes `amount_in` at the provided block height.
     ///
@@ -64,7 +63,7 @@ impl Quoter for QuoterInstance {
         }
     }
 
-    fn get_tokens(&self) -> (LocalTokenOrFiat, LocalTokenOrFiat) {
+    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         match self {
             QuoterInstance::Fixed(tracker) => tracker.get_tokens(),
             QuoterInstance::UniswapV2(quoter) => quoter.get_tokens(),

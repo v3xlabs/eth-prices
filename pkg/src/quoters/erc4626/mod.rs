@@ -10,7 +10,8 @@ use alloy::sol;
 use serde::Deserialize;
 
 use crate::quoters::{Quoter, RateDirection};
-use crate::token::local::LocalTokenOrFiat;
+use crate::token::Token;
+use crate::token::identity::TokenIdentifier;
 
 sol! {
     #[sol(rpc)]
@@ -32,9 +33,9 @@ pub struct ERC4626Config {
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
     /// Vault contract address.
-    pub vault_address: Address,
+    pub vault_address: Token,
     /// Underlying asset returned by `asset()`.
-    pub token_address: Address,
+    pub token_address: Token,
     /// Provider used to fetch historical conversions.
     pub provider: DynProvider,
 }
@@ -44,6 +45,8 @@ impl ERC4626Quoter {
     pub async fn new(vault_address: Address, provider: &DynProvider) -> Self {
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await.unwrap();
+        let token_address = Token::new(token_address.into(), provider).await.unwrap();
+        let vault_address = Token::new(vault_address.into(), provider).await.unwrap();
         Self {
             vault_address,
             token_address,
@@ -54,11 +57,11 @@ impl ERC4626Quoter {
 
 impl Quoter for ERC4626Quoter {
     fn get_slug(&self) -> String {
-        format!("erc4626:{}:{}", self.vault_address, self.token_address)
+        format!("erc4626:{}:{}", self.vault_address.identifier, self.token_address.identifier)
     }
 
-    fn get_tokens(&self) -> (LocalTokenOrFiat, LocalTokenOrFiat) {
-        (self.vault_address.into(), self.token_address.into())
+    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+        (self.vault_address.identifier.clone(), self.token_address.identifier.clone())
     }
 
     async fn get_rate(
@@ -67,7 +70,7 @@ impl Quoter for ERC4626Quoter {
         direction: RateDirection,
         block: BlockNumber,
     ) -> U256 {
-        let vault = ERC4626::new(self.vault_address, &self.provider);
+        let vault = ERC4626::new(self.vault_address.unwrap_address(), &self.provider);
         match direction {
             RateDirection::Forward => {
                 let rate = vault
@@ -94,7 +97,7 @@ impl Quoter for ERC4626Quoter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{tests::get_test_provider, token::erc20::ERC20Token};
+    use crate::{tests::get_test_provider, token::Token};
     use alloy::primitives::address;
 
     #[tokio::test]
@@ -105,13 +108,13 @@ mod tests {
         let provider = get_test_provider().await;
         let quoter = ERC4626Quoter::new(vault_address, provider).await;
 
-        let token_a = ERC20Token::new(quoter.vault_address, provider).await;
+        let token_a = Token::new(quoter.vault_address.identifier.clone(), provider).await.unwrap();
         let token_a_amount = token_a.nominal_amount().await;
         let forward_rate = quoter
             .get_rate(token_a_amount, RateDirection::Forward, block)
             .await;
 
-        let token_b = ERC20Token::new(quoter.token_address, provider).await;
+        let token_b = Token::new(quoter.token_address.identifier.clone(), provider).await.unwrap();
         let token_b_amount = token_b.nominal_amount().await;
         let reverse_rate = quoter
             .get_rate(token_b_amount, RateDirection::Reverse, block)

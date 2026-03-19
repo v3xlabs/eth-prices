@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::{
     quoters::{Quoter, RateDirection},
-    token::local::LocalTokenOrFiat,
+    token::{Token, identity::TokenIdentifier},
 };
 
 /// A static conversion rate between two assets.
@@ -14,9 +14,9 @@ use crate::{
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct FixedTracker {
     /// Input asset for forward quotes.
-    pub token_in: LocalTokenOrFiat,
+    pub token_in: TokenIdentifier,
     /// Output asset for forward quotes.
-    pub token_out: LocalTokenOrFiat,
+    pub token_out: TokenIdentifier,
     /// Multiplier applied during forward quotes.
     pub fixed_rate: f64,
 }
@@ -26,7 +26,7 @@ impl Quoter for FixedTracker {
         format!("fixed:{}:{}", self.token_in, self.token_out)
     }
 
-    fn get_tokens(&self) -> (LocalTokenOrFiat, LocalTokenOrFiat) {
+    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token_in.clone(), self.token_out.clone())
     }
 
@@ -56,10 +56,10 @@ mod tests {
     #[tokio::test]
     async fn test_get_rate() {
         let tracker = FixedTracker {
-            token_in: LocalTokenOrFiat::ERC20 {
+            token_in: TokenIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000001"),
             },
-            token_out: LocalTokenOrFiat::ERC20 {
+            token_out: TokenIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000002"),
             },
             fixed_rate: 2.0,

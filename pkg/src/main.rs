@@ -3,6 +3,7 @@ use alloy::providers::{Provider, ProviderBuilder};
 use crate::{
     config::Config,
     quoters::{Quoter, RateDirection},
+    token::Token,
 };
 
 pub mod config;
@@ -13,8 +14,6 @@ pub mod token;
 
 #[tokio::main]
 pub async fn main() {
-    println!("Hello, world!");
-
     let config = Config::load("config.toml").await;
 
     for (chain_slug, chain_config) in config.chains {
@@ -38,8 +37,12 @@ pub async fn main() {
         for quoter in chain_config.trackers.all(&box_provider).await {
             println!("quoter: {:?}", quoter.get_slug());
             let (token_a, token_b) = quoter.get_tokens();
-            let amount_a = token_a.nominal_amount(&box_provider).await;
-            let amount_b = token_b.nominal_amount(&box_provider).await;
+
+            let token_a = Token::new(token_a, &box_provider).await.unwrap();
+            let token_b = Token::new(token_b, &box_provider).await.unwrap();
+
+            let amount_a = token_a.nominal_amount().await;
+            let amount_b = token_b.nominal_amount().await;
 
             let forward_rate = quoter
                 .get_rate(amount_a, RateDirection::Forward, block)
@@ -49,25 +52,17 @@ pub async fn main() {
                 .await;
             println!(
                 "forward_rate: {:?} {} = {:?} {}",
-                token_a
-                    .format_amount(amount_a, precision, &box_provider)
-                    .await,
-                token_a.symbol(&box_provider).await,
-                token_b
-                    .format_amount(forward_rate, precision, &box_provider)
-                    .await,
-                token_b.symbol(&box_provider).await
+                token_a.format_amount(amount_a, precision).await,
+                token_a.symbol,
+                token_b.format_amount(forward_rate, precision).await,
+                token_b.symbol,
             );
             println!(
                 "reverse_rate: {:?} {} = {:?} {}",
-                token_b
-                    .format_amount(amount_b, precision, &box_provider)
-                    .await,
-                token_b.symbol(&box_provider).await,
-                token_a
-                    .format_amount(reverse_rate, precision, &box_provider)
-                    .await,
-                token_a.symbol(&box_provider).await
+                token_b.format_amount(amount_b, precision).await,
+                token_b.symbol,
+                token_a.format_amount(reverse_rate, precision).await,
+                token_a.symbol,
             );
         }
     }

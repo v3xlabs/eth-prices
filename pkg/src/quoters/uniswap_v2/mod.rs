@@ -10,7 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     quoters::{Quoter, RateDirection},
-    token::local::LocalTokenOrFiat,
+    token::{Token, identity::TokenIdentifier},
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -114,8 +114,8 @@ impl Quoter for UniswapV2Quoter {
         )
     }
 
-    fn get_tokens(&self) -> (LocalTokenOrFiat, LocalTokenOrFiat) {
-        (self.token0.into(), self.token1.into())
+    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+        (TokenIdentifier::ERC20 { address: self.token0 }, TokenIdentifier::ERC20 { address: self.token1 })
     }
 
     async fn get_rate(
