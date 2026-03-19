@@ -2,10 +2,10 @@ use alloy::{
     primitives::address,
     providers::{Provider, ProviderBuilder},
 };
-use eth_prices::quoters::{
+use eth_prices::{quoters::{
     Quoter, RateDirection,
     uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-};
+}, token::Token};
 
 #[tokio::main]
 pub async fn main() {
@@ -20,17 +20,19 @@ pub async fn main() {
         UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address }).await;
 
     let (token_a, token_b) = quoter.get_tokens();
-    let amount_in = token_a.nominal_amount(&provider).await;
+    let token_a = Token::new(token_a, &provider).await.unwrap();
+    let token_b = Token::new(token_b, &provider).await.unwrap();
+    let amount_in = token_a.nominal_amount().await;
     let block = provider.get_block_number().await.unwrap();
     let rate = quoter
         .get_rate(amount_in, RateDirection::Forward, block)
-        .await;
+        .await.unwrap();
 
     println!(
         "rate: {} {} = {} {}",
-        token_a.format_amount(amount_in, 4, &provider).await,
-        token_a.symbol(&provider).await,
-        token_b.format_amount(rate, 4, &provider).await,
-        token_b.symbol(&provider).await
+        token_a.format_amount(amount_in, 4).await,
+        token_a.symbol,
+        token_b.format_amount(rate, 4).await,
+        token_b.symbol
     );
 }

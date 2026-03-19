@@ -7,6 +7,7 @@ use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
 };
+use anyhow::Result;
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 
@@ -125,9 +126,9 @@ impl Quoter for UniswapV2Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> U256 {
+    ) -> Result<U256> {
         let pair = UniswapV2Pair::new(self.pair_address, &self.provider);
-        let reserves = pair.getReserves().call().block(block.into()).await.unwrap();
+        let reserves = pair.getReserves().call().block(block.into()).await?;
         let reserve0 = U512::from(reserves.reserve0);
         let reserve1 = U512::from(reserves.reserve1);
         let amount_in = U512::from(amount_in);
@@ -150,7 +151,7 @@ impl Quoter for UniswapV2Quoter {
 
                 let amount_out = numerator / denominator;
 
-                U256::from(amount_out)
+                Ok(U256::from(amount_out))
             }
             RateDirection::Reverse => {
                 let numerator = amount_in * reserve0;
@@ -158,7 +159,7 @@ impl Quoter for UniswapV2Quoter {
 
                 let amount_out = numerator / denominator;
 
-                U256::from(amount_out)
+                Ok(U256::from(amount_out))
             }
         }
     }

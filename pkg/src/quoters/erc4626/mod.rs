@@ -7,6 +7,7 @@ use alloy::primitives::{Address, BlockNumber, U256};
 use alloy::providers::DynProvider;
 
 use alloy::sol;
+use anyhow::Result;
 use serde::Deserialize;
 
 use crate::quoters::{Quoter, RateDirection};
@@ -57,7 +58,10 @@ impl ERC4626Quoter {
 
 impl Quoter for ERC4626Quoter {
     fn get_slug(&self) -> String {
-        format!("erc4626:{}:{}", self.vault_address.identifier, self.token_address.identifier)
+        format!(
+            "erc4626:{}:{}",
+            self.vault_address.identifier, self.token_address.identifier
+        )
     }
 
     fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
@@ -69,28 +73,24 @@ impl Quoter for ERC4626Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> U256 {
+    ) -> Result<U256> {
         let vault = ERC4626::new(self.vault_address.unwrap_address(), &self.provider);
-        match direction {
+        Ok(match direction {
             RateDirection::Forward => {
-                let rate = vault
+                vault
                     .convertToAssets(amount_in)
                     .block(block.into())
                     .call()
-                    .await
-                    .unwrap();
-                rate
+                    .await?
             }
             RateDirection::Reverse => {
-                let rate = vault
+                vault
                     .convertToShares(amount_in)
                     .block(block.into())
                     .call()
-                    .await
-                    .unwrap();
-                rate
+                    .await?
             }
-        }
+        })
     }
 }
 
@@ -108,17 +108,23 @@ mod tests {
         let provider = get_test_provider().await;
         let quoter = ERC4626Quoter::new(vault_address, provider).await;
 
-        let token_a = Token::new(quoter.vault_address.identifier.clone(), provider).await.unwrap();
+        let token_a = Token::new(quoter.vault_address.identifier.clone(), provider)
+            .await
+            .unwrap();
         let token_a_amount = token_a.nominal_amount().await;
         let forward_rate = quoter
             .get_rate(token_a_amount, RateDirection::Forward, block)
-            .await;
+            .await
+            .unwrap();
 
-        let token_b = Token::new(quoter.token_address.identifier.clone(), provider).await.unwrap();
+        let token_b = Token::new(quoter.token_address.identifier.clone(), provider)
+            .await
+            .unwrap();
         let token_b_amount = token_b.nominal_amount().await;
         let reverse_rate = quoter
             .get_rate(token_b_amount, RateDirection::Reverse, block)
-            .await;
+            .await
+            .unwrap();
 
         assert_eq!(forward_rate, U256::from(1020816));
         assert_eq!(reverse_rate, U256::from(979608427435069667u64));

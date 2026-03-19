@@ -4,6 +4,7 @@ use alloy::{
     primitives::{Address, BlockNumber, U256, U512},
     providers::DynProvider,
 };
+use anyhow::Result;
 use pool::UniswapV3Pool;
 use serde::Deserialize;
 
@@ -64,7 +65,7 @@ impl Quoter for UniswapV3Quoter {
     }
 
     fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
-        (TokenIdentifier::ERC20 { address: self.token0 }, TokenIdentifier::ERC20 { address: self.token1 })
+        (self.token0.into(), self.token1.into())
     }
 
     async fn get_rate(
@@ -72,9 +73,9 @@ impl Quoter for UniswapV3Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> U256 {
+    ) -> Result<U256> {
         let pool = UniswapV3Pool::new(self.pool_address, &self.provider);
-        let slot0 = pool.slot0().block(block.into()).call().await.unwrap();
+        let slot0 = pool.slot0().block(block.into()).call().await?;
         let sqrt_price_x96 = U512::from(slot0.sqrtPriceX96);
         let q192 = U512::from(1) << 192;
         let sqrt_price_squared = sqrt_price_x96 * sqrt_price_x96;
@@ -82,9 +83,9 @@ impl Quoter for UniswapV3Quoter {
         let price0_in_1_raw = (sqrt_price_squared * U512::from(amount_in)) / q192;
         let price1_in_0_raw = (q192 * U512::from(amount_in)) / sqrt_price_squared;
 
-        match direction {
+        Ok(match direction {
             RateDirection::Forward => U256::from(price0_in_1_raw),
             RateDirection::Reverse => U256::from(price1_in_0_raw),
-        }
+        })
     }
 }

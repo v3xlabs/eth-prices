@@ -4,6 +4,7 @@
 //! an on-chain Uniswap pool, or an ERC-4626 vault conversion.
 
 use alloy::primitives::{BlockNumber, U256};
+use anyhow::Result;
 
 use crate::{
     quoters::{
@@ -38,7 +39,7 @@ pub trait Quoter: Send + Sync {
     ///
     /// The output asset is determined by `direction` relative to [`Quoter::get_tokens`].
     async fn get_rate(&self, amount_in: U256, direction: RateDirection, block: BlockNumber)
-    -> U256;
+    -> Result<U256>;
 
     /// Returns a stable, human-readable identifier for this quoter.
     fn get_slug(&self) -> String;
@@ -81,7 +82,7 @@ impl Quoter for QuoterInstance {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> U256 {
+    ) -> Result<U256> {
         match self {
             QuoterInstance::Fixed(tracker) => tracker.get_rate(amount_in, direction, block).await,
             QuoterInstance::UniswapV2(quoter) => quoter.get_rate(amount_in, direction, block).await,

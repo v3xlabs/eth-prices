@@ -1,6 +1,7 @@
 //! Fixed rate quote sources.
 
 use alloy::primitives::{BlockNumber, U256};
+use anyhow::Result;
 use serde::Deserialize;
 
 use crate::{
@@ -35,14 +36,10 @@ impl Quoter for FixedTracker {
         amount_in: U256,
         direction: RateDirection,
         _block: BlockNumber,
-    ) -> U256 {
+    ) -> Result<U256> {
         match direction {
-            RateDirection::Forward => {
-                U256::from(self.fixed_rate * amount_in.to_string().parse::<f64>().unwrap())
-            }
-            RateDirection::Reverse => {
-                U256::from(1.0 / self.fixed_rate * amount_in.to_string().parse::<f64>().unwrap())
-            }
+            RateDirection::Forward => Ok(U256::from(self.fixed_rate * amount_in.to_string().parse::<f64>()?)),
+            RateDirection::Reverse => Ok(U256::from(1.0 / self.fixed_rate * amount_in.to_string().parse::<f64>()?)),
         }
     }
 }
@@ -72,7 +69,7 @@ mod tests {
             .get_rate(U256::from(100), RateDirection::Reverse, 100)
             .await;
 
-        assert_eq!(forwards, U256::from(200));
-        assert_eq!(backwards, U256::from(50));
+        assert_eq!(forwards.unwrap(), U256::from(200));
+        assert_eq!(backwards.unwrap(), U256::from(50));
     }
 }
