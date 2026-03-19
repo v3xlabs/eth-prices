@@ -1445,6 +1445,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "examples-uniswap"
+version = "0.0.1"
+dependencies = [
+ "alloy",
+ "eth-prices",
+ "tokio",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
