@@ -1,3 +1,5 @@
+//! Uniswap v2 quote sources.
+
 pub mod factory;
 pub mod pair;
 
@@ -10,7 +12,7 @@ use serde::Deserialize;
 
 use crate::{
     quoters::{Quoter, RateDirection},
-    token::{Token, identity::TokenIdentifier},
+    token::identity::TokenIdentifier,
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -70,7 +72,7 @@ impl UniswapV2Quoter {
 impl UniswapV2Quoter {
     /// Builds a quoter from a selector.
     ///
-    /// When a token pair is provided, the factory is used to discover the pair address.
+    /// When a token pair is provided, the configured factory is used to discover the pair address.
     pub async fn from_selector(provider: &DynProvider, selector: UniswapV2Selector) -> Self {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 

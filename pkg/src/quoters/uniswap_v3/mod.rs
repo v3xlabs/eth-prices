@@ -1,3 +1,5 @@
+//! Uniswap v3 quote sources.
+
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512},
     providers::DynProvider,
@@ -7,19 +9,23 @@ use serde::Deserialize;
 
 use crate::{
     quoters::{Quoter, RateDirection},
-    token::{Token, identity::TokenIdentifier},
+    token::identity::TokenIdentifier,
 };
 
 pub mod factory;
 pub mod pool;
 
+/// Configuration for a set of Uniswap v3 pools on a single chain.
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct UniswapV3Config {
+    /// Pools to load as quoters.
     pub pools: Vec<UniswapV3Selector>,
 }
 
+/// Selects a Uniswap v3 pool by address.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct UniswapV3Selector {
+    /// Pool contract address.
     pool_address: Address,
 }
 

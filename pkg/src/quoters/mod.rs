@@ -1,6 +1,6 @@
 //! Quote sources for converting one asset into another at a given block height.
 //!
-//! A tracker is a single-hop pricing primitive. Examples include a fixed fiat peg,
+//! A quoter is a single-hop pricing primitive. Examples include a fixed fiat peg,
 //! an on-chain Uniswap pool, or an ERC-4626 vault conversion.
 
 use alloy::primitives::{BlockNumber, U256};
@@ -17,7 +17,7 @@ pub mod fixed;
 pub mod uniswap_v2;
 pub mod uniswap_v3;
 
-/// The direction to quote along a tracker edge.
+/// The direction to quote along a quoter edge.
 ///
 /// `Forward` means `token0 -> token1` for the pair returned by [`Quoter::get_tokens`].
 /// `Reverse` means the inverse direction.
@@ -47,9 +47,13 @@ pub trait Quoter: Send + Sync {
 /// An owned enum wrapper around all supported quote source implementations.
 #[derive(Debug, Clone)]
 pub enum QuoterInstance {
+    /// A fixed-rate synthetic quote source.
     Fixed(FixedTracker),
+    /// A Uniswap v2 pair-backed quote source.
     UniswapV2(UniswapV2Quoter),
+    /// A Uniswap v3 pool-backed quote source.
     UniswapV3(UniswapV3Quoter),
+    /// An ERC-4626 vault-backed quote source.
     ERC4626(ERC4626Quoter),
 }
 

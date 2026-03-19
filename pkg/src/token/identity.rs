@@ -3,6 +3,7 @@ use std::fmt::Display;
 use alloy::primitives::Address;
 use serde::{Deserialize, Deserializer};
 
+/// A lightweight token identifier used by quoters and config.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenIdentifier {
     /// An ERC-20 token identified by contract address.
@@ -22,15 +23,22 @@ impl From<Address> for TokenIdentifier {
 impl TryFrom<String> for TokenIdentifier {
     type Error = anyhow::Error;
 
+    /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or `native`.
     fn try_from(input: String) -> Result<Self, Self::Error> {
         if input == "native" {
             Ok(TokenIdentifier::Native)
         } else if input.starts_with("fiat:") {
-            let symbol = input.split("fiat:").nth(1).ok_or(anyhow::anyhow!("Invalid fiat symbol"))?.to_string();
+            let symbol = input
+                .split("fiat:")
+                .nth(1)
+                .ok_or(anyhow::anyhow!("Invalid fiat symbol"))?
+                .to_string();
 
             Ok(TokenIdentifier::Fiat { symbol })
         } else if input.starts_with("0x") {
-            let address = input.parse::<Address>().map_err(|e| anyhow::anyhow!("Invalid address: {}", e))?;
+            let address = input
+                .parse::<Address>()
+                .map_err(|e| anyhow::anyhow!("Invalid address: {}", e))?;
 
             Ok(TokenIdentifier::ERC20 { address })
         } else {

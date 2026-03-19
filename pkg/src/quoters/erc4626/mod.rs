@@ -32,9 +32,9 @@ pub struct ERC4626Config {
 /// Quotes conversions between an ERC-4626 vault share token and its underlying asset.
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
-    /// Vault contract address.
+    /// Vault share token metadata.
     pub vault_address: Token,
-    /// Underlying asset returned by `asset()`.
+    /// Underlying asset metadata returned by `asset()`.
     pub token_address: Token,
     /// Provider used to fetch historical conversions.
     pub provider: DynProvider,

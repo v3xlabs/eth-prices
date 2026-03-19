@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::{
     quoters::{Quoter, RateDirection},
-    token::{Token, identity::TokenIdentifier},
+    token::identity::TokenIdentifier,
 };
 
 /// A static conversion rate between two assets.
