@@ -8,11 +8,11 @@ use serde::Deserialize;
 use crate::trackers::{
     erc4626::{ERC4626Config, ERC4626Quoter},
     fixed::FixedTracker,
-    uniswap::{
-        v2::quoter::{UniswapV2Config, UniswapV2Quoter},
-        v3::{quoter::UniswapV3Quoter, UniswapV3Config},
+    uniswap_v2::{
+        quoter::{UniswapV2Config, UniswapV2Quoter},
     },
-    Quoter, QuoterInstance,
+    uniswap_v3::{quoter::UniswapV3Quoter, UniswapV3Config},
+    QuoterInstance,
 };
 
 #[derive(Debug, Deserialize, PartialEq)]

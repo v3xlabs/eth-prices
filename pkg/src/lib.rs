@@ -12,8 +12,8 @@
 //! 
 //! Currently supported quoters include:
 //! - [`trackers::fixed::FixedTracker`] for static conversion rates.
-//! - [`trackers::uniswap::v2::quoter::UniswapV2Quoter`] for Uniswap v2 pairs.
-//! - [`trackers::uniswap::v3::quoter::UniswapV3Quoter`] for Uniswap v3 pools.
+//! - [`trackers::uniswap_v2::quoter::UniswapV2Quoter`] for Uniswap v2 pairs.
+//! - [`trackers::uniswap_v3::quoter::UniswapV3Quoter`] for Uniswap v3 pools.
 //! - [`trackers::erc4626::ERC4626Quoter`] for ERC-4626 vaults (Morpho, Aave, etc).
 //!
 //! The public API is still early and intentionally small, but these types are the

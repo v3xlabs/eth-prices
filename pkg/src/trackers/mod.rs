@@ -5,10 +5,11 @@
 
 use alloy::{primitives::{BlockNumber, U256}};
 
-use crate::{token::local::LocalTokenOrFiat, trackers::{erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap::{v2::quoter::UniswapV2Quoter, v3::quoter::UniswapV3Quoter}}};
+use crate::{token::local::LocalTokenOrFiat, trackers::{erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::quoter::UniswapV2Quoter, uniswap_v3::quoter::UniswapV3Quoter}};
 
 pub mod fixed;
-pub mod uniswap;
+pub mod uniswap_v2;
+pub mod uniswap_v3;
 pub mod erc4626;
 
 /// The direction to quote along a tracker edge.

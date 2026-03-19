@@ -5,7 +5,7 @@ use alloy::{
 
 use crate::{
     token::local::LocalTokenOrFiat,
-    trackers::{Quoter, RateDirection, uniswap::v3::UniswapV3Selector},
+    trackers::{Quoter, RateDirection, uniswap_v3::UniswapV3Selector},
 };
 use alloy::sol;
 

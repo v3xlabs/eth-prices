@@ -4,7 +4,7 @@ use alloy::{
 };
 use eth_prices::trackers::{
     Quoter, RateDirection,
-    uniswap::v2::quoter::{UniswapV2Quoter, UniswapV2Selector},
+    uniswap_v2::quoter::{UniswapV2Quoter, UniswapV2Selector},
 };
 
 #[tokio::main]
