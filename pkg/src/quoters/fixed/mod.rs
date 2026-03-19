@@ -1,7 +1,9 @@
+//! Fixed rate quote sources.
+
 use alloy::primitives::{BlockNumber, U256};
 use serde::Deserialize;
 
-use crate::{token::local::LocalTokenOrFiat, trackers::{Quoter, RateDirection}};
+use crate::{token::local::LocalTokenOrFiat, quoters::{Quoter, RateDirection}};
 
 /// A static conversion rate between two assets.
 ///

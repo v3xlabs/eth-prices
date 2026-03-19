@@ -1,21 +1,21 @@
-use alloy::{
-    primitives::{Address, BlockNumber, U256, U512},
-    providers::DynProvider,
-};
+use alloy::{primitives::{Address, BlockNumber, U256, U512}, providers::DynProvider};
+use serde::Deserialize;
+use pool::UniswapV3Pool;
 
-use crate::{
-    token::local::LocalTokenOrFiat,
-    trackers::{Quoter, RateDirection, uniswap_v3::UniswapV3Selector},
-};
-use alloy::sol;
+use crate::{quoters::{Quoter, RateDirection}, token::local::LocalTokenOrFiat};
 
-sol! {
-    #[sol(rpc)]
-    contract UniswapV3Pool {
-         function slot0() public view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked);
-         function token0() public view returns (address);
-         function token1() public view returns (address);
-    }
+pub mod pool;
+pub mod factory;
+
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct UniswapV3Config {
+    pub pools: Vec<UniswapV3Selector>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Clone)]
+pub struct UniswapV3Selector {
+    pool_address: Address,
 }
 
 /// Quotes spot rates from a Uniswap v3 pool at a given block height.

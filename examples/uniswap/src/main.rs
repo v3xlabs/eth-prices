@@ -2,9 +2,9 @@ use alloy::{
     primitives::address,
     providers::{Provider, ProviderBuilder},
 };
-use eth_prices::trackers::{
+use eth_prices::quoters::{
     Quoter, RateDirection,
-    uniswap_v2::quoter::{UniswapV2Quoter, UniswapV2Selector},
+    uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
 };
 
 #[tokio::main]

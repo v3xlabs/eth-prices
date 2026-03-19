@@ -5,7 +5,7 @@
 
 use alloy::{primitives::{BlockNumber, U256}};
 
-use crate::{token::local::LocalTokenOrFiat, trackers::{erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::quoter::UniswapV2Quoter, uniswap_v3::quoter::UniswapV3Quoter}};
+use crate::{token::local::LocalTokenOrFiat, quoters::{erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::UniswapV2Quoter, uniswap_v3::UniswapV3Quoter}};
 
 pub mod fixed;
 pub mod uniswap_v2;

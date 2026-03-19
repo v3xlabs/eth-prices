@@ -1,4 +1,7 @@
-use super::pair::UniswapV2Pair::{self, UniswapV2PairInstance};
+pub mod factory;
+pub mod pair;
+
+use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use alloy::{
     primitives::{address, Address, BlockNumber, U256, U512},
     providers::DynProvider,
@@ -7,7 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     token::local::LocalTokenOrFiat,
-    trackers::{Quoter, RateDirection},
+    quoters::{Quoter, RateDirection},
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -79,7 +82,7 @@ impl UniswapV2Quoter {
                 token_out,
             } => {
                 let pair_address =
-                    super::factory::fetch_pair(provider, factory_address, token_in, token_out)
+                    factory::fetch_pair(provider, factory_address, token_in, token_out)
                         .await
                         .unwrap();
 

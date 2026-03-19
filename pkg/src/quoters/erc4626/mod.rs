@@ -10,7 +10,7 @@ use alloy::sol;
 use serde::Deserialize;
 
 use crate::token::local::LocalTokenOrFiat;
-use crate::trackers::{Quoter, RateDirection};
+use crate::quoters::{Quoter, RateDirection};
 
 sol! {
     #[sol(rpc)]
