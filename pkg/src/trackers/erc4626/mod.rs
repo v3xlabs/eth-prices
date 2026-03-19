@@ -1,3 +1,8 @@
+//! ERC-4626 vault quote sources.
+//!
+//! These quoters map between vault shares and the underlying asset using the vault's
+//! conversion functions at a specific block.
+
 use alloy::primitives::{Address, BlockNumber, U256};
 use alloy::providers::DynProvider;
 
@@ -7,8 +12,6 @@ use serde::Deserialize;
 use crate::token::local::LocalTokenOrFiat;
 use crate::trackers::{Quoter, RateDirection};
 
-// https://eips.ethereum.org/EIPS/eip-4626
-// future expansion see also: 7575 & 7540
 sol! {
     #[sol(rpc)]
     contract ERC4626 {
@@ -18,19 +21,26 @@ sol! {
     }
 }
 
+/// Configuration for a single ERC-4626 vault quoter.
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct ERC4626Config {
+    /// Vault contract address.
     pub vault_address: Address,
 }
 
+/// Quotes conversions between an ERC-4626 vault share token and its underlying asset.
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
+    /// Vault contract address.
     pub vault_address: Address,
+    /// Underlying asset returned by `asset()`.
     pub token_address: Address,
+    /// Provider used to fetch historical conversions.
     pub provider: DynProvider,
 }
 
 impl ERC4626Quoter {
+    /// Creates a quoter by loading the vault's underlying asset.
     pub async fn new(vault_address: Address, provider: &DynProvider) -> Self {
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await.unwrap();

@@ -18,15 +18,21 @@ sol! {
     }
 }
 
+/// Quotes spot rates from a Uniswap v3 pool at a given block height.
 #[derive(Debug, Clone)]
 pub struct UniswapV3Quoter {
+    /// Pool contract address.
     pub pool_address: Address,
+    /// First token in pool order.
     pub token0: Address,
+    /// Second token in pool order.
     pub token1: Address,
+    /// Provider used to fetch historical pool state.
     pub provider: DynProvider,
 }
 
 impl UniswapV3Quoter {
+    /// Builds a quoter from a configured pool selector.
     pub async fn from_selector(provider: &DynProvider, selector: UniswapV3Selector) -> Self {
         let pool_address = selector.pool_address;
         let pool = UniswapV3Pool::new(pool_address, provider);

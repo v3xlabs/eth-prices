@@ -10,33 +10,45 @@ use crate::{
     trackers::{Quoter, RateDirection},
 };
 
+/// Configuration for a set of Uniswap v2 pools on a single chain.
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct UniswapV2Config {
+    /// Factory contract used when resolving pools from token pairs.
     pub factory_address: Address,
+    /// Pools to load as quoters.
     pub pairs: Vec<UniswapV2Selector>,
 }
 
+/// Selects a Uniswap v2 pool either by tokens or by pair address.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum UniswapV2Selector {
+    /// Resolve the pair address from token addresses.
     IO {
         token_in: Address,
         token_out: Address,
     },
+    /// Use an already-known pair contract address.
     Pair {
         pair_address: Address,
     },
 }
 
+/// Quotes spot rates from a Uniswap v2 pair contract at a given block height.
 #[derive(Debug, Clone)]
 pub struct UniswapV2Quoter {
+    /// Pair contract address.
     pub pair_address: Address,
+    /// First token in canonical pair order.
     pub token0: Address,
+    /// Second token in canonical pair order.
     pub token1: Address,
+    /// Provider used to fetch historical reserves.
     pub provider: DynProvider,
 }
 
 impl UniswapV2Quoter {
+    /// Builds a quoter from an instantiated pair contract.
     pub async fn from_contract(
         contract: UniswapV2PairInstance<&DynProvider>,
         provider: &DynProvider,
@@ -55,6 +67,9 @@ impl UniswapV2Quoter {
 }
 
 impl UniswapV2Quoter {
+    /// Builds a quoter from a selector.
+    ///
+    /// When a token pair is provided, the factory is used to discover the pair address.
     pub async fn from_selector(provider: &DynProvider, selector: UniswapV2Selector) -> Self {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 

@@ -3,10 +3,16 @@ use serde::Deserialize;
 
 use crate::{token::local::LocalTokenOrFiat, trackers::{Quoter, RateDirection}};
 
+/// A static conversion rate between two assets.
+///
+/// This is mainly useful for synthetic edges such as fiat pegs or test fixtures.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct FixedTracker {
+    /// Input asset for forward quotes.
     pub token_in: LocalTokenOrFiat,
+    /// Output asset for forward quotes.
     pub token_out: LocalTokenOrFiat,
+    /// Multiplier applied during forward quotes.
     pub fixed_rate: f64,
 }
 

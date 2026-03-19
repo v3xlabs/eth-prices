@@ -5,15 +5,21 @@ use serde::{Deserialize, Deserializer};
 
 use crate::token::erc20::ERC20Token;
 
+/// A local asset identifier used by quoters.
+///
+/// This enum currently supports ERC-20 addresses and fiat symbols such as `fiat:usd`.
 #[derive(Debug, PartialEq, Clone)]
 pub enum LocalTokenOrFiat {
+    /// An ERC-20 token identified by contract address.
     ERC20 { address: Address },
+    /// A fiat endpoint identified by symbol.
     Fiat { symbol: String },
 }
 
 const FIAT_DECIMALS: u32 = 6;
 
 impl LocalTokenOrFiat {
+    /// Returns one nominal unit for this asset in its base precision.
     pub async fn nominal_amount(&self, provider: &DynProvider) -> U256 {
         match self {
             LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider).await.nominal_amount().await,
@@ -21,6 +27,7 @@ impl LocalTokenOrFiat {
         }
     }
 
+    /// Formats a raw integer amount into a human-readable decimal string.
     pub async fn format_amount(&self, amount: U256, precision: usize, provider: &DynProvider) -> String {
         match self {
             LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider).await.format_amount(amount, precision).await,
@@ -33,6 +40,7 @@ impl LocalTokenOrFiat {
         }
     }
 
+    /// Returns a display symbol for this asset.
     pub async fn symbol(&self, provider: &DynProvider) -> String {
         match self {
             LocalTokenOrFiat::ERC20 { address } => ERC20Token::new(*address, provider).await.name.lock().await.clone(),
