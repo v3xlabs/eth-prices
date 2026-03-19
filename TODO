@@ -1,0 +1,6 @@
+- [ ] Setup wasm building
+- [ ] Setup JS wasm bindings
+- [ ] Fix the floating point math
+- [ ] Migrate routing logic to this repo
+- [ ] Implement caching strategy
+- [ ] Rust Docs
