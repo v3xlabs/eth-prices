@@ -12,7 +12,7 @@ use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 
 use crate::{
-    quoters::{Quoter, RateDirection},
+    quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };
 

@@ -5,7 +5,7 @@ use figment::{
 };
 use serde::Deserialize;
 
-use crate::quoters::{
+use crate::quoter::{
     QuoterInstance,
     erc4626::{ERC4626Config, ERC4626Quoter},
     fixed::FixedTracker,

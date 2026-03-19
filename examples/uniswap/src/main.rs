@@ -2,7 +2,7 @@ use alloy::{
     primitives::address,
     providers::{Provider, ProviderBuilder},
 };
-use eth_prices::{quoters::{
+use eth_prices::{quoter::{
     Quoter, RateDirection,
     uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
 }, token::Token};

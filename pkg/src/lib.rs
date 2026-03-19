@@ -6,21 +6,24 @@
 //! `wBTC -> wETH -> USDC -> fiat:usd` once and reuse that route across many blocks.
 //!
 //! Today, the main building blocks are:
-//! - [`quoters::Quoter`] for single-hop quote sources.
-//! - [`quoters::QuoterInstance`] for storing heterogeneous quote sources together.
+//! - [`quoter::Quoter`] for single-hop quote sources.
+//! - [`quoter::QuoterInstance`] for storing heterogeneous quote sources together.
 //! - [`token::TokenIdentifier`] for identifying ERC-20, fiat, and native assets.
 //! - [`token::Token`] for token metadata and amount formatting helpers.
 //!
-//! Currently supported quoters include:
-//! - [`quoters::fixed::FixedTracker`] for static conversion rates.
-//! - [`quoters::uniswap_v2::UniswapV2Quoter`] for Uniswap v2 pairs.
-//! - [`quoters::uniswap_v3::UniswapV3Quoter`] for Uniswap v3 pools.
-//! - [`quoters::erc4626::ERC4626Quoter`] for ERC-4626 vaults.
+//! # Quoters
 //!
-//! The public API is still early and intentionally small, but these types are the
-//! foundation for the higher-level router API that will sit on top.
+//! Currently supported quoters include:
+//! - [`quoter::fixed`] for static conversion rates.
+//! - [`quoter::uniswap_v2`] for Uniswap v2 pairs.
+//! - [`quoter::uniswap_v3`] for Uniswap v3 pools.
+//! - [`quoter::erc4626`] for ERC-4626 vaults.
+//!  
+//! # Routing
+//! 
+//! Routing is currently in-progress and will be available in a future release.
 
-pub mod quoters;
+pub mod quoter;
 #[cfg(test)]
 pub mod tests;
 pub mod token;

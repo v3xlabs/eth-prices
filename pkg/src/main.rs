@@ -2,12 +2,12 @@ use alloy::providers::{Provider, ProviderBuilder};
 
 use crate::{
     config::Config,
-    quoters::{Quoter, RateDirection},
+    quoter::{Quoter, RateDirection},
     token::Token,
 };
 
 pub mod config;
-pub mod quoters;
+pub mod quoter;
 #[cfg(test)]
 pub mod tests;
 pub mod token;

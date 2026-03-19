@@ -5,7 +5,7 @@ use anyhow::Result;
 use serde::Deserialize;
 
 use crate::{
-    quoters::{Quoter, RateDirection},
+    quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };
 

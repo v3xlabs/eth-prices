@@ -9,7 +9,7 @@ use pool::UniswapV3Pool;
 use serde::Deserialize;
 
 use crate::{
-    quoters::{Quoter, RateDirection},
+    quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };
 
