@@ -29,6 +29,8 @@
 //! ```
 //! 
 
+use std::fmt::{self, Display};
+
 use alloy::primitives::{BlockNumber, U256};
 use anyhow::Result;
 
@@ -52,6 +54,12 @@ pub mod uniswap_v3;
 pub enum RateDirection {
     Forward,
     Reverse,
+}
+
+impl Display for RateDirection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 /// A single-hop quote source.

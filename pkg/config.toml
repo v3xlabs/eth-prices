@@ -24,7 +24,7 @@ slug = "weth"
 
 [[chains.ethereum.quoters.fixed]]
 token_in = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
-token_out = "fiat:usdc"
+token_out = "fiat:usd"
 fixed_rate = 1.0
 
 [[chains.ethereum.quoters.erc4626]]

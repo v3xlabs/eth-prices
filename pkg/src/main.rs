@@ -9,7 +9,7 @@ use tracing::info;
 use eth_prices::{
     config::Config,
     quoter::{Quoter, RateDirection},
-    router::{QuoterGraph, Route},
+    router::{graph::QuoterGraph, Route},
     token::{Token, TokenIdentifier},
 };
 
@@ -69,17 +69,13 @@ pub async fn main() {
             );
         }
 
-        let mut router = QuoterGraph::default();
-
-        for quoter in chain_config.quoters.all(&box_provider).await {
-            router.add_quoter(&quoter);
-        }
+        let router = QuoterGraph::from_iter(quoters);
 
         info!("{}", router.to_graphviz());
 
         let mut all_tokens = HashSet::new();
 
-        for quoter in &quoters {
+        for quoter in &router.quoters {
             let (token_in, token_out) = quoter.get_tokens();
             all_tokens.insert(token_in);
             all_tokens.insert(token_out);
@@ -96,7 +92,7 @@ pub async fn main() {
                 continue;
             }
 
-            let route = Route::compute(&router, &quoters, &token, &token_out)
+            let route = Route::compute(&router, &token, &token_out)
                 .expect("Failed to compute route");
             info!("route: {:?}", route);
             routes.push(route);
@@ -109,7 +105,7 @@ pub async fn main() {
                 .unwrap();
             let token_input = token_a.nominal_amount().await;
 
-            let token_output = route.quote(&quoters, block, token_input).await.unwrap();
+            let token_output = route.quote(block, token_input).await.unwrap();
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,

@@ -19,5 +19,5 @@ futures = "0"
 async-stream = "0.3.6"
 figment = { version = "0.10.19", features = ["toml"] }
 petgraph = "0.8.3"
-tracing = "0.1.44"
+tracing = { version = "0.1.44", default-features = false, features = ["log"] }
 tracing-subscriber = "0.3.23"

@@ -1,17 +1,14 @@
-use std::collections::HashMap;
-
 use alloy::primitives::{BlockNumber, U256};
 use anyhow::Result;
-use petgraph::{
-    dot::Dot,
-    graph::{NodeIndex, UnGraph},
-};
-use tracing::info;
+use tracing::{Level, event, info, span};
 
 use crate::{
-    quoter::{Quoter, QuoterInstance, RateDirection},
+    quoter::{Quoter, RateDirection},
+    router::graph::QuoterGraph,
     token::TokenIdentifier,
 };
+
+pub mod graph;
 
 #[derive(Debug, Clone)]
 pub struct Route {
@@ -20,67 +17,10 @@ pub struct Route {
     pub output_token: TokenIdentifier,
 }
 
-pub struct QuoterGraph {
-    graph: UnGraph<String, String>,
-    token_map: HashMap<String, NodeIndex<u32>>,
-}
-
-impl Default for QuoterGraph {
-    fn default() -> Self {
-        Self {
-            graph: UnGraph::new_undirected(),
-            token_map: HashMap::new(),
-        }
-    }
-}
-
-impl QuoterGraph {
-    pub fn get_token_index(&self, token: &TokenIdentifier) -> Option<NodeIndex<u32>> {
-        self.token_map.get(&token.to_string()).copied()
-    }
-
-    pub fn get_token_by_index(&self, index: NodeIndex<u32>) -> Option<TokenIdentifier> {
-        self.token_map
-            .iter()
-            .find(|x| *x.1 == index)
-            .map(|(token, _)| token.clone())
-            .map(TokenIdentifier::try_from)
-            .and_then(|x| x.ok())
-    }
-
-    pub fn add_token(&mut self, token: &TokenIdentifier) -> NodeIndex<u32> {
-        match self.token_map.get(&token.to_string()) {
-            Some(node_index) => *node_index,
-            None => {
-                let slug = token.to_string();
-                let node_index = self.graph.add_node(slug.to_owned());
-                self.token_map.insert(slug, node_index);
-                node_index
-            }
-        }
-    }
-
-    pub fn add_quoter(&mut self, quoter: &impl Quoter) {
-        let slug = quoter.get_slug();
-        let (token_in, token_out) = quoter.get_tokens();
-
-        let token_in_index = self.add_token(&token_in);
-        let token_out_index = self.add_token(&token_out);
-
-        self.graph
-            .extend_with_edges([(token_in_index, token_out_index, slug)]);
-    }
-
-    pub fn to_graphviz(&self) -> String {
-        Dot::new(&self.graph).to_string()
-    }
-}
-
 impl Route {
     /// compute a route given an input and output token
     pub fn compute(
         graph: &QuoterGraph,
-        quoters: &[QuoterInstance],
         input_token: &TokenIdentifier,
         output_token: &TokenIdentifier,
     ) -> Result<Self> {
@@ -90,6 +30,12 @@ impl Route {
         let token_b_index = graph
             .get_token_index(output_token)
             .ok_or(anyhow::anyhow!("Token not found"))?;
+
+        info!(
+            target: "router::compute_start",
+            input_token = %input_token,
+            output_token = %output_token,
+        );
 
         let path = petgraph::algo::astar(
             &graph.graph,
@@ -102,8 +48,10 @@ impl Route {
         match path {
             None => return Err(anyhow::anyhow!("No path found")),
             Some((_cost, node_path)) => {
-                //
-                info!("node_path: {:?}", node_path);
+                info!(
+                    target: "router::compute_end",
+                    node_path = ?node_path,
+                );
                 let token_route = node_path
                     .iter()
                     .map(|x| graph.get_token_by_index(*x).unwrap())
@@ -117,7 +65,8 @@ impl Route {
                         continue;
                     };
 
-                    let quoter = quoters
+                    let quoter = graph
+                        .quoters
                         .iter()
                         .find(|x| {
                             let (token_in, token_out) = x.get_tokens();
@@ -132,7 +81,11 @@ impl Route {
                 }
 
                 if path.len() != node_path.len() - 1 {
-                    return Err(anyhow::anyhow!("Path length mismatch {} != {}", path.len(), node_path.len() - 1));
+                    return Err(anyhow::anyhow!(
+                        "Path length mismatch {} != {}",
+                        path.len(),
+                        node_path.len() - 1
+                    ));
                 }
 
                 Ok(Self {
@@ -147,23 +100,47 @@ impl Route {
     /// calculate a quote for a given route
     pub async fn quote(
         &self,
-        quoters: &[QuoterInstance],
+        graph: &QuoterGraph,
         block: BlockNumber,
         amount_in: U256,
     ) -> Result<U256> {
         let mut amount_out = amount_in;
 
         for quoter in self.path.iter() {
-            let quoter = quoters.iter().find(|x| x.get_slug() == *quoter).unwrap();
+            let quoter = graph
+                .quoters
+                .iter()
+                .find(|x| x.get_slug() == *quoter)
+                .unwrap();
             let (token_in, _token_out) = quoter.get_tokens();
-            let direction = if token_in == self.input_token { RateDirection::Forward } else { RateDirection::Reverse };
+            let direction = if token_in == self.input_token {
+                RateDirection::Forward
+            } else {
+                RateDirection::Reverse
+            };
 
-            info!("direction: {:?}", direction);
-            info!("amount_in: {:?}", amount_out);
+            // info!("direction: {:?}", direction);
+            // info!("amount_in: {:?}", amount_out);
 
-            let rate = quoter.get_rate(amount_out, direction, block).await.unwrap();
+            let quoter_slug = quoter.get_slug();
+
+            info!(
+                target: "router::quote_start",
+                quoter_slug,
+                amount_in = %amount_in,
+                direction = %direction,
+            );
+
+            let rate = quoter.get_rate(amount_out, direction, block).await?;
             amount_out = rate;
-            info!("amount_out: {:?}", amount_out);
+
+            info!(
+                target: "router::quote_end",
+                quoter_slug,
+                amount_in = %amount_in,
+                direction = %direction,
+                amount_out = %amount_out,
+            );
         }
 
         Ok(U256::from(amount_out))

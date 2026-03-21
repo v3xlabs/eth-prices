@@ -1,42 +1,33 @@
-use std::{
-    collections::{HashMap, HashSet},
-    io::Error,
-    sync::Arc,
-};
-
-use alloy::{
-    primitives::address,
-    providers::{DynProvider, Provider, ProviderBuilder},
-};
+use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
     config::Config,
-    quoter::{
-        Quoter, QuoterInstance, RateDirection,
-        uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-    },
-    router::{QuoterGraph, Route},
+    quoter::Quoter,
+    router::{Route, graph::QuoterGraph},
     token::{Token, TokenIdentifier},
 };
 use poem::{
-    EndpointExt, IntoResponse, Route as PoemRoute, Server, get, handler,
-    listener::TcpListener,
-    web::{Data, Path},
+    EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
 };
-use prometheus_client::{encoding::{EncodeLabelSet, text::encode}, metrics::{family::Family, gauge::Gauge}, registry::Registry};
-use tracing_subscriber::fmt;
+use prometheus_client::{
+    encoding::{EncodeLabelSet, text::encode},
+    metrics::{family::Family, gauge::Gauge},
+    registry::Registry,
+};
+use std::{
+    collections::{HashMap, HashSet},
+    io::Error,
+    sync::{Arc, atomic::AtomicU64},
+};
 
 pub struct ChainState {
     provider: DynProvider,
     router: QuoterGraph,
-    all_tokens: HashSet<TokenIdentifier>,
-    token_out: TokenIdentifier,
     routes: Vec<Route>,
-    quoters: Vec<QuoterInstance>,
 }
 
 pub struct Metrics {
     registry: Registry,
-    token_price_in_usd: Family<Labels, Gauge>,
+    token_price_in_usd: Family<Labels, Gauge<f64, AtomicU64>>,
 }
 
 pub struct AppState {
@@ -47,10 +38,10 @@ pub struct AppState {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct Labels {
-  // Use your own enum types to represent label values.
-  chain: String,
-  // Or just a plain string.
-  token: String,
+    // Use your own enum types to represent label values.
+    chain: String,
+    // Or just a plain string.
+    token: String,
 }
 
 pub async fn setup() -> AppState {
@@ -64,26 +55,19 @@ pub async fn setup() -> AppState {
             let token_address = token_config.address.clone();
             println!("token: {:?}", token_address);
         }
-        let block = provider.get_block_number().await.unwrap();
-        let precision = 10;
         let quoters = chain_config.quoters.all(&provider).await;
-        let mut router = QuoterGraph::default();
-
-        for quoter in chain_config.quoters.all(&provider).await {
-            router.add_quoter(&quoter);
-        }
+        let router = QuoterGraph::from_iter(quoters);
 
         let mut all_tokens = HashSet::new();
-        for quoter in &quoters {
+        for quoter in &router.quoters {
             let (token_in, token_out) = quoter.get_tokens();
             all_tokens.insert(token_in);
             all_tokens.insert(token_out);
         }
 
-        let token_out = TokenIdentifier::ERC20 {
-            address: address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
+        let token_out = TokenIdentifier::Fiat {
+            symbol: "usd".to_string(),
         };
-        let token_b = Token::new(token_out.clone(), &provider).await.unwrap();
         let mut routes = Vec::new();
 
         for token in &all_tokens {
@@ -91,25 +75,10 @@ pub async fn setup() -> AppState {
                 continue;
             }
 
-            let route = Route::compute(&router, &quoters, &token, &token_out)
-                .expect("Failed to compute route");
+            let route =
+                Route::compute(&router, token, &token_out).expect("Failed to compute route");
             println!("route: {:?}", route);
             routes.push(route);
-        }
-
-        for route in &routes {
-            let token_input = &route.input_token;
-            let token_a = Token::new(token_input.clone(), &provider)
-                .await
-                .unwrap();
-            let token_input = token_a.nominal_amount().await;
-
-            let token_output = route.quote(&quoters, block, token_input).await.unwrap();
-            println!(
-                "token_output: 1 {} = {:?}",
-                token_a.symbol,
-                token_b.format_amount(token_output, precision).await
-            );
         }
 
         chains.insert(
@@ -117,18 +86,19 @@ pub async fn setup() -> AppState {
             ChainState {
                 provider,
                 router,
-                all_tokens,
-                token_out,
                 routes,
-                quoters,
             },
         );
     }
 
     let mut registry = <Registry>::default();
 
-    let token_price_in_usd = Family::<Labels, Gauge>::default();
-    registry.register("token_price_usd", "Token price in USD", token_price_in_usd.clone());
+    let token_price_in_usd = Family::<Labels, Gauge<f64, AtomicU64>>::default();
+    registry.register(
+        "token_price_usd",
+        "Token price in USD",
+        token_price_in_usd.clone(),
+    );
 
     AppState {
         config,
@@ -147,24 +117,28 @@ fn index() -> String {
 
 #[handler]
 async fn metrics(state: Data<&Arc<AppState>>) -> String {
-
     for (chain_slug, chain) in &state.chains {
         let block = chain.provider.get_block_number().await.unwrap();
 
         for route in &chain.routes {
             let token_input = &route.input_token;
-            let token_input = Token::new(token_input.clone(), &chain.provider).await.unwrap();
+            let token_input = Token::new(token_input.clone(), &chain.provider)
+                .await
+                .unwrap();
             let amount_in = token_input.nominal_amount().await;
-            let token_output = route.quote(&chain.quoters, block, amount_in).await.unwrap();
-            
-            let rate: i64 = token_output.to_string().parse().unwrap();
+            let token_output = route.quote(&chain.router, block, amount_in).await.unwrap();
 
-            state.metrics.token_price_in_usd.get_or_create(
-                &Labels {
+            let rate: i64 = token_output.to_string().parse().unwrap();
+            let rate = rate as f64 / 10_f64.powf(6 as f64);
+
+            state
+                .metrics
+                .token_price_in_usd
+                .get_or_create(&Labels {
                     chain: chain_slug.clone(),
                     token: token_input.symbol.clone(),
-                }
-            ).set(rate);
+                })
+                .set(rate);
         }
     }
 
