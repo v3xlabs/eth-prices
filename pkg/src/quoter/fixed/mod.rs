@@ -23,15 +23,15 @@ pub struct FixedQuoter {
 }
 
 impl Quoter for FixedQuoter {
-    fn get_slug(&self) -> String {
+    fn id(&self) -> String {
         format!("fixed:{}:{}", self.token_in, self.token_out)
     }
 
-    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token_in.clone(), self.token_out.clone())
     }
 
-    async fn get_rate(
+    async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
@@ -67,10 +67,10 @@ mod tests {
         };
 
         let forwards = tracker
-            .get_rate(U256::from(100), RateDirection::Forward, 100)
+            .rate(U256::from(100), RateDirection::Forward, 100)
             .await;
         let backwards = tracker
-            .get_rate(U256::from(100), RateDirection::Reverse, 100)
+            .rate(U256::from(100), RateDirection::Reverse, 100)
             .await;
 
         assert_eq!(forwards.unwrap(), U256::from(200));

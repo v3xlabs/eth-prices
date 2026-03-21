@@ -28,7 +28,8 @@ pub struct ChainState {
 
 pub struct Metrics {
     registry: Registry,
-    token_price_in_usd: Family<Labels, Gauge<f64, AtomicU64>>,
+    token_price_in_usd: Family<TokenLabels, Gauge<f64, AtomicU64>>,
+    block_height: Family<Labels, Gauge<u64, AtomicU64>>,
 }
 
 pub struct AppState {
@@ -39,11 +40,17 @@ pub struct AppState {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
-struct Labels {
+struct TokenLabels {
     // Use your own enum types to represent label values.
     chain: String,
     // Or just a plain string.
     token: String,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+struct Labels {
+    // Use your own enum types to represent label values.
+    chain: String,
 }
 
 pub async fn setup() -> AppState {
@@ -62,7 +69,7 @@ pub async fn setup() -> AppState {
 
         let mut all_tokens = HashSet::new();
         for quoter in &router.quoters {
-            let (token_in, token_out) = quoter.get_tokens();
+            let (token_in, token_out) = quoter.tokens();
             all_tokens.insert(token_in);
             all_tokens.insert(token_out);
         }
@@ -96,12 +103,15 @@ pub async fn setup() -> AppState {
 
     let mut registry = <Registry>::default();
 
-    let token_price_in_usd = Family::<Labels, Gauge<f64, AtomicU64>>::default();
+    let token_price_in_usd = Family::<TokenLabels, Gauge<f64, AtomicU64>>::default();
     registry.register(
         "token_price_usd",
         "Token price in USD",
         token_price_in_usd.clone(),
     );
+
+    let block_height = Family::<Labels, Gauge<u64, AtomicU64>>::default();
+    registry.register("block_height", "Block height", block_height.clone());
 
     AppState {
         config,
@@ -109,6 +119,7 @@ pub async fn setup() -> AppState {
         metrics: Metrics {
             registry,
             token_price_in_usd,
+            block_height,
         },
     }
 }
@@ -123,13 +134,21 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
     for (chain_slug, chain) in &state.chains {
         let block = chain.provider.get_block_number().await.unwrap();
 
+        state
+            .metrics
+            .block_height
+            .get_or_create(&Labels {
+                chain: chain_slug.clone(),
+            })
+            .set(block.into());
+
         for route in &chain.routes {
             let token_input = &route.input_token;
             let token_input = Token::new(token_input.clone(), &chain.provider)
                 .await
                 .unwrap();
             let amount_in = token_input.nominal_amount().await;
-            let token_output = route.quote(&chain.router, block, amount_in).await.unwrap();
+            let token_output = route.quote(block, amount_in).await.unwrap();
 
             let rate: i64 = token_output.to_string().parse().unwrap();
             let rate = rate as f64 / 10_f64.powf(6_f64);
@@ -137,7 +156,7 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             state
                 .metrics
                 .token_price_in_usd
-                .get_or_create(&Labels {
+                .get_or_create(&TokenLabels {
                     chain: chain_slug.clone(),
                     token: token_input.symbol.clone(),
                 })

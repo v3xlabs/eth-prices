@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use petgraph::{
@@ -8,14 +8,14 @@ use petgraph::{
 use tracing::info;
 
 use crate::{
-    quoter::{Quoter, QuoterInstance},
-    router::Route,
+    quoter::{Quoter, QuoterInstance, RateDirection},
+    router::{Route, RouteStep},
     token::TokenIdentifier,
 };
 
 #[derive(Debug, Clone)]
 pub struct QuoterGraph {
-    pub quoters: Vec<QuoterInstance>,
+    pub quoters: Vec<Arc<QuoterInstance>>,
     pub graph: UnGraph<String, String>,
     pub token_map: HashMap<String, NodeIndex<u32>>,
 }
@@ -35,7 +35,7 @@ impl FromIterator<QuoterInstance> for QuoterGraph {
         let mut graph = Self::default();
         for quoter in iter {
             graph.add_quoter(&quoter);
-            graph.quoters.push(quoter);
+            graph.quoters.push(Arc::new(quoter));
         }
         graph
     }
@@ -68,8 +68,8 @@ impl QuoterGraph {
     }
 
     pub fn add_quoter(&mut self, quoter: &impl Quoter) {
-        let slug = quoter.get_slug();
-        let (token_in, token_out) = quoter.get_tokens();
+        let slug = quoter.id();
+        let (token_in, token_out) = quoter.tokens();
 
         let token_in_index = self.add_token(&token_in);
         let token_out_index = self.add_token(&token_out);
@@ -133,14 +133,21 @@ impl QuoterGraph {
                         .quoters
                         .iter()
                         .find(|x| {
-                            let (token_in, token_out) = x.get_tokens();
+                            let (token_in, token_out) = x.tokens();
 
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
                         })
                         .unwrap();
 
-                    path.push(quoter.get_slug());
+                    path.push(RouteStep {
+                        quoter: quoter.clone(),
+                        direction: if *previous_token == quoter.tokens().0 {
+                            RateDirection::Forward
+                        } else {
+                            RateDirection::Reverse
+                        },
+                    });
                     previous_token = next_token;
                 }
 

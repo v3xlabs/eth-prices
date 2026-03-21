@@ -36,8 +36,8 @@ pub async fn main() {
 
         let quoters = chain_config.quoters.all(&box_provider).await;
         for quoter in &quoters {
-            info!("quoter: {:?}", quoter.get_slug());
-            let (token_a, token_b) = quoter.get_tokens();
+            info!("quoter: {:?}", quoter.id());
+            let (token_a, token_b) = quoter.tokens();
 
             let token_a = Token::new(token_a, &box_provider).await.unwrap();
             let token_b = Token::new(token_b, &box_provider).await.unwrap();
@@ -46,11 +46,11 @@ pub async fn main() {
             let amount_b = token_b.nominal_amount().await;
 
             let forward_rate = quoter
-                .get_rate(amount_a, RateDirection::Forward, block)
+                .rate(amount_a, RateDirection::Forward, block)
                 .await
                 .unwrap();
             let reverse_rate = quoter
-                .get_rate(amount_b, RateDirection::Reverse, block)
+                .rate(amount_b, RateDirection::Reverse, block)
                 .await
                 .unwrap();
             info!(
@@ -76,7 +76,7 @@ pub async fn main() {
         let mut all_tokens = HashSet::new();
 
         for quoter in &router.quoters {
-            let (token_in, token_out) = quoter.get_tokens();
+            let (token_in, token_out) = quoter.tokens();
             all_tokens.insert(token_in);
             all_tokens.insert(token_out);
         }
@@ -106,7 +106,7 @@ pub async fn main() {
                 .unwrap();
             let token_input = token_a.nominal_amount().await;
 
-            let token_output = route.quote(&router, block, token_input).await.unwrap();
+            let token_output = route.quote(block, token_input).await.unwrap();
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,

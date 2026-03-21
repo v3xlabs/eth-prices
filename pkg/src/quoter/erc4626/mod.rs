@@ -78,18 +78,18 @@ impl ERC4626Quoter {
 }
 
 impl Quoter for ERC4626Quoter {
-    fn get_slug(&self) -> String {
+    fn id(&self) -> String {
         format!("erc4626:{}", self.vault_address.identifier)
     }
 
-    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             self.vault_address.identifier.clone(),
             self.token_address.identifier.clone(),
         )
     }
 
-    async fn get_rate(
+    async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
@@ -134,7 +134,7 @@ mod tests {
             .unwrap();
         let token_a_amount = token_a.nominal_amount().await;
         let forward_rate = quoter
-            .get_rate(token_a_amount, RateDirection::Forward, block)
+            .rate(token_a_amount, RateDirection::Forward, block)
             .await
             .unwrap();
 
@@ -143,7 +143,7 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount().await;
         let reverse_rate = quoter
-            .get_rate(token_b_amount, RateDirection::Reverse, block)
+            .rate(token_b_amount, RateDirection::Reverse, block)
             .await
             .unwrap();
 

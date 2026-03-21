@@ -45,15 +45,15 @@ impl UniswapV3Quoter {
 }
 
 impl Quoter for UniswapV3Quoter {
-    fn get_slug(&self) -> String {
+    fn id(&self) -> String {
         format!("uniswap_v3:{}", self.pool_address)
     }
 
-    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token0.into(), self.token1.into())
     }
 
-    async fn get_rate(
+    async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,

@@ -72,20 +72,17 @@ impl Display for RateDirection {
 /// specific block height.
 pub trait Quoter: Send + Sync {
     /// Returns the pair of assets connected by this quoter.
-    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier);
+    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
 
     /// Quotes `amount_in` at the provided block height.
-    ///
-    /// The output asset is determined by `direction` relative to [`Quoter::get_tokens`].
-    fn get_rate(
+    fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
     ) -> impl Future<Output = Result<U256>> + Send;
 
-    /// Returns a stable, human-readable identifier for this quoter.
-    fn get_slug(&self) -> String;
+    fn id(&self) -> String;
 }
 
 /// An owned enum wrapper around all supported quote source implementations.
@@ -102,35 +99,35 @@ pub enum QuoterInstance {
 }
 
 impl Quoter for QuoterInstance {
-    fn get_slug(&self) -> String {
+    fn id(&self) -> String {
         match self {
-            QuoterInstance::Fixed(tracker) => tracker.get_slug(),
-            QuoterInstance::UniswapV2(quoter) => quoter.get_slug(),
-            QuoterInstance::UniswapV3(quoter) => quoter.get_slug(),
-            QuoterInstance::ERC4626(quoter) => quoter.get_slug(),
+            QuoterInstance::Fixed(tracker) => tracker.id(),
+            QuoterInstance::UniswapV2(quoter) => quoter.id(),
+            QuoterInstance::UniswapV3(quoter) => quoter.id(),
+            QuoterInstance::ERC4626(quoter) => quoter.id(),
         }
     }
 
-    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         match self {
-            QuoterInstance::Fixed(tracker) => tracker.get_tokens(),
-            QuoterInstance::UniswapV2(quoter) => quoter.get_tokens(),
-            QuoterInstance::UniswapV3(quoter) => quoter.get_tokens(),
-            QuoterInstance::ERC4626(quoter) => quoter.get_tokens(),
+            QuoterInstance::Fixed(tracker) => tracker.tokens(),
+            QuoterInstance::UniswapV2(quoter) => quoter.tokens(),
+            QuoterInstance::UniswapV3(quoter) => quoter.tokens(),
+            QuoterInstance::ERC4626(quoter) => quoter.tokens(),
         }
     }
 
-    async fn get_rate(
+    async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
     ) -> Result<U256> {
         match self {
-            QuoterInstance::Fixed(tracker) => tracker.get_rate(amount_in, direction, block).await,
-            QuoterInstance::UniswapV2(quoter) => quoter.get_rate(amount_in, direction, block).await,
-            QuoterInstance::UniswapV3(quoter) => quoter.get_rate(amount_in, direction, block).await,
-            QuoterInstance::ERC4626(quoter) => quoter.get_rate(amount_in, direction, block).await,
+            QuoterInstance::Fixed(tracker) => tracker.rate(amount_in, direction, block).await,
+            QuoterInstance::UniswapV2(quoter) => quoter.rate(amount_in, direction, block).await,
+            QuoterInstance::UniswapV3(quoter) => quoter.rate(amount_in, direction, block).await,
+            QuoterInstance::ERC4626(quoter) => quoter.rate(amount_in, direction, block).await,
         }
     }
 }

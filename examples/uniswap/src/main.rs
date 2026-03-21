@@ -22,13 +22,13 @@ pub async fn main() {
     let quoter =
         UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address }).await;
 
-    let (token_a, token_b) = quoter.get_tokens();
+    let (token_a, token_b) = quoter.tokens();
     let token_a = Token::new(token_a, &provider).await.unwrap();
     let token_b = Token::new(token_b, &provider).await.unwrap();
     let amount_in = token_a.nominal_amount().await;
     let block = provider.get_block_number().await.unwrap();
     let rate = quoter
-        .get_rate(amount_in, RateDirection::Forward, block)
+        .rate(amount_in, RateDirection::Forward, block)
         .await
         .unwrap();
 

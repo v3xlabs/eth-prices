@@ -111,14 +111,14 @@ impl UniswapV2Quoter {
 }
 
 impl Quoter for UniswapV2Quoter {
-    fn get_slug(&self) -> String {
+    fn id(&self) -> String {
         format!(
             "uniswap_v2:{}:{}:{}",
             self.pair_address, self.token0, self.token1
         )
     }
 
-    fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             TokenIdentifier::ERC20 {
                 address: self.token0,
@@ -129,7 +129,7 @@ impl Quoter for UniswapV2Quoter {
         )
     }
 
-    async fn get_rate(
+    async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
