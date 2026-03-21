@@ -6,6 +6,7 @@ use petgraph::{
     dot::Dot,
     graph::{NodeIndex, UnGraph},
 };
+use tracing::info;
 
 use crate::{
     quoter::{Quoter, QuoterInstance, RateDirection},
@@ -102,7 +103,7 @@ impl Route {
             None => return Err(anyhow::anyhow!("No path found")),
             Some((cost, node_path)) => {
                 //
-                println!("node_path: {:?}", node_path);
+                info!("node_path: {:?}", node_path);
                 let token_route = node_path
                     .iter()
                     .map(|x| graph.get_token_by_index(*x).unwrap())
@@ -157,12 +158,12 @@ impl Route {
             let (token_in, _token_out) = quoter.get_tokens();
             let direction = if token_in == self.input_token { RateDirection::Forward } else { RateDirection::Reverse };
 
-            println!("direction: {:?}", direction);
-            println!("amount_in: {:?}", amount_out);
+            info!("direction: {:?}", direction);
+            info!("amount_in: {:?}", amount_out);
 
             let rate = quoter.get_rate(amount_out, direction, block).await.unwrap();
             amount_out = rate;
-            println!("amount_out: {:?}", amount_out);
+            info!("amount_out: {:?}", amount_out);
         }
 
         Ok(U256::from(amount_out))

@@ -4,6 +4,7 @@ use alloy::{
     primitives::address,
     providers::{Provider, ProviderBuilder},
 };
+use tracing::info;
 
 use eth_prices::{
     config::Config,
@@ -14,17 +15,17 @@ use eth_prices::{
 
 #[tokio::main]
 pub async fn main() {
+    tracing_subscriber::fmt::init();
+
     let config = Config::load("config.toml").await;
 
     for (chain_slug, chain_config) in config.chains {
-        println!("chain: {:?}", chain_slug);
         let url = chain_config.rpc_url;
         let provider = ProviderBuilder::new().connect(&url).await.unwrap();
 
-        println!("tokens: {:?}", chain_config.tokens.len());
         for token_config in chain_config.tokens {
             let token_address = token_config.address;
-            println!("token: {:?}", token_address);
+            info!("token: {:?}", token_address);
         }
 
         let box_provider = Box::new(provider.erased());
@@ -35,7 +36,7 @@ pub async fn main() {
 
         let quoters = chain_config.trackers.all(&box_provider).await;
         for quoter in &quoters {
-            println!("quoter: {:?}", quoter.get_slug());
+            info!("quoter: {:?}", quoter.get_slug());
             let (token_a, token_b) = quoter.get_tokens();
 
             let token_a = Token::new(token_a, &box_provider).await.unwrap();
@@ -52,14 +53,14 @@ pub async fn main() {
                 .get_rate(amount_b, RateDirection::Reverse, block)
                 .await
                 .unwrap();
-            println!(
+            info!(
                 "forward_rate: {:?} {} = {:?} {}",
                 token_a.format_amount(amount_a, precision).await,
                 token_a.symbol,
                 token_b.format_amount(forward_rate, precision).await,
                 token_b.symbol,
             );
-            println!(
+            info!(
                 "reverse_rate: {:?} {} = {:?} {}",
                 token_b.format_amount(amount_b, precision).await,
                 token_b.symbol,
@@ -74,7 +75,7 @@ pub async fn main() {
             router.add_quoter(&quoter);
         }
 
-        println!("{}", router.to_dot());
+        info!("{}", router.to_dot());
 
         let mut all_tokens = HashSet::new();
 
@@ -97,7 +98,7 @@ pub async fn main() {
 
             let route = Route::compute(&router, &quoters, &token, &token_out)
                 .expect("Failed to compute route");
-            println!("route: {:?}", route);
+            info!("route: {:?}", route);
             routes.push(route);
         }
 
@@ -109,7 +110,7 @@ pub async fn main() {
             let token_input = token_a.nominal_amount().await;
 
             let token_output = route.quote(&quoters, block, token_input).await.unwrap();
-            println!(
+            info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,
                 token_b.format_amount(token_output, precision).await

@@ -10,6 +10,7 @@ use alloy::{
 use anyhow::Result;
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
+use tracing::info;
 
 use crate::{
     quoter::{Quoter, RateDirection},
@@ -141,10 +142,10 @@ impl Quoter for UniswapV2Quoter {
 
                 // x.to_string().parse::<U256>().unwrap()
 
-                println!("amount_in: {:?}", amount_in);
-                println!("reserve0: {:?}", reserve0);
-                println!("reserve1: {:?}", reserve1);
-                println!("scale: {:?}", scale);
+                info!("amount_in: {:?}", amount_in);
+                info!("reserve0: {:?}", reserve0);
+                info!("reserve1: {:?}", reserve1);
+                info!("scale: {:?}", scale);
 
                 let numerator = amount_in * reserve1;
                 let denominator = reserve0;

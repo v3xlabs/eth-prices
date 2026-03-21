@@ -4,6 +4,7 @@ version = "0.0.1"
 edition = "2024"
 description = "A library for fetching Ethereum prices."
 license = "LGPL-3.0"
+repository = "https://github.com/v3xlabs/eth-prices"
 
 [dependencies]
 alloy = { version = "1", features = [
@@ -18,3 +19,5 @@ futures = "0"
 async-stream = "0.3.6"
 figment = { version = "0.10.19", features = ["toml"] }
 petgraph = "0.8.3"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
