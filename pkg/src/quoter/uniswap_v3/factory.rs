@@ -14,7 +14,7 @@ pub struct UniswapV3Config {
 #[serde(untagged)]
 pub enum UniswapV3Selector {
     /// Resolve the pool address from factory
-    IO {
+    ByTokens {
         token_in: Address,
         token_out: Address,
         fee: Option<u32>,
@@ -34,7 +34,7 @@ impl UniswapV3Selector {
     pub async fn resolve(&self, provider: &DynProvider) -> Result<Address> {
         let factory_address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
         match self {
-            UniswapV3Selector::IO { token_in, token_out, fee } => {
+            UniswapV3Selector::ByTokens { token_in, token_out, fee } => {
                 let factory = UniswapV3Factory::new(factory_address, provider);
                 let fee = U24::from(fee.unwrap_or(3000));
                 let pool = factory.getPool(*token_in, *token_out, fee).call().await?;

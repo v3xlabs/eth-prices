@@ -71,7 +71,7 @@ impl QuoterGraph {
             .extend_with_edges([(token_in_index, token_out_index, slug)]);
     }
 
-    pub fn to_dot(&self) -> String {
+    pub fn to_graphviz(&self) -> String {
         Dot::new(&self.graph).to_string()
     }
 }

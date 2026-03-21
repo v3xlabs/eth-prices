@@ -75,7 +75,7 @@ pub async fn main() {
             router.add_quoter(&quoter);
         }
 
-        info!("{}", router.to_dot());
+        info!("{}", router.to_graphviz());
 
         let mut all_tokens = HashSet::new();
 

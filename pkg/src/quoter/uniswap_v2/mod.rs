@@ -31,7 +31,7 @@ pub struct UniswapV2Config {
 #[serde(untagged)]
 pub enum UniswapV2Selector {
     /// Resolve the pair address from token addresses.
-    IO {
+    ByTokens {
         token_in: Address,
         token_out: Address,
     },
@@ -79,7 +79,7 @@ impl UniswapV2Quoter {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 
         match selector {
-            UniswapV2Selector::IO {
+            UniswapV2Selector::ByTokens {
                 token_in,
                 token_out,
             } => {
@@ -136,12 +136,6 @@ impl Quoter for UniswapV2Quoter {
         let scale = U512::from(10).pow(U512::from(8));
         match direction {
             RateDirection::Forward => {
-                // let rate = reserve0 * scale / reserve1;
-
-                // let x = U512::from(amount_in) * rate / scale;
-
-                // x.to_string().parse::<U256>().unwrap()
-
                 info!("amount_in: {:?}", amount_in);
                 info!("reserve0: {:?}", reserve0);
                 info!("reserve1: {:?}", reserve1);
