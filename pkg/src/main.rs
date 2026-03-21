@@ -9,7 +9,7 @@ use tracing::info;
 use eth_prices::{
     config::Config,
     quoter::{Quoter, RateDirection},
-    router::{graph::QuoterGraph, Route},
+    router::graph::QuoterGraph,
     token::{Token, TokenIdentifier},
 };
 
@@ -19,7 +19,7 @@ pub async fn main() {
 
     let config = Config::load("config.toml").await;
 
-    for (chain_slug, chain_config) in config.chains {
+    for (_, chain_config) in config.chains {
         let url = chain_config.rpc_url;
         let provider = ProviderBuilder::new().connect(&url).await.unwrap();
 
@@ -92,7 +92,8 @@ pub async fn main() {
                 continue;
             }
 
-            let route = router.compute(&token, &token_out)
+            let route = router
+                .compute(&token, &token_out)
                 .expect("Failed to compute route");
             info!("route: {:?}", route);
             routes.push(route);

@@ -1,11 +1,12 @@
 //! Token metadata and identifier helpers.
 
-use alloy::{primitives::{Address, U256}, providers::DynProvider};
+use alloy::{
+    primitives::{Address, U256},
+    providers::DynProvider,
+};
 use anyhow::Result;
 
-use crate::token::{
-    erc20::ERC20,
-};
+use crate::token::erc20::ERC20;
 
 pub mod erc20;
 pub mod identity;
@@ -36,15 +37,14 @@ impl Token {
             TokenIdentifier::ERC20 { address } => {
                 let erc20 = ERC20::new(*address, provider);
 
-                (erc20.name().call().await?, erc20.symbol().call().await?, erc20.decimals().call().await?)
-            },
-            TokenIdentifier::Fiat { symbol } => {
-
-                (symbol.clone(), symbol.clone(), FIAT_DECIMALS)
-            },
-            TokenIdentifier::Native => {
-               ("Native".to_string(), "ETH".to_string(), 18)
-            },
+                (
+                    erc20.name().call().await?,
+                    erc20.symbol().call().await?,
+                    erc20.decimals().call().await?,
+                )
+            }
+            TokenIdentifier::Fiat { symbol } => (symbol.clone(), symbol.clone(), FIAT_DECIMALS),
+            TokenIdentifier::Native => ("Native".to_string(), "ETH".to_string(), 18),
         };
 
         Ok(Self {

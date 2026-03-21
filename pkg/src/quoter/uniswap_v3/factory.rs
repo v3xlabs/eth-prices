@@ -1,4 +1,8 @@
-use alloy::{primitives::{Address, address, aliases::U24}, providers::DynProvider, sol};
+use alloy::{
+    primitives::{Address, address, aliases::U24},
+    providers::DynProvider,
+    sol,
+};
 use anyhow::Result;
 use serde::Deserialize;
 
@@ -34,7 +38,11 @@ impl UniswapV3Selector {
     pub async fn resolve(&self, provider: &DynProvider) -> Result<Address> {
         let factory_address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
         match self {
-            UniswapV3Selector::ByTokens { token_in, token_out, fee } => {
+            UniswapV3Selector::ByTokens {
+                token_in,
+                token_out,
+                fee,
+            } => {
                 let factory = UniswapV3Factory::new(factory_address, provider);
                 let fee = U24::from(fee.unwrap_or(3000));
                 let pool = factory.getPool(*token_in, *token_out, fee).call().await?;
@@ -51,7 +59,5 @@ impl UniswapV3Selector {
 
 #[cfg(test)]
 mod tests {
-    use alloy::primitives::{Address, address};
-
-    const FACTORY_ADDRESS: Address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
+    // const FACTORY_ADDRESS: Address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
 }

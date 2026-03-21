@@ -32,6 +32,7 @@ pub struct Metrics {
 }
 
 pub struct AppState {
+    #[allow(dead_code)]
     config: Config,
     chains: HashMap<String, ChainState>,
     metrics: Metrics,

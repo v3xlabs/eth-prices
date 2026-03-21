@@ -1,6 +1,6 @@
 use alloy::primitives::{BlockNumber, U256};
 use anyhow::Result;
-use tracing::{Level, event, info, span};
+use tracing::info;
 
 use crate::{
     quoter::{Quoter, RateDirection},

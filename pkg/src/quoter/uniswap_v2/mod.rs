@@ -119,7 +119,14 @@ impl Quoter for UniswapV2Quoter {
     }
 
     fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
-        (TokenIdentifier::ERC20 { address: self.token0 }, TokenIdentifier::ERC20 { address: self.token1 })
+        (
+            TokenIdentifier::ERC20 {
+                address: self.token0,
+            },
+            TokenIdentifier::ERC20 {
+                address: self.token1,
+            },
+        )
     }
 
     async fn get_rate(

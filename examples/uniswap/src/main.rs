@@ -2,10 +2,13 @@ use alloy::{
     primitives::address,
     providers::{Provider, ProviderBuilder},
 };
-use eth_prices::{quoter::{
-    Quoter, RateDirection,
-    uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-}, token::Token};
+use eth_prices::{
+    quoter::{
+        Quoter, RateDirection,
+        uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
+    },
+    token::Token,
+};
 
 #[tokio::main]
 pub async fn main() {
@@ -26,7 +29,8 @@ pub async fn main() {
     let block = provider.get_block_number().await.unwrap();
     let rate = quoter
         .get_rate(amount_in, RateDirection::Forward, block)
-        .await.unwrap();
+        .await
+        .unwrap();
 
     println!(
         "rate: {} {} = {} {}",

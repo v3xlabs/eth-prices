@@ -2,32 +2,35 @@
 //!
 //! A quoter is a single-hop pricing primitive. Examples include a fixed fiat peg,
 //! an on-chain Uniswap pool, or an ERC-4626 vault conversion.
-//! 
+//!
 //! The [`Quoter`] trait is implemented by all supported data sources.
-//! 
+//!
 //! ```rust,no_run
 //! use eth_prices::quoter::Quoter;
-//! 
+//!
+//! async {
+//!
 //! // Create a quoter for a data source
-//! let quoter = Quoter::new(config, provider).await;
-//! 
+//! let quoter = FixedQuoter::new(config, provider).await;
+//!
 //! // Get the token pair data
 //! let (token_a, token_b) = quoter.get_tokens();
 //! let token_a = Token::new(token_a, provider).await.unwrap();
 //! let token_b = Token::new(token_b, provider).await.unwrap();
-//! 
+//!
 //! // Inputs
 //! let amount_in = token_a.nominal_amount().await;
 //! let block = provider.get_block_number().await.unwrap();
-//! 
+//!
 //! // Quote the rate
 //! let rate = quoter.get_rate(amount_in, RateDirection::Forward, block).await.unwrap();
-//! 
+//!
 //! // Print the rate
 //! let rate_formatted = token_b.format_amount(rate, 4).await;
 //! println!("rate: {token_a.symbol} = {rate_formatted} {token_b.symbol}");
+//! }
 //! ```
-//! 
+//!
 
 use std::fmt::{self, Display};
 
@@ -38,7 +41,8 @@ use crate::{
     quoter::{
         erc4626::ERC4626Quoter, fixed::FixedQuoter, uniswap_v2::UniswapV2Quoter,
         uniswap_v3::UniswapV3Quoter,
-    }, token::identity::TokenIdentifier,
+    },
+    token::identity::TokenIdentifier,
 };
 
 pub mod erc4626;
@@ -73,8 +77,12 @@ pub trait Quoter: Send + Sync {
     /// Quotes `amount_in` at the provided block height.
     ///
     /// The output asset is determined by `direction` relative to [`Quoter::get_tokens`].
-    async fn get_rate(&self, amount_in: U256, direction: RateDirection, block: BlockNumber)
-    -> Result<U256>;
+    fn get_rate(
+        &self,
+        amount_in: U256,
+        direction: RateDirection,
+        block: BlockNumber,
+    ) -> impl Future<Output = Result<U256>> + Send;
 
     /// Returns a stable, human-readable identifier for this quoter.
     fn get_slug(&self) -> String;

@@ -38,8 +38,12 @@ impl Quoter for FixedQuoter {
         _block: BlockNumber,
     ) -> Result<U256> {
         match direction {
-            RateDirection::Forward => Ok(U256::from(self.fixed_rate * amount_in.to_string().parse::<f64>()?)),
-            RateDirection::Reverse => Ok(U256::from(1.0 / self.fixed_rate * amount_in.to_string().parse::<f64>()?)),
+            RateDirection::Forward => Ok(U256::from(
+                self.fixed_rate * amount_in.to_string().parse::<f64>()?,
+            )),
+            RateDirection::Reverse => Ok(U256::from(
+                1.0 / self.fixed_rate * amount_in.to_string().parse::<f64>()?,
+            )),
         }
     }
 }

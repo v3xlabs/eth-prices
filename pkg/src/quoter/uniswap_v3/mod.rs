@@ -15,7 +15,6 @@ use crate::{
 pub mod factory;
 pub mod pool;
 
-
 /// Quotes spot rates from a Uniswap v3 pool at a given block height.
 #[derive(Debug, Clone)]
 pub struct UniswapV3Quoter {
