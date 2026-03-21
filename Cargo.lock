@@ -1471,6 +1471,7 @@ dependencies = [
  "poem",
  "prometheus-client",
  "tokio",
+ "tracing-subscriber",
 ]
 
 [[package]]

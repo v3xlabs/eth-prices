@@ -34,7 +34,7 @@ pub async fn main() {
 
         let precision = 10;
 
-        let quoters = chain_config.trackers.all(&box_provider).await;
+        let quoters = chain_config.quoters.all(&box_provider).await;
         for quoter in &quoters {
             info!("quoter: {:?}", quoter.get_slug());
             let (token_a, token_b) = quoter.get_tokens();
@@ -71,7 +71,7 @@ pub async fn main() {
 
         let mut router = QuoterGraph::default();
 
-        for quoter in chain_config.trackers.all(&box_provider).await {
+        for quoter in chain_config.quoters.all(&box_provider).await {
             router.add_quoter(&quoter);
         }
 

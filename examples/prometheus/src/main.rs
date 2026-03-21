@@ -23,6 +23,7 @@ use poem::{
     web::{Data, Path},
 };
 use prometheus_client::{encoding::{EncodeLabelSet, text::encode}, metrics::{family::Family, gauge::Gauge}, registry::Registry};
+use tracing_subscriber::fmt;
 
 pub struct ChainState {
     provider: DynProvider,
@@ -52,7 +53,6 @@ struct Labels {
   token: String,
 }
 
-
 pub async fn setup() -> AppState {
     let config = Config::load("config.toml").await;
     let mut chains = HashMap::new();
@@ -66,10 +66,10 @@ pub async fn setup() -> AppState {
         }
         let block = provider.get_block_number().await.unwrap();
         let precision = 10;
-        let quoters = chain_config.trackers.all(&provider).await;
+        let quoters = chain_config.quoters.all(&provider).await;
         let mut router = QuoterGraph::default();
 
-        for quoter in chain_config.trackers.all(&provider).await {
+        for quoter in chain_config.quoters.all(&provider).await {
             router.add_quoter(&quoter);
         }
 
@@ -142,7 +142,7 @@ pub async fn setup() -> AppState {
 
 #[handler]
 fn index() -> String {
-    format!("hello: world")
+    "hello world!".to_string()
 }
 
 #[handler]
@@ -176,6 +176,8 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
 
 #[tokio::main]
 pub async fn main() -> Result<(), Error> {
+    tracing_subscriber::fmt::init();
+
     let state = setup().await;
 
     let app = PoemRoute::new()

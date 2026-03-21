@@ -34,7 +34,7 @@ use anyhow::Result;
 
 use crate::{
     quoter::{
-        erc4626::ERC4626Quoter, fixed::FixedTracker, uniswap_v2::UniswapV2Quoter,
+        erc4626::ERC4626Quoter, fixed::FixedQuoter, uniswap_v2::UniswapV2Quoter,
         uniswap_v3::UniswapV3Quoter,
     }, token::identity::TokenIdentifier,
 };
@@ -76,7 +76,7 @@ pub trait Quoter: Send + Sync {
 #[derive(Debug, Clone)]
 pub enum QuoterInstance {
     /// A fixed-rate synthetic quote source.
-    Fixed(FixedTracker),
+    Fixed(FixedQuoter),
     /// A Uniswap v2 pair-backed quote source.
     UniswapV2(UniswapV2Quoter),
     /// A Uniswap v3 pool-backed quote source.

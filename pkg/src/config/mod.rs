@@ -8,7 +8,7 @@ use serde::Deserialize;
 use crate::quoter::{
     QuoterInstance,
     erc4626::{ERC4626Config, ERC4626Quoter},
-    fixed::FixedTracker,
+    fixed::FixedQuoter,
     uniswap_v2::{UniswapV2Config, UniswapV2Quoter},
     uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Config},
 };
@@ -23,18 +23,18 @@ pub struct ChainConfig {
     pub chain_id: u64,
     pub rpc_url: String,
     pub tokens: Vec<TokenConfig>,
-    pub trackers: TrackersConfig,
+    pub quoters: QuotersConfig,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub struct TrackersConfig {
-    pub fixed: Vec<FixedTracker>,
+pub struct QuotersConfig {
+    pub fixed: Vec<FixedQuoter>,
     pub uniswap_v2: Option<UniswapV2Config>,
     pub uniswap_v3: Option<UniswapV3Config>,
     pub erc4626: Vec<ERC4626Config>,
 }
 
-impl TrackersConfig {
+impl QuotersConfig {
     pub async fn all(&self, provider: &DynProvider) -> Vec<QuoterInstance> {
         let mut quoters = Vec::new();
         for tracker in &self.fixed {

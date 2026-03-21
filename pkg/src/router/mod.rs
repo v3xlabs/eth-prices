@@ -101,7 +101,7 @@ impl Route {
 
         match path {
             None => return Err(anyhow::anyhow!("No path found")),
-            Some((cost, node_path)) => {
+            Some((_cost, node_path)) => {
                 //
                 info!("node_path: {:?}", node_path);
                 let token_route = node_path

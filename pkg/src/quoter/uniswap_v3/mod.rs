@@ -6,7 +6,6 @@ use alloy::{
 };
 use anyhow::Result;
 use pool::UniswapV3Pool;
-use serde::Deserialize;
 
 use crate::{
     quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},

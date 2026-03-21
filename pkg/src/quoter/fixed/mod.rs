@@ -13,7 +13,7 @@ use crate::{
 ///
 /// This is mainly useful for synthetic edges such as fiat pegs or test fixtures.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct FixedTracker {
+pub struct FixedQuoter {
     /// Input asset for forward quotes.
     pub token_in: TokenIdentifier,
     /// Output asset for forward quotes.
@@ -22,7 +22,7 @@ pub struct FixedTracker {
     pub fixed_rate: f64,
 }
 
-impl Quoter for FixedTracker {
+impl Quoter for FixedQuoter {
     fn get_slug(&self) -> String {
         format!("fixed:{}:{}", self.token_in, self.token_out)
     }
@@ -52,7 +52,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_rate() {
-        let tracker = FixedTracker {
+        let tracker = FixedQuoter {
             token_in: TokenIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000001"),
             },
