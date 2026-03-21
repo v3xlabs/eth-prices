@@ -92,7 +92,7 @@ pub async fn main() {
                 continue;
             }
 
-            let route = Route::compute(&router, &token, &token_out)
+            let route = router.compute(&token, &token_out)
                 .expect("Failed to compute route");
             info!("route: {:?}", route);
             routes.push(route);
@@ -105,7 +105,7 @@ pub async fn main() {
                 .unwrap();
             let token_input = token_a.nominal_amount().await;
 
-            let token_output = route.quote(block, token_input).await.unwrap();
+            let token_output = route.quote(&router, block, token_input).await.unwrap();
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,

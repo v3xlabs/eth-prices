@@ -18,6 +18,7 @@ use std::{
     io::Error,
     sync::{Arc, atomic::AtomicU64},
 };
+use tracing::info;
 
 pub struct ChainState {
     provider: DynProvider,
@@ -75,9 +76,10 @@ pub async fn setup() -> AppState {
                 continue;
             }
 
-            let route =
-                Route::compute(&router, token, &token_out).expect("Failed to compute route");
-            println!("route: {:?}", route);
+            let route = router
+                .compute(token, &token_out)
+                .expect("Failed to compute route");
+            info!("route: {:?}", route);
             routes.push(route);
         }
 
@@ -129,7 +131,7 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             let token_output = route.quote(&chain.router, block, amount_in).await.unwrap();
 
             let rate: i64 = token_output.to_string().parse().unwrap();
-            let rate = rate as f64 / 10_f64.powf(6 as f64);
+            let rate = rate as f64 / 10_f64.powf(6_f64);
 
             state
                 .metrics
