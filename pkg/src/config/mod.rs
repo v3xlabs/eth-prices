@@ -10,7 +10,7 @@ use crate::quoter::{
     erc4626::{ERC4626Config, ERC4626Quoter},
     fixed::FixedTracker,
     uniswap_v2::{UniswapV2Config, UniswapV2Quoter},
-    uniswap_v3::{UniswapV3Config, UniswapV3Quoter},
+    uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Config},
 };
 
 #[derive(Debug, Deserialize, PartialEq)]

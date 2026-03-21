@@ -1,26 +1,26 @@
 //! ERC-4626 Vault Quoter
-//! 
+//!
 //! The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
 //!
-//! 
+//!
 //!
 //! ```rust
 //! use eth_prices::quoter::erc4626::ERC4626Quoter;
 //!
 //! let provider = ProviderBuilder::new().connect("https://...").await.unwrap();
-//! 
+//!
 //! // Create a quoter for the vault
 //! let quoter = ERC4626Quoter::new(vault_address, provider).await;
-//! 
+//!
 //! // Get the token pair data (vault shares and underlying asset)
 //! let (token_a, token_b) = quoter.get_tokens();
-//! 
+//!
 //! // Get 1 of the token
 //! let amount_in = token_a.nominal_amount().await;
-//! 
+//!
 //! // Decide what block to query (latest in this case)
 //! let block = provider.get_block_number().await.unwrap();
-//! 
+//!
 //! // Quote the rate
 //! let rate = quoter.get_rate(amount_in, RateDirection::Forward, block).await.unwrap();
 //! println!("rate: {}", rate);
@@ -81,10 +81,7 @@ impl ERC4626Quoter {
 
 impl Quoter for ERC4626Quoter {
     fn get_slug(&self) -> String {
-        format!(
-            "erc4626:{}:{}",
-            self.vault_address.identifier, self.token_address.identifier
-        )
+        format!("erc4626:{}", self.vault_address.identifier)
     }
 
     fn get_tokens(&self) -> (TokenIdentifier, TokenIdentifier) {

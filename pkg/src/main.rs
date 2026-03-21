@@ -1,16 +1,8 @@
-use alloy::providers::{Provider, ProviderBuilder};
+use alloy::{primitives::address, providers::{Provider, ProviderBuilder}};
 
-use crate::{
-    config::Config,
-    quoter::{Quoter, RateDirection},
-    token::Token,
+use eth_prices::{
+    config::Config, quoter::{Quoter, RateDirection}, router::{QuoterGraph, Route}, token::{Token, TokenIdentifier}
 };
-
-pub mod config;
-pub mod quoter;
-#[cfg(test)]
-pub mod tests;
-pub mod token;
 
 #[tokio::main]
 pub async fn main() {
@@ -33,8 +25,8 @@ pub async fn main() {
 
         let precision = 10;
 
-        // TODO: turn all trackers into quoters
-        for quoter in chain_config.trackers.all(&box_provider).await {
+        let quoters = chain_config.trackers.all(&box_provider).await;
+        for quoter in &quoters {
             println!("quoter: {:?}", quoter.get_slug());
             let (token_a, token_b) = quoter.get_tokens();
 
@@ -65,5 +57,28 @@ pub async fn main() {
                 token_a.symbol,
             );
         }
+
+        let mut router = QuoterGraph::default();
+
+        for quoter in chain_config.trackers.all(&box_provider).await {
+            router.add_quoter(&quoter);
+        }
+
+        println!("{}", router.to_dot());
+
+        let token_in = TokenIdentifier::ERC20 { address: address!("0x68749665FF8D2d112Fa859AA293F07A622782F38") };
+        let token_out = TokenIdentifier::ERC20 { address: address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48") };
+
+        let route = Route::compute(&router, &quoters, &token_in, &token_out).expect("Failed to compute route");
+
+        println!("route: {:?}", route);
+
+        let token_a = Token::new(token_in, &box_provider).await.unwrap();
+        let token_b = Token::new(token_out, &box_provider).await.unwrap();
+        let token_input = token_a.nominal_amount().await;
+        let block = box_provider.get_block_number().await.unwrap();
+
+        let token_output = route.quote(&quoters, block, token_input).await.unwrap();
+        println!("token_output: {:?}", token_b.format_amount(token_output, precision).await);
     }
 }

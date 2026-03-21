@@ -9,26 +9,13 @@ use pool::UniswapV3Pool;
 use serde::Deserialize;
 
 use crate::{
-    quoter::{Quoter, RateDirection},
+    quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
     token::identity::TokenIdentifier,
 };
 
 pub mod factory;
 pub mod pool;
 
-/// Configuration for a set of Uniswap v3 pools on a single chain.
-#[derive(Debug, Deserialize, PartialEq)]
-pub struct UniswapV3Config {
-    /// Pools to load as quoters.
-    pub pools: Vec<UniswapV3Selector>,
-}
-
-/// Selects a Uniswap v3 pool by address.
-#[derive(Debug, Deserialize, PartialEq, Clone)]
-pub struct UniswapV3Selector {
-    /// Pool contract address.
-    pool_address: Address,
-}
 
 /// Quotes spot rates from a Uniswap v3 pool at a given block height.
 #[derive(Debug, Clone)]
@@ -46,7 +33,7 @@ pub struct UniswapV3Quoter {
 impl UniswapV3Quoter {
     /// Builds a quoter from a configured pool selector.
     pub async fn from_selector(provider: &DynProvider, selector: UniswapV3Selector) -> Self {
-        let pool_address = selector.pool_address;
+        let pool_address = selector.resolve(provider).await.unwrap();
         let pool = UniswapV3Pool::new(pool_address, provider);
         let token0 = pool.token0().call().await.unwrap();
         let token1 = pool.token1().call().await.unwrap();

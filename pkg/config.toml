@@ -56,3 +56,13 @@ pool_address = "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8"
 # xAUT/USDT
 [[chains.ethereum.trackers.uniswap_v3.pools]]
 pool_address = "0x6546055f46e866a4b9a4a13e81273e3152bae5da"
+
+[[chains.ethereum.trackers.uniswap_v3.pools]]
+token_in = "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c"
+token_out = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+fee = 500
+
+[[chains.ethereum.trackers.uniswap_v3.pools]]
+token_in = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+token_out = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+fee = 500

@@ -48,6 +48,7 @@ pub mod uniswap_v3;
 ///
 /// `Forward` means `token0 -> token1` for the pair returned by [`Quoter::get_tokens`].
 /// `Reverse` means the inverse direction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateDirection {
     Forward,
     Reverse,

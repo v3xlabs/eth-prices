@@ -23,7 +23,11 @@
 //! 
 //! Routing is currently in-progress and will be available in a future release.
 
+pub mod token;
 pub mod quoter;
+pub mod router;
+pub mod config;
+
+// Utilities for testing and development
 #[cfg(test)]
 pub mod tests;
-pub mod token;
