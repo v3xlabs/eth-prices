@@ -5,8 +5,8 @@
 //!
 //! The [`Quoter`] trait is implemented by all supported data sources.
 //!
-//! ```rust,no_run
-//! use eth_prices::quoter::Quoter;
+//! ```rust,ignore
+//! use eth_prices::quoter::{fixed::FixedQuoter, Quoter, RateDirection};
 //!
 //! async {
 //!

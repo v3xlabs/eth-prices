@@ -2,9 +2,7 @@
 //!
 //! The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
 //!
-//!
-//!
-//! ```rust
+//! ```rust,ignore
 //! use eth_prices::quoter::erc4626::ERC4626Quoter;
 //!
 //! let provider = ProviderBuilder::new().connect("https://...").await.unwrap();

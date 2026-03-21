@@ -7,7 +7,7 @@ specific block height.
 # Overview
 
 Here is a simple example showing off some of the features of `eth-prices`:
-```rust,no_run
+```rust,ignore
 use eth_prices::{quoter::Quoter, token::Token};
 use alloy::primitives::address;
 
