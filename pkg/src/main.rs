@@ -1,7 +1,15 @@
-use alloy::{primitives::address, providers::{Provider, ProviderBuilder}};
+use std::collections::HashSet;
+
+use alloy::{
+    primitives::address,
+    providers::{Provider, ProviderBuilder},
+};
 
 use eth_prices::{
-    config::Config, quoter::{Quoter, RateDirection}, router::{QuoterGraph, Route}, token::{Token, TokenIdentifier}
+    config::Config,
+    quoter::{Quoter, RateDirection},
+    router::{QuoterGraph, Route},
+    token::{Token, TokenIdentifier},
 };
 
 #[tokio::main]
@@ -38,10 +46,12 @@ pub async fn main() {
 
             let forward_rate = quoter
                 .get_rate(amount_a, RateDirection::Forward, block)
-                .await.unwrap();
+                .await
+                .unwrap();
             let reverse_rate = quoter
                 .get_rate(amount_b, RateDirection::Reverse, block)
-                .await.unwrap();
+                .await
+                .unwrap();
             println!(
                 "forward_rate: {:?} {} = {:?} {}",
                 token_a.format_amount(amount_a, precision).await,
@@ -66,19 +76,44 @@ pub async fn main() {
 
         println!("{}", router.to_dot());
 
-        let token_in = TokenIdentifier::ERC20 { address: address!("0x68749665FF8D2d112Fa859AA293F07A622782F38") };
-        let token_out = TokenIdentifier::ERC20 { address: address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48") };
+        let mut all_tokens = HashSet::new();
 
-        let route = Route::compute(&router, &quoters, &token_in, &token_out).expect("Failed to compute route");
+        for quoter in &quoters {
+            let (token_in, token_out) = quoter.get_tokens();
+            all_tokens.insert(token_in);
+            all_tokens.insert(token_out);
+        }
 
-        println!("route: {:?}", route);
+        let token_out = TokenIdentifier::ERC20 {
+            address: address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
+        };
+        let token_b = Token::new(token_out.clone(), &box_provider).await.unwrap();
+        let mut routes = Vec::new();
 
-        let token_a = Token::new(token_in, &box_provider).await.unwrap();
-        let token_b = Token::new(token_out, &box_provider).await.unwrap();
-        let token_input = token_a.nominal_amount().await;
-        let block = box_provider.get_block_number().await.unwrap();
+        for token in all_tokens {
+            if token == token_out {
+                continue;
+            }
 
-        let token_output = route.quote(&quoters, block, token_input).await.unwrap();
-        println!("token_output: {:?}", token_b.format_amount(token_output, precision).await);
+            let route = Route::compute(&router, &quoters, &token, &token_out)
+                .expect("Failed to compute route");
+            println!("route: {:?}", route);
+            routes.push(route);
+        }
+
+        for route in &routes {
+            let token_input = &route.input_token;
+            let token_a = Token::new(token_input.clone(), &box_provider)
+                .await
+                .unwrap();
+            let token_input = token_a.nominal_amount().await;
+
+            let token_output = route.quote(&quoters, block, token_input).await.unwrap();
+            println!(
+                "token_output: 1 {} = {:?}",
+                token_a.symbol,
+                token_b.format_amount(token_output, precision).await
+            );
+        }
     }
 }

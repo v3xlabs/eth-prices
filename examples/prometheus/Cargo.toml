@@ -1,0 +1,16 @@
+[package]
+name = "examples-prometheus"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+eth-prices = { path = "../../pkg" }
+tokio = { version = "1", features = ["full"] }
+alloy = { version = "1", features = [
+    "contract",
+    "provider-http",
+    "reqwest-rustls-tls",
+], default-features = false }
+prometheus-client = "0.24.0"
+poem = "3.1.12"

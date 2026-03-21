@@ -4,7 +4,7 @@ use alloy::primitives::Address;
 use serde::{Deserialize, Deserializer};
 
 /// A lightweight token identifier used by quoters and config.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenIdentifier {
     /// An ERC-20 token identified by contract address.
     ERC20 { address: Address },
