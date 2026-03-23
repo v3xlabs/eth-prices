@@ -1456,6 +1456,7 @@ dependencies = [
  "figment",
  "futures",
  "getrandom 0.2.17",
+ "js-sys",
  "petgraph",
  "serde",
  "serde_json",

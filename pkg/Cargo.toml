@@ -23,6 +23,7 @@ tracing = { version = "0.1.44", default-features = false, features = ["log"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 getrandom = { version = "*", features = ["js"] }
+js-sys = "0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 alloy = { version = "1", features = ["contract", "provider-http", "reqwest-rustls-tls"], default-features = false }
