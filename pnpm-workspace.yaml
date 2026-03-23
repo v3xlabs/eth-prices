@@ -1,4 +1,4 @@
 autoInstallPeers: false
 packages:
-  - "ts"
   - "pkg"
+  - "ts"
