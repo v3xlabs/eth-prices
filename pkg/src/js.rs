@@ -12,13 +12,13 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     quoter::{
-        Quoter, QuoterInstance,
+        Quoter as QuoterTrait, QuoterInstance,
         erc4626::ERC4626Quoter,
         fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
         uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector},
     },
-    router::{Route, graph::QuoterGraph},
+    router::{Route as RouterRoute, graph::QuoterGraph},
     token::TokenIdentifier,
 };
 
@@ -59,7 +59,7 @@ export interface QuoteRequest {
 
 export interface RouteStepView {
   quoterId: string;
-  direction: string;
+  direction: "Forward" | "Reverse";
 }
 
 export interface RouteView {
@@ -135,19 +135,19 @@ struct RouteView {
 }
 
 #[wasm_bindgen]
-pub struct WasmQuoter {
+pub struct Quoter {
     provider: DynProvider,
     router: QuoterGraph,
 }
 
 #[wasm_bindgen]
 #[derive(Clone)]
-pub struct WasmRoute {
-    route: Route,
+pub struct Route {
+    route: RouterRoute,
 }
 
 #[wasm_bindgen]
-impl WasmRoute {
+impl Route {
     #[wasm_bindgen(js_name = inputToken)]
     pub fn input_token(&self) -> String {
         self.route.input_token.to_string()
@@ -181,7 +181,7 @@ impl WasmRoute {
 }
 
 #[wasm_bindgen]
-impl WasmQuoter {
+impl Quoter {
     #[wasm_bindgen(js_name = addFixedQuoter)]
     pub fn add_fixed_quoter(&mut self, config: JsFixedQuoterConfig) -> Result<(), JsError> {
         let quoter: FixedQuoter =
@@ -229,7 +229,7 @@ impl WasmQuoter {
         &self,
         input_token: String,
         output_token: String,
-    ) -> Result<WasmRoute, JsError> {
+    ) -> Result<Route, JsError> {
         let input_token = parse_token_identifier(&input_token)?;
         let output_token = parse_token_identifier(&output_token)?;
         let route = self
@@ -237,13 +237,13 @@ impl WasmQuoter {
             .compute(&input_token, &output_token)
             .map_err(into_js_error)?;
 
-        Ok(WasmRoute { route })
+        Ok(Route { route })
     }
 
     #[wasm_bindgen(js_name = quoteRoute)]
     pub async fn quote_route(
         &self,
-        route: &WasmRoute,
+        route: &Route,
         amount_in: String,
         block: Option<u64>,
     ) -> Result<String, JsError> {
@@ -300,7 +300,7 @@ impl WasmQuoter {
     }
 }
 
-impl WasmQuoter {
+impl Quoter {
     fn add_quoter(&mut self, quoter: QuoterInstance) {
         self.router.add_quoter(&quoter);
         self.router.quoters.push(Arc::new(quoter));
@@ -319,7 +319,7 @@ impl WasmQuoter {
 }
 
 #[wasm_bindgen(js_name = createQuoter)]
-pub async fn create_quoter(config: JsCreateQuoterConfig) -> Result<WasmQuoter, JsError> {
+pub async fn create_quoter(config: JsCreateQuoterConfig) -> Result<Quoter, JsError> {
     let config: CreateQuoterConfig =
         serde_wasm_bindgen::from_value(config.into()).map_err(into_js_error)?;
     let provider = ProviderBuilder::new()
@@ -328,7 +328,7 @@ pub async fn create_quoter(config: JsCreateQuoterConfig) -> Result<WasmQuoter, J
         .map_err(into_js_error)?
         .erased();
 
-    let mut quoter = WasmQuoter {
+    let mut quoter = Quoter {
         provider,
         router: QuoterGraph::default(),
     };
