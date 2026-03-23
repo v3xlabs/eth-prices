@@ -1,5 +1,3 @@
-import {init_panic_hook, quoteUniswapV3} from "../pkg/eth_prices.js";
+import { createQuoter } from "../pkg/eth_prices.js";
 
-init_panic_hook();
-
-const x = await quoteUniswapV3({});
+const x = await createQuoter({});
