@@ -2,6 +2,6 @@
     "name": "eth-prices-wasm",
     "private": true,
     "scripts": {
-        "build": "wasm-pack build ./ --target bundler --out-dir ../ts/pkg --release"
+        "build": "wasm-pack build ./ --target bundler --out-dir ../ts/pkg --release --features wasm-bindings"
     }
 }
