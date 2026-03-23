@@ -140,7 +140,7 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             .get_or_create(&Labels {
                 chain: chain_slug.clone(),
             })
-            .set(block.into());
+            .set(block);
 
         for route in &chain.routes {
             let token_input = &route.input_token;

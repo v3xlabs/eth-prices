@@ -80,7 +80,7 @@ pub trait Quoter: Send + Sync {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> impl Future<Output = Result<U256>> + Send;
+    ) -> impl Future<Output = Result<U256>>;
 
     fn id(&self) -> String;
 }

@@ -1455,11 +1455,15 @@ dependencies = [
  "async-stream",
  "figment",
  "futures",
+ "getrandom 0.2.17",
  "petgraph",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
