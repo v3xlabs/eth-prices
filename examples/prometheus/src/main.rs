@@ -22,6 +22,7 @@ use tracing::info;
 
 pub struct ChainState {
     provider: DynProvider,
+    #[allow(dead_code)]
     router: QuoterGraph,
     routes: Vec<Route>,
 }
