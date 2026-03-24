@@ -30,17 +30,17 @@ pub struct UniswapV3Quoter {
 
 impl UniswapV3Quoter {
     /// Builds a quoter from a configured pool selector.
-    pub async fn from_selector(provider: &DynProvider, selector: UniswapV3Selector) -> Self {
-        let pool_address = selector.resolve(provider).await.unwrap();
+    pub async fn from_selector(provider: &DynProvider, selector: UniswapV3Selector) -> Result<Self> {
+        let pool_address = selector.resolve(provider).await?;
         let pool = UniswapV3Pool::new(pool_address, provider);
-        let token0 = pool.token0().call().await.unwrap();
-        let token1 = pool.token1().call().await.unwrap();
-        Self {
+        let token0 = pool.token0().call().await?;
+        let token1 = pool.token1().call().await?;
+        Ok(Self {
             pool_address,
             token0,
             token1,
             provider: provider.clone(),
-        }
+        })
     }
 }
 

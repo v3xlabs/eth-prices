@@ -51,7 +51,7 @@ impl Engine {
     ) -> Result<(), JsError> {
         let selector: UniswapV2Selector =
             serde_wasm_bindgen::from_value(selector.into()).map_err(into_js_error)?;
-        let quoter = UniswapV2Quoter::from_selector(&self.provider, selector).await;
+        let quoter = UniswapV2Quoter::from_selector(&self.provider, selector).await.map_err(into_js_error)?;
         self.push_quoter(QuoterInstance::UniswapV2(quoter));
         Ok(())
     }
@@ -63,7 +63,7 @@ impl Engine {
     ) -> Result<(), JsError> {
         let selector: UniswapV3Selector =
             serde_wasm_bindgen::from_value(selector.into()).map_err(into_js_error)?;
-        let quoter = UniswapV3Quoter::from_selector(&self.provider, selector).await;
+        let quoter = UniswapV3Quoter::from_selector(&self.provider, selector).await.map_err(into_js_error)?;
         self.push_quoter(QuoterInstance::UniswapV3(quoter));
         Ok(())
     }
@@ -71,7 +71,7 @@ impl Engine {
     #[wasm_bindgen(js_name = addErc4626Quoter)]
     pub async fn add_erc4626_quoter(&mut self, vault_address: String) -> Result<(), JsError> {
         let vault_address = parse_address(&vault_address)?;
-        let quoter = ERC4626Quoter::new(vault_address, &self.provider).await;
+        let quoter = ERC4626Quoter::new(vault_address, &self.provider).await.map_err(into_js_error)?;
         self.push_quoter(QuoterInstance::ERC4626(quoter));
         Ok(())
     }
@@ -180,9 +180,9 @@ impl Engine {
         };
 
         quoter.load_fixed(config.quoters.fixed);
-        quoter.load_uniswap_v2(config.quoters.uniswap_v2).await;
-        quoter.load_uniswap_v3(config.quoters.uniswap_v3).await;
-        quoter.load_erc4626(config.quoters.erc4626).await;
+        quoter.load_uniswap_v2(config.quoters.uniswap_v2).await?;
+        quoter.load_uniswap_v3(config.quoters.uniswap_v3).await?;
+        quoter.load_erc4626(config.quoters.erc4626).await?;
 
         Ok(quoter)
     }
@@ -193,25 +193,28 @@ impl Engine {
         }
     }
 
-    async fn load_uniswap_v2(&mut self, selectors: Vec<UniswapV2Selector>) {
+    async fn load_uniswap_v2(&mut self, selectors: Vec<UniswapV2Selector>) -> Result<(), JsError> {
         for selector in selectors {
-            let quoter = UniswapV2Quoter::from_selector(&self.provider, selector).await;
+            let quoter = UniswapV2Quoter::from_selector(&self.provider, selector).await.map_err(into_js_error)?;
             self.push_quoter(QuoterInstance::UniswapV2(quoter));
         }
+        Ok(())
     }
 
-    async fn load_uniswap_v3(&mut self, selectors: Vec<UniswapV3Selector>) {
+    async fn load_uniswap_v3(&mut self, selectors: Vec<UniswapV3Selector>) -> Result<(), JsError> {
         for selector in selectors {
-            let quoter = UniswapV3Quoter::from_selector(&self.provider, selector).await;
+            let quoter = UniswapV3Quoter::from_selector(&self.provider, selector).await.map_err(into_js_error)?;
             self.push_quoter(QuoterInstance::UniswapV3(quoter));
         }
+        Ok(())
     }
 
-    async fn load_erc4626(&mut self, vault_addresses: Vec<alloy::primitives::Address>) {
+    async fn load_erc4626(&mut self, vault_addresses: Vec<alloy::primitives::Address>) -> Result<(), JsError> {
         for vault_address in vault_addresses {
-            let quoter = ERC4626Quoter::new(vault_address, &self.provider).await;
+            let quoter = ERC4626Quoter::new(vault_address, &self.provider).await.map_err(into_js_error)?;
             self.push_quoter(QuoterInstance::ERC4626(quoter));
         }
+        Ok(())
     }
 }
 

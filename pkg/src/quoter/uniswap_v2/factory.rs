@@ -39,7 +39,7 @@ pub async fn fetch_pair(
     factory_address: Address,
     token_from: Address,
     token_to: Address,
-) -> Result<Address, Box<dyn std::error::Error>> {
+) -> anyhow::Result<Address> {
     let factory = UniswapV2Factory::new(factory_address, provider);
     let fr = &factory;
 
