@@ -1,3 +1,5 @@
+//! Graph-backed route discovery for quoter networks.
+
 use std::{collections::HashMap, sync::Arc};
 
 use crate::Result;
@@ -42,10 +44,12 @@ impl FromIterator<QuoterInstance> for QuoterGraph {
 }
 
 impl QuoterGraph {
+    /// Returns the graph node index for a token, if present.
     pub fn get_token_index(&self, token: &TokenIdentifier) -> Option<NodeIndex<u32>> {
         self.token_map.get(&token.to_string()).copied()
     }
 
+    /// Resolves a token identifier from a graph node index.
     pub fn get_token_by_index(&self, index: NodeIndex<u32>) -> Option<TokenIdentifier> {
         self.token_map
             .iter()
@@ -55,6 +59,7 @@ impl QuoterGraph {
             .and_then(|x| x.ok())
     }
 
+    /// Adds a token node to the graph if it does not already exist.
     pub fn add_token(&mut self, token: &TokenIdentifier) -> NodeIndex<u32> {
         match self.token_map.get(&token.to_string()) {
             Some(node_index) => *node_index,
@@ -67,6 +72,7 @@ impl QuoterGraph {
         }
     }
 
+    /// Adds a quoter edge between its token pair.
     pub fn add_quoter(&mut self, quoter: &impl Quoter) {
         let slug = quoter.id();
         let (token_in, token_out) = quoter.tokens();
@@ -78,11 +84,15 @@ impl QuoterGraph {
             .extend_with_edges([(token_in_index, token_out_index, slug)]);
     }
 
+    /// Renders the internal graph in Graphviz DOT format.
     pub fn to_graphviz(&self) -> String {
         Dot::new(&self.graph).to_string()
     }
 
-    /// compute a route given an input and output token
+    /// Computes a route between two tokens.
+    ///
+    /// The returned route contains one [`RouteStep`] per traversed edge and can
+    /// be executed with [`Route::quote`].
     pub fn compute(
         &self,
         input_token: &TokenIdentifier,
