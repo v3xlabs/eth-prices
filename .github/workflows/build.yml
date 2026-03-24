@@ -9,20 +9,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: jdx/mise-action@v2
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Check formatting
         run: cargo fmt --check
-      
+
       - name: Check clippy
         run: cargo clippy --all-targets -- -D warnings
-      
+
       - name: Check documentation
         run: cargo doc --all-features --no-deps
-      
-      - name: Run tests
+
+      - name: Run Rust tests
         run: cargo test --all-features
-      
+
       - name: Build examples
         run: cargo build --examples
+
+      - name: Install JS dependencies
+        run: cd ts && pnpm install
+
+      - name: Run JS tests
+        run: cd ts && pnpm test

@@ -72,6 +72,10 @@ pub struct TokenConfig {
 }
 
 impl Config {
+    pub fn from_toml_str(content: &str) -> Result<Self, figment::Error> {
+        Figment::new().merge(Toml::string(content)).extract::<Config>()
+    }
+
     pub async fn load(path: &str) -> Self {
         let figment = Figment::new().merge(Toml::file(path));
         figment.extract::<Config>().unwrap()

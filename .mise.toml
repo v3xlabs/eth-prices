@@ -1,0 +1,5 @@
+[tools]
+node = "22"
+pnpm = "10"
+rust = { version = "stable", targets = "wasm32-unknown-unknown" }
+"ubi:rustwasm/wasm-bindgen" = { version = "0.2.114", extract_all = "true" }

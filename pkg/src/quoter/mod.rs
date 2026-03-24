@@ -45,6 +45,18 @@ use crate::{
     token::identity::TokenIdentifier,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
+pub trait MaybeSend: Send {}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: Send> MaybeSend for T {}
+
+#[cfg(target_arch = "wasm32")]
+pub trait MaybeSend {}
+
+#[cfg(target_arch = "wasm32")]
+impl<T> MaybeSend for T {}
+
 pub mod erc4626;
 pub mod fixed;
 pub mod uniswap_v2;
@@ -80,7 +92,7 @@ pub trait Quoter: Send + Sync {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> impl Future<Output = Result<U256>> + Send;
+    ) -> impl Future<Output = Result<U256>> + MaybeSend;
 
     fn id(&self) -> String;
 }
