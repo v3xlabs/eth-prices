@@ -1,0 +1,10 @@
+{
+    "name": "eth-prices-wasm",
+    "private": true,
+    "scripts": {
+        "build": "pnpm run build:wasm && pnpm run build:wasm-clean && pnpm run build:wasm-bindgen",
+        "build:wasm": "cargo build --release --target wasm32-unknown-unknown",
+        "build:wasm-clean": "rm -rf ../ts/pkg",
+        "build:wasm-bindgen": "wasm-bindgen --target bundler --out-dir ../ts/pkg ../target/wasm32-unknown-unknown/release/eth_prices.wasm"
+    }
+}

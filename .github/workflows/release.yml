@@ -1,9 +1,18 @@
-name: CI
+name: Release
+
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release-npm
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -53,3 +62,6 @@ jobs:
 
       - name: Test package
         run: pnpm --sequential -r test
+
+      - name: Publish package to npm
+        run: pnpm -C ts publish --access public --provenance --no-git-checks

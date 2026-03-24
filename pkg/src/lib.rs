@@ -35,11 +35,14 @@ Routing is currently in-progress and will be available in a future release.
 You can find more examples in the [examples](https://github.com/v3xlabs/eth-prices/tree/master/examples) directory.
 */
 
+pub mod builder;
 pub mod config;
 pub mod quoter;
 pub mod router;
 pub mod token;
 
-// Utilities for testing and development
+#[cfg(target_arch = "wasm32")]
+pub mod js;
+
 #[cfg(test)]
 pub mod tests;

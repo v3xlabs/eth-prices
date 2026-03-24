@@ -1,12 +1,35 @@
 {
   "name": "eth-prices",
-  "version": "0.0.1",
-  "description": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "version": "0.0.2",
+  "type": "module",
+  "description": "js bindings for eth-prices rust crate",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "keywords": [],
-  "author": "",
+  "files": [
+    "dist",
+    "pkg"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "license": "LGPL-3.0",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.2",
+    "vite": "^8.0.2",
+    "vite-plugin-wasm": "^3.5.0",
+    "vitest": "^3.2.4"
+  },
   "packageManager": "pnpm@10.15.0"
 }

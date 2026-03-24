@@ -66,7 +66,7 @@ mod tests {
     async fn test_fetch_pair_info() {
         let provider = get_test_provider().await;
         let pair_address = address!("0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc");
-        let pair_info = fetch_pair_info(provider, pair_address).await.unwrap();
+        let pair_info = fetch_pair_info(&provider, pair_address).await.unwrap();
 
         println!("pair_info: {:?}", pair_info);
     }
