@@ -60,7 +60,7 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_all_pairs() {
         let provider = get_test_provider().await;
-        let pairs = fetch_all_pairs(provider, FACTORY_ADDRESS);
+        let pairs = fetch_all_pairs(&provider, FACTORY_ADDRESS);
 
         let first_pairs = pairs.take(5).collect::<Vec<_>>().await;
 
@@ -80,7 +80,7 @@ mod tests {
         let provider = get_test_provider().await;
         let token_usdc = address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
         let token_weth = address!("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-        let pair = fetch_pair(provider, FACTORY_ADDRESS, token_usdc, token_weth)
+        let pair = fetch_pair(&provider, FACTORY_ADDRESS, token_usdc, token_weth)
             .await
             .unwrap();
 
