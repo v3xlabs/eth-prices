@@ -23,7 +23,7 @@ use super::{
         JsCreateEngineConfig, JsFixedQuoterConfig, JsQuoteRequest, JsUniswapV2Selector,
         JsUniswapV3Selector,
     },
-    convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
+    convert::{into_js_error, parse_address, parse_u256},
     route::Route,
     types::{CreateEngineConfig, QuoteRequest},
 };
@@ -82,8 +82,8 @@ impl Engine {
         input_token: String,
         output_token: String,
     ) -> Result<Route, JsError> {
-        let input_token = parse_token_identifier(&input_token)?;
-        let output_token = parse_token_identifier(&output_token)?;
+        let input_token = TokenIdentifier::try_from(&input_token).map_err(into_js_error)?;
+        let output_token = TokenIdentifier::try_from(&output_token).map_err(into_js_error)?;
         self.router
             .compute(&input_token, &output_token)
             .map(Route::from)
