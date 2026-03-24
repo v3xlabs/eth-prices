@@ -10,10 +10,7 @@ pub async fn get_test_provider() -> &'static DynProvider {
         .get_or_init(|| async {
             let rpc_url = std::env::var("RPC_URL").unwrap();
 
-            let provider = ProviderBuilder::new()
-                .connect(&rpc_url)
-                .await
-                .unwrap();
+            let provider = ProviderBuilder::new().connect(&rpc_url).await.unwrap();
 
             provider.erased()
         })
