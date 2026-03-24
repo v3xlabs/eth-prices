@@ -22,6 +22,9 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      - name: Setup wasm target
+        run: rustup target add wasm32-unknown-unknown
+
       - name: Install wasm-bindgen
         run: cargo install wasm-bindgen-cli --version 0.2.114 --locked
 
