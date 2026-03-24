@@ -24,6 +24,9 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Setup wasm target
         run: rustup target add wasm32-unknown-unknown
 
