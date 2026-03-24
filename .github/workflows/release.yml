@@ -41,16 +41,8 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
-      # - name: Install wasm-pack
-      #   uses: taiki-e/install-action@v2
-      #   with:
-      #     tool: wasm-pack
-
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
-
-      # - name: Verify published package shape
-      #   run: pnpm -C ts exec tsc --noEmit
 
       - name: Build wasm package
         run: pnpm -C pkg run build
