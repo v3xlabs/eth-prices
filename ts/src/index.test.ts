@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createEngine } from '../index.js'
+import { createEngine } from './index.js'
 
 const RPC_URL = 'https://reth-ethereum.ithaca.xyz/rpc'
 const BLOCK = 24692474n

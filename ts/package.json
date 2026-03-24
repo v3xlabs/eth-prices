@@ -5,17 +5,16 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
     "pkg",
-    "index.js",
-    "index.d.ts"
+    "dist"
   ],
   "scripts": {
-    "build": "cargo build --target wasm32-unknown-unknown --release --manifest-path ../Cargo.toml -p eth-prices && wasm-bindgen --target web --out-dir pkg ../target/wasm32-unknown-unknown/release/eth_prices.wasm",
+    "build": "cargo build --target wasm32-unknown-unknown --release --manifest-path ../Cargo.toml -p eth-prices && wasm-bindgen --target bundler --out-dir pkg ../target/wasm32-unknown-unknown/release/eth_prices.wasm && tsc",
     "test": "pnpm build && vitest run"
   },
   "keywords": [],
@@ -23,7 +22,8 @@
   "license": "LGPL-3.0",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "typescript": "^5.9.2",
+    "vite-plugin-wasm": "^3.5.0",
     "vitest": "^3.0.0"
   }
 }
