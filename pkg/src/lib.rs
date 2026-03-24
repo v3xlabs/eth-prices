@@ -41,7 +41,7 @@ pub mod quoter;
 pub mod router;
 pub mod token;
 
-#[cfg(feature = "wasm-bindings")]
+#[cfg(target_arch = "wasm32")]
 pub mod js;
 
 #[cfg(test)]

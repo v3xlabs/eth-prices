@@ -3,16 +3,18 @@
   "version": "0.0.2",
   "type": "module",
   "description": "JavaScript bindings for eth-prices wasm",
-  "main": "./pkg/eth_prices.js",
-  "types": "./pkg/eth_prices.d.ts",
+  "main": "./index.js",
+  "types": "./index.d.ts",
   "exports": {
     ".": {
-      "types": "./pkg/eth_prices.d.ts",
-      "default": "./pkg/eth_prices.js"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     }
   },
   "files": [
-    "pkg"
+    "pkg",
+    "index.js",
+    "index.d.ts"
   ],
   "scripts": {
     "test": "vitest run"
