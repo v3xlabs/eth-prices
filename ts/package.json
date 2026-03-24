@@ -5,12 +5,14 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./pkg/eth_prices.d.ts",
-      "import": "./pkg/eth_prices.js"
+      "types": "./index.d.ts",
+      "import": "./index.js"
     }
   },
   "files": [
-    "pkg"
+    "pkg",
+    "index.js",
+    "index.d.ts"
   ],
   "scripts": {
     "build": "cargo build --target wasm32-unknown-unknown --release --manifest-path ../Cargo.toml -p eth-prices && wasm-bindgen --target web --out-dir pkg ../target/wasm32-unknown-unknown/release/eth_prices.wasm",

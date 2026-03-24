@@ -9,8 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jdx/mise-action@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
       - uses: Swatinem/rust-cache@v2
+
+      - name: Enable pnpm via corepack
+        run: corepack enable
+
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen CLI
+        run: cargo install wasm-bindgen-cli --version 0.2.114 --locked
 
       - name: Check formatting
         run: cargo fmt --check
@@ -28,7 +41,7 @@ jobs:
         run: cargo build --examples
 
       - name: Install JS dependencies
-        run: cd ts && pnpm install
+        run: pnpm -C ts install
 
       - name: Run JS tests
-        run: cd ts && pnpm test
+        run: pnpm -C ts test

@@ -1,52 +1,123 @@
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import init, { EthPrices, eth_prices_version, initSync } from '../pkg/eth_prices.js'
+import { createEngine } from '../index.js'
 
-const FIXED_GRAPH_TOML = `
-[chains.mainnet]
-chain_id = 1
-rpc_url = "https://reth-ethereum.ithaca.xyz/rpc"
-tokens = []
+const RPC_URL = 'https://reth-ethereum.ithaca.xyz/rpc'
+const BLOCK = 24692474n
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+const EURC = '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c'
+const WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const XAUT = '0x68749665FF8D2d112Fa859AA293F07A622782F38'
+const KPK_VAULT_EURC = '0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1'
+const USDC_WETH_V2_PAIR = '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc'
+const XAUT_USDT_V3_POOL = '0x6546055f46e866a4B9a4A13e81273e3152BAE5dA'
 
-[chains.mainnet.quoters]
-fixed = [
-  { token_in = "fiat:usd", token_out = "native", fixed_rate = 2.0 }
-]
-erc4626 = []
-`
+describe('wasm quoter real rpc', () => {
+    it(
+        'quotes USDC -> WETH at a fixed block',
+        async () => {
+            const engine = await createEngine({
+                rpcUrl: RPC_URL,
+                quoters: {
+                    uniswapV2: [{ pair_address: USDC_WETH_V2_PAIR }],
+                },
+            })
 
-test('loads web-target wasm bindings', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const wasmPath = join(currentDir, '../pkg/eth_prices_bg.wasm');
-    const wasmBytes = readFileSync(wasmPath);
+            const route = engine.computeRoute(USDC, WETH)
+            expect(route.path().length).toBe(1)
 
-    initSync({ module: wasmBytes });
+            const amountOut = await engine.getRate(USDC, WETH, '1000000', BLOCK)
+            expect(amountOut).toBe('472461178704761')
+        },
+        30_000,
+    )
 
-    const version = eth_prices_version();
-    expect(typeof version).toBe('string');
-    expect(version).toBe('0.0.2');
-})
+    it(
+        'quotes xAUT -> USDC through a two-hop route',
+        async () => {
+            const engine = await createEngine({
+                rpcUrl: RPC_URL,
+                quoters: {
+                    uniswapV3: [
+                        { pool_address: XAUT_USDT_V3_POOL },
+                        { token_in: USDT, token_out: USDC, fee: 500 },
+                    ],
+                },
+            })
 
-test('web api can parse config and compute router quote', async () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const wasmPath = join(currentDir, '../pkg/eth_prices_bg.wasm');
-    const wasmBytes = readFileSync(wasmPath);
-    await init({ module_or_path: wasmBytes });
+            const route = engine.computeRoute(XAUT, USDC)
 
-    const parsed = EthPrices.parseConfigToml(FIXED_GRAPH_TOML);
-    expect(parsed.mainnet.chain_id).toBe(1);
-    expect(parsed.mainnet.fixed_quoters).toBe(1);
+            expect(route.path().map((step) => step.direction)).toEqual(['forward', 'reverse'])
+            expect(route.path().map((step) => step.quoterId)).toEqual([
+                'uniswap_v3:0x6546055f46e866a4B9a4A13e81273e3152BAE5dA',
+                'uniswap_v3:0x7858E59e0C01EA06Df3aF3D20aC7B0003275D4Bf',
+            ])
 
-    const client = await EthPrices.connect('https://reth-ethereum.ithaca.xyz/rpc');
-    const graph = await client.graphFromToml(FIXED_GRAPH_TOML, 'mainnet');
+            const amountOut = await engine.quoteRoute(route, '1000000', BLOCK)
+            expect(amountOut).toBe('4582921520')
+        },
+        30_000,
+    )
 
-    expect(graph.quoterCount()).toBe(1);
+    it(
+        'quotes xAUT -> fiat:usd through a three-hop route',
+        async () => {
+            const quoter = await createEngine({
+                rpcUrl: RPC_URL,
+                quoters: {
+                    fixed: [{ token_in: USDC, token_out: 'fiat:usd', fixed_rate: 1 }],
+                    uniswapV3: [
+                        { pool_address: XAUT_USDT_V3_POOL },
+                        { token_in: USDT, token_out: USDC, fee: 500 },
+                    ],
+                },
+            })
 
-    const route = graph.compute('fiat:usd', 'native');
-    const quoted = await route.quote(0, '1000000');
+            const route = quoter.computeRoute(XAUT, 'fiat:usd')
 
-    expect(quoted).toBe('2000000');
+            expect(route.path().map((step) => step.direction)).toEqual([
+                'forward',
+                'reverse',
+                'forward',
+            ])
+            expect(route.path()).toHaveLength(3)
+
+            const amountOut = await quoter.quoteRoute(route, '1000000', BLOCK)
+            expect(amountOut).toBe('4582921520')
+        },
+        30_000,
+    )
+
+    it(
+        'quotes kpk_EURC_Yield -> fiat:usd through vault and EURC/USDC route',
+        async () => {
+            const quoter = await createEngine({
+                rpcUrl: RPC_URL,
+                quoters: {
+                    fixed: [{ token_in: USDC, token_out: 'fiat:usd', fixed_rate: 1 }],
+                    uniswapV3: [{ token_in: EURC, token_out: USDC, fee: 500 }],
+                    erc4626: [KPK_VAULT_EURC],
+                },
+            })
+
+            const route = quoter.computeRoute(KPK_VAULT_EURC, 'fiat:usd')
+            const path = route.path()
+
+            expect(path.map((step) => step.quoterId)).toEqual([
+                'erc4626:0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1',
+                'uniswap_v3:0x95DBB3C7546F22BCE375900AbFdd64a4E5bD73d6',
+                'fixed:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48:fiat:usd',
+            ])
+            expect(path.map((step) => step.direction)).toEqual([
+                'forward',
+                'forward',
+                'forward',
+            ])
+
+            const amountOut = await quoter.quoteRoute(route, '1000000000000000000', BLOCK)
+            expect(amountOut).toBe('1175390')
+        },
+        30_000,
+    )
 })

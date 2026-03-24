@@ -41,7 +41,7 @@ pub mod router;
 pub mod token;
 
 #[cfg(target_arch = "wasm32")]
-pub mod wasm;
+pub mod js;
 
 // Utilities for testing and development
 #[cfg(test)]
