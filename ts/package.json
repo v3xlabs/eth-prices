@@ -11,6 +11,15 @@
       "default": "./dist/index.js"
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/v3xlabs/eth-prices.git",
+    "directory": "ts"
+  },
+  "author": {
+    "name": "v3xlabs",
+    "url": "https://github.com/v3xlabs"
+  },
   "files": [
     "dist",
     "pkg"
