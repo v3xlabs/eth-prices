@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { createQuoter } from "../src/index";
 
-const RPC_URL = "https://reth-ethereum.ithaca.xyz/rpc";
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      RPC_URL: string;
+    }
+  }
+}
+
+const RPC_URL = process.env.RPC_URL;
 const BLOCK = 24692474n;
 const USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 const USDT = "0xdAC17F958D2ee523a2206206994597C13D831ec7";

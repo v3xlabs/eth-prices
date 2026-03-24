@@ -8,8 +8,10 @@ static PROVIDER: OnceCell<DynProvider> = OnceCell::const_new();
 pub async fn get_test_provider() -> &'static DynProvider {
     PROVIDER
         .get_or_init(|| async {
+            let rpc_url = std::env::var("RPC_URL").unwrap();
+
             let provider = ProviderBuilder::new()
-                .connect("https://reth-ethereum.ithaca.xyz/rpc")
+                .connect(&rpc_url)
                 .await
                 .unwrap();
 
