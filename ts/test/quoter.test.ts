@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createQuoter } from "../src/index";
+import { createEngine } from "../src/index";
 
 declare global {
   namespace NodeJS {
@@ -25,7 +25,7 @@ describe("wasm quoter real rpc", () => {
   it(
     "quotes USDC -> WETH at a fixed block",
     async () => {
-      const quoter = await createQuoter({
+      const quoter = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
           uniswap_v2: [{ pair_address: USDC_WETH_V2_PAIR }],
@@ -45,7 +45,7 @@ describe("wasm quoter real rpc", () => {
   it(
     "quotes xAUT -> USDC through a two-hop route",
     async () => {
-      const quoter = await createQuoter({
+      const quoter = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
           uniswap_v3: [
@@ -73,7 +73,7 @@ describe("wasm quoter real rpc", () => {
   it(
     "quotes xAUT -> fiat:usd through a three-hop route",
     async () => {
-      const quoter = await createQuoter({
+      const engine = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
           fixed: [{ token_in: USDC, token_out: "fiat:usd", fixed_rate: 1 }],
@@ -84,7 +84,7 @@ describe("wasm quoter real rpc", () => {
         },
       });
 
-      const route = quoter.computeRoute(XAUT, "fiat:usd");
+      const route = engine.computeRoute(XAUT, "fiat:usd");
       const routeView = route.toJSON();
 
       expect(routeView.path.map((step) => step.direction)).toEqual([
@@ -94,7 +94,7 @@ describe("wasm quoter real rpc", () => {
       ]);
       expect(routeView.path).toHaveLength(3);
 
-      const amountOut = await quoter.quoteRoute(route, "1000000", BLOCK);
+      const amountOut = await engine.quoteRoute(route, "1000000", BLOCK);
       expect(amountOut).toBe("4582921520");
     },
     30_000,
@@ -103,7 +103,7 @@ describe("wasm quoter real rpc", () => {
   it(
     "quotes kpk_EURC_Yield -> fiat:usd through vault and EURC/USDC route",
     async () => {
-      const quoter = await createQuoter({
+      const engine = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
           fixed: [{ token_in: USDC, token_out: "fiat:usd", fixed_rate: 1 }],
@@ -112,7 +112,7 @@ describe("wasm quoter real rpc", () => {
         },
       });
 
-      const route = quoter.computeRoute(KPK_VAULT_EURC, "fiat:usd");
+      const route = engine.computeRoute(KPK_VAULT_EURC, "fiat:usd");
       const routeView = route.toJSON();
 
       expect(routeView.path.map((step) => step.quoterId)).toEqual([
@@ -126,7 +126,7 @@ describe("wasm quoter real rpc", () => {
         "Forward",
       ]);
 
-      const amountOut = await quoter.quoteRoute(route, "1000000000000000000", BLOCK);
+      const amountOut = await engine.quoteRoute(route, "1000000000000000000", BLOCK);
       expect(amountOut).toBe("1175390");
     },
     30_000,

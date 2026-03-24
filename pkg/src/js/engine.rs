@@ -20,22 +20,22 @@ use crate::{
 
 use super::{
     bindings::{
-        JsCreateQuoterConfig, JsFixedQuoterConfig, JsQuoteRequest, JsUniswapV2Selector,
+        JsCreateEngineConfig, JsFixedQuoterConfig, JsQuoteRequest, JsUniswapV2Selector,
         JsUniswapV3Selector,
     },
     convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
     route::Route,
-    types::{CreateQuoterConfig, QuoteRequest},
+    types::{CreateEngineConfig, QuoteRequest},
 };
 
 #[wasm_bindgen]
-pub struct Quoter {
+pub struct Engine {
     provider: DynProvider,
     router: QuoterGraph,
 }
 
 #[wasm_bindgen]
-impl Quoter {
+impl Engine {
     #[wasm_bindgen(js_name = addFixedQuoter)]
     pub fn add_fixed_quoter(&mut self, config: JsFixedQuoterConfig) -> Result<(), JsError> {
         let quoter: FixedQuoter =
@@ -150,7 +150,7 @@ impl Quoter {
     }
 }
 
-impl Quoter {
+impl Engine {
     fn push_quoter(&mut self, quoter: QuoterInstance) {
         self.router.add_quoter(&quoter);
         self.router.quoters.push(Arc::new(quoter));
@@ -167,7 +167,7 @@ impl Quoter {
         }
     }
 
-    async fn from_config(config: CreateQuoterConfig) -> Result<Self, JsError> {
+    async fn from_config(config: CreateEngineConfig) -> Result<Self, JsError> {
         let provider = ProviderBuilder::new()
             .connect(&config.rpc_url)
             .await
@@ -215,9 +215,9 @@ impl Quoter {
     }
 }
 
-#[wasm_bindgen(js_name = createQuoter)]
-pub async fn create_quoter(config: JsCreateQuoterConfig) -> Result<Quoter, JsError> {
-    let config: CreateQuoterConfig =
+#[wasm_bindgen(js_name = createEngine)]
+pub async fn create_engine(config: JsCreateEngineConfig) -> Result<Engine, JsError> {
+    let config: CreateEngineConfig =
         serde_wasm_bindgen::from_value(config.into()).map_err(into_js_error)?;
-    Quoter::from_config(config).await
+    Engine::from_config(config).await
 }

@@ -23,7 +23,7 @@ export interface QuotersConfig {
   erc4626?: string[];
 }
 
-export interface CreateQuoterConfig {
+export interface CreateEngineConfig {
   rpcUrl: string;
   quoters?: QuotersConfig;
 }
@@ -58,8 +58,8 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "UniswapV3Selector")]
     pub type JsUniswapV3Selector;
 
-    #[wasm_bindgen(typescript_type = "CreateQuoterConfig")]
-    pub type JsCreateQuoterConfig;
+    #[wasm_bindgen(typescript_type = "CreateEngineConfig")]
+    pub type JsCreateEngineConfig;
 
     #[wasm_bindgen(typescript_type = "QuoteRequest")]
     pub type JsQuoteRequest;

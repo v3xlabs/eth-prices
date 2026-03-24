@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateQuoterConfig {
+pub struct CreateEngineConfig {
     pub rpc_url: String,
     #[serde(default)]
     pub quoters: QuotersConfig,
