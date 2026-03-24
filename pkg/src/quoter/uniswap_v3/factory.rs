@@ -16,15 +16,22 @@ pub struct UniswapV3Config {
 /// Selects a Uniswap v3 pool by address.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(untagged)]
+#[cfg_attr(target_arch = "wasm32", derive(tsify::Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 pub enum UniswapV3Selector {
     /// Resolve the pool address from factory
     ByTokens {
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_in: Address,
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_out: Address,
         fee: Option<u32>,
     },
     /// Use an already-known pool contract address.
-    Pool { pool_address: Address },
+    Pool {
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
+        pool_address: Address,
+    },
 }
 
 sol! {

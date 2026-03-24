@@ -29,14 +29,21 @@ pub struct UniswapV2Config {
 /// Selects a Uniswap v2 pool either by tokens or by pair address.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(untagged)]
+#[cfg_attr(target_arch = "wasm32", derive(tsify::Tsify))]
+#[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 pub enum UniswapV2Selector {
     /// Resolve the pair address from token addresses.
     ByTokens {
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_in: Address,
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_out: Address,
     },
     /// Use an already-known pair contract address.
-    Pair { pair_address: Address },
+    Pair {
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
+        pair_address: Address,
+    },
 }
 
 /// Quotes spot rates from a Uniswap v2 pair contract at a given block height.
@@ -75,7 +82,10 @@ impl UniswapV2Quoter {
     /// Builds a quoter from a selector.
     ///
     /// When a token pair is provided, the configured factory is used to discover the pair address.
-    pub async fn from_selector(provider: &DynProvider, selector: UniswapV2Selector) -> Result<Self> {
+    pub async fn from_selector(
+        provider: &DynProvider,
+        selector: UniswapV2Selector,
+    ) -> Result<Self> {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 
         match selector {
@@ -84,8 +94,7 @@ impl UniswapV2Quoter {
                 token_out,
             } => {
                 let pair_address =
-                    factory::fetch_pair(provider, factory_address, token_in, token_out)
-                        .await?;
+                    factory::fetch_pair(provider, factory_address, token_in, token_out).await?;
 
                 let (token0, token1) = if token_in < token_out {
                     (token_in, token_out)

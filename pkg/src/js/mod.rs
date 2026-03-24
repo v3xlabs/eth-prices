@@ -1,6 +1,5 @@
 /*! JS compatibility layer using wasm-bindgen. */
 
-mod bindings;
 mod convert;
 mod engine;
 mod route;

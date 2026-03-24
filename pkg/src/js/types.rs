@@ -1,5 +1,6 @@
 use alloy::primitives::Address;
 use serde::{Deserialize, Serialize};
+use tsify::Tsify;
 
 use crate::{
     quoter::{
@@ -9,15 +10,16 @@ use crate::{
     router::Route as RouterRoute,
 };
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Tsify)]
+#[tsify(from_wasm_abi)]
 pub struct CreateEngineConfig {
     pub rpc_url: String,
     #[serde(default)]
     pub quoters: QuotersConfig,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Tsify, Default)]
+#[tsify(from_wasm_abi)]
 pub struct QuotersConfig {
     #[serde(default)]
     pub fixed: Vec<FixedQuoter>,
@@ -26,11 +28,12 @@ pub struct QuotersConfig {
     #[serde(default)]
     pub uniswap_v3: Vec<UniswapV3Selector>,
     #[serde(default)]
+    #[tsify(type = "string[]")]
     pub erc4626: Vec<Address>,
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Tsify)]
+#[tsify(from_wasm_abi, large_number_types_as_bigints)]
 pub struct QuoteRequest {
     pub input_token: String,
     pub output_token: String,
@@ -38,15 +41,16 @@ pub struct QuoteRequest {
     pub block: Option<u64>,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
 pub struct RouteStepView {
     pub quoter_id: String,
+    #[tsify(type = "\"Forward\" | \"Reverse\"")]
     pub direction: &'static str,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Serialize, Tsify)]
+#[tsify(into_wasm_abi)]
 pub struct RouteView {
     pub input_token: String,
     pub output_token: String,

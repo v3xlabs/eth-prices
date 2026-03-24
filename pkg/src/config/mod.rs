@@ -43,20 +43,26 @@ impl QuotersConfig {
 
         if let Some(uniswap_v2_config) = &self.uniswap_v2 {
             for uni_quoters in uniswap_v2_config.pairs.iter() {
-                let quoter = UniswapV2Quoter::from_selector(provider, uni_quoters.clone()).await.unwrap();
+                let quoter = UniswapV2Quoter::from_selector(provider, uni_quoters.clone())
+                    .await
+                    .unwrap();
                 quoters.push(QuoterInstance::UniswapV2(quoter));
             }
         }
 
         if let Some(uniswap_v3_config) = &self.uniswap_v3 {
             for uni_quoters in uniswap_v3_config.pools.iter() {
-                let quoter = UniswapV3Quoter::from_selector(provider, uni_quoters.clone()).await.unwrap();
+                let quoter = UniswapV3Quoter::from_selector(provider, uni_quoters.clone())
+                    .await
+                    .unwrap();
                 quoters.push(QuoterInstance::UniswapV3(quoter));
             }
         }
 
         for erc4626_config in &self.erc4626 {
-            let quoter = ERC4626Quoter::new(erc4626_config.vault_address, provider).await.unwrap();
+            let quoter = ERC4626Quoter::new(erc4626_config.vault_address, provider)
+                .await
+                .unwrap();
             quoters.push(QuoterInstance::ERC4626(quoter));
         }
 
