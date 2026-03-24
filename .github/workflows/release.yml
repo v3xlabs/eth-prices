@@ -14,18 +14,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish-npm:
+  test:
     runs-on: ubuntu-latest
-
+    env:
+      RPC_URL: https://eth.drpc.org
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.15.0
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -33,19 +33,35 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
-      # - name: Set up Rust
-      #   uses: dtolnay/rust-toolchain@stable
-      #   with:
-      #     targets: wasm32-unknown-unknown
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install workspace dependencies
+      - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build wasm package
-        run: pnpm -C pkg run build
+      - name: Setup wasm target
+        run: rustup target add wasm32-unknown-unknown
 
-      # - name: Publish package to npm
-      #   run: pnpm -C ts publish --access public --provenance --no-git-checks
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli --version 0.2.114 --locked
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Check clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Check documentation
+        run: cargo doc --all-features --no-deps
+
+      - name: Run tests
+        run: cargo test --all-features
+
+      - name: Build examples
+        run: cargo build --examples
+
+      - name: Build wasm package
+        run: pnpm -r build
+
+      - name: Test package
+        run: pnpm -r test
+
+      - name: Publish package to npm
+        run: pnpm -C ts publish --access public --provenance --no-git-checks
