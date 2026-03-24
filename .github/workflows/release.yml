@@ -64,4 +64,5 @@ jobs:
         run: pnpm --sequential -r test
 
       - name: Publish package to npm
-        run: pnpm -C ts publish --access public --provenance --no-git-checks
+        run: pnpm publish --access public --provenance --no-git-checks
+        working-directory: ts
