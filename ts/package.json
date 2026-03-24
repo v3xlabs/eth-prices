@@ -2,7 +2,7 @@
   "name": "eth-prices",
   "version": "0.0.2",
   "type": "module",
-  "description": "JavaScript bindings for eth-prices wasm",
+  "description": "js bindings for eth-prices rust crate",
   "main": "./index.js",
   "types": "./index.d.ts",
   "exports": {
