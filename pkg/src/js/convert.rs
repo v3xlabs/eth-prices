@@ -13,9 +13,9 @@ pub fn parse_token_identifier(token: &str) -> Result<TokenIdentifier, JsError> {
 }
 
 pub fn parse_u256(amount: &str) -> Result<U256, JsError> {
-    amount.parse::<U256>().map_err(|err| into_js_error(err))
+    amount.parse::<U256>().map_err(into_js_error)
 }
 
 pub fn parse_address(address: &str) -> Result<Address, JsError> {
-    address.parse::<Address>().map_err(|err| into_js_error(err))
+    address.parse::<Address>().map_err(into_js_error)
 }
