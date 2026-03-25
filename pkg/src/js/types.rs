@@ -12,6 +12,7 @@ use crate::{
 
 #[derive(Debug, Deserialize, Tsify)]
 #[tsify(from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateEngineConfig {
     pub rpc_url: String,
     #[serde(default)]
@@ -20,6 +21,7 @@ pub struct CreateEngineConfig {
 
 #[derive(Debug, Deserialize, Tsify, Default)]
 #[tsify(from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct QuotersConfig {
     #[serde(default)]
     pub fixed: Vec<FixedQuoter>,
@@ -34,6 +36,7 @@ pub struct QuotersConfig {
 
 #[derive(Debug, Deserialize, Tsify)]
 #[tsify(from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
 pub struct QuoteRequest {
     pub input_token: String,
     pub output_token: String,
@@ -43,6 +46,7 @@ pub struct QuoteRequest {
 
 #[derive(Debug, Serialize, Tsify)]
 #[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct RouteStepView {
     pub quoter_id: String,
     #[tsify(type = "\"Forward\" | \"Reverse\"")]
@@ -51,6 +55,7 @@ pub struct RouteStepView {
 
 #[derive(Debug, Serialize, Tsify)]
 #[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct RouteView {
     pub input_token: String,
     pub output_token: String,

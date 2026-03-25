@@ -13,6 +13,7 @@ use crate::{
 ///
 /// This is mainly useful for synthetic edges such as fiat pegs or test fixtures.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
+#[cfg_attr(target_arch = "wasm32", serde(rename_all = "camelCase"))]
 #[cfg_attr(target_arch = "wasm32", derive(tsify::Tsify))]
 #[cfg_attr(target_arch = "wasm32", tsify(from_wasm_abi))]
 pub struct FixedQuoter {
