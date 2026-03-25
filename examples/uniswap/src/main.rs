@@ -20,7 +20,9 @@ pub async fn main() {
         .unwrap()
         .erased();
     let quoter =
-        UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address }).await;
+        UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address })
+            .await
+            .unwrap();
 
     let (token_a, token_b) = quoter.tokens();
     let token_a = Token::new(token_a, &provider).await.unwrap();
