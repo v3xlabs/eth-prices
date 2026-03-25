@@ -1459,6 +1459,7 @@ dependencies = [
  "petgraph",
  "serde",
  "serde-wasm-bindgen",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",

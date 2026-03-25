@@ -3,11 +3,11 @@
 pub mod factory;
 pub mod pair;
 
+use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
 };
-use anyhow::Result;
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 use tracing::info;

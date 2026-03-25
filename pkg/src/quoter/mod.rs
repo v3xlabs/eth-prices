@@ -34,8 +34,8 @@
 
 use std::fmt::{self, Display};
 
+use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
-use anyhow::Result;
 
 use crate::{
     quoter::{

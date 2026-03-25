@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
+use crate::Result;
 use alloy::{
     primitives::BlockNumber,
     providers::{DynProvider, Provider, ProviderBuilder},
 };
-use anyhow::Result;
 use wasm_bindgen::prelude::*;
 
 use crate::{

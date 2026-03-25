@@ -27,8 +27,8 @@
 use alloy::primitives::{Address, BlockNumber, U256};
 use alloy::providers::DynProvider;
 
+use crate::Result;
 use alloy::sol;
-use anyhow::Result;
 use serde::Deserialize;
 
 use crate::quoter::{Quoter, RateDirection};

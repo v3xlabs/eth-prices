@@ -16,18 +16,18 @@ sol! {
 pub fn fetch_all_pairs<'a>(
     provider: &'a DynProvider,
     factory_address: Address,
-) -> impl Stream<Item = Address> + 'a {
+) -> impl Stream<Item = crate::Result<Address>> + 'a {
     stream! {
         let factory = UniswapV2Factory::new(factory_address, provider);
         let fr = &factory;
-        let max = fr.allPairsLength().call().await.unwrap();
+        let max = match fr.allPairsLength().call().await { Ok(m) => m, Err(e) => { yield Err(crate::error::EthPricesError::from(e)); return; } };
 
         let mut state = U256::from(0);
         while state < max {
 
-            let pair = fr.allPairs(U256::from(state)).call().await.unwrap();
+            let pair = match fr.allPairs(U256::from(state)).call().await { Ok(p) => p, Err(e) => { yield Err(crate::error::EthPricesError::from(e)); return; } };
 
-            yield pair;
+            yield Ok(pair);
 
             state += U256::from(1);
         }
@@ -39,7 +39,7 @@ pub async fn fetch_pair(
     factory_address: Address,
     token_from: Address,
     token_to: Address,
-) -> anyhow::Result<Address> {
+) -> crate::Result<Address> {
     let factory = UniswapV2Factory::new(factory_address, provider);
     let fr = &factory;
 
@@ -62,9 +62,9 @@ mod tests {
         let provider = get_test_provider().await;
         let pairs = fetch_all_pairs(&provider, FACTORY_ADDRESS);
 
-        let first_pairs = pairs.take(5).collect::<Vec<_>>().await;
+        let first_pairs = pairs.take(5).map(|x| x.unwrap()).collect::<Vec<_>>().await;
 
-        let dummy = vec![
+        let dummy: Vec<Address> = vec![
             address!("0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc"),
             address!("0x3139ffc91b99aa94da8a2dc13f1fc36f9bdc98ee"),
             address!("0x12ede161c702d1494612d19f05992f43aa6a26fb"),

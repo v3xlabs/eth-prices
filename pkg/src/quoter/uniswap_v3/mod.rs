@@ -1,10 +1,10 @@
 //! Uniswap v3 quote sources.
 
+use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512},
     providers::DynProvider,
 };
-use anyhow::Result;
 use pool::UniswapV3Pool;
 
 use crate::{

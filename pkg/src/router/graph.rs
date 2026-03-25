@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use anyhow::Result;
+use crate::Result;
 use petgraph::{
     dot::Dot,
     graph::{NodeIndex, UnGraph},
@@ -88,12 +88,12 @@ impl QuoterGraph {
         input_token: &TokenIdentifier,
         output_token: &TokenIdentifier,
     ) -> Result<Route> {
-        let token_a_index = self
-            .get_token_index(input_token)
-            .ok_or(anyhow::anyhow!("Token not found"))?;
-        let token_b_index = self
-            .get_token_index(output_token)
-            .ok_or(anyhow::anyhow!("Token not found"))?;
+        let token_a_index = self.get_token_index(input_token).ok_or(
+            crate::error::EthPricesError::TokenNotFound("Token missing in graph".to_string()),
+        )?;
+        let token_b_index = self.get_token_index(output_token).ok_or(
+            crate::error::EthPricesError::TokenNotFound("Token missing in graph".to_string()),
+        )?;
 
         info!(
             target: "router::compute_start",
@@ -110,7 +110,10 @@ impl QuoterGraph {
         );
 
         match path {
-            None => Err(anyhow::anyhow!("No path found")),
+            None => Err(crate::error::EthPricesError::NoRouteFound(
+                input_token.to_string(),
+                output_token.to_string(),
+            )),
             Some((_cost, node_path)) => {
                 info!(
                     target: "router::compute_end",
@@ -118,8 +121,12 @@ impl QuoterGraph {
                 );
                 let token_route = node_path
                     .iter()
-                    .map(|x| self.get_token_by_index(*x).unwrap())
-                    .collect::<Vec<TokenIdentifier>>();
+                    .map(|x| {
+                        self.get_token_by_index(*x).ok_or_else(|| {
+                            crate::error::EthPricesError::Internal("Missing token".to_string())
+                        })
+                    })
+                    .collect::<Result<Vec<TokenIdentifier>>>()?;
 
                 let mut path = Vec::new();
 
@@ -138,7 +145,11 @@ impl QuoterGraph {
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
                         })
-                        .unwrap();
+                        .ok_or_else(|| {
+                            crate::error::EthPricesError::Internal(
+                                "Missing quoter in router".to_string(),
+                            )
+                        })?;
 
                     path.push(RouteStep {
                         quoter: quoter.clone(),
@@ -152,10 +163,8 @@ impl QuoterGraph {
                 }
 
                 if path.len() != node_path.len() - 1 {
-                    return Err(anyhow::anyhow!(
-                        "Path length mismatch {} != {}",
-                        path.len(),
-                        node_path.len() - 1
+                    return Err(crate::error::EthPricesError::Internal(
+                        "Path length mismatch".to_string(),
                     ));
                 }
 
