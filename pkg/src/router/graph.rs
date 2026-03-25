@@ -122,9 +122,8 @@ impl QuoterGraph {
                 let token_route = node_path
                     .iter()
                     .map(|x| {
-                        self.get_token_by_index(*x).ok_or_else(|| {
-                            crate::error::EthPricesError::Internal("Missing token".to_string())
-                        })
+                        self.get_token_by_index(*x)
+                            .ok_or_else(|| crate::error::EthPricesError::MissingTokenInRoute)
                     })
                     .collect::<Result<Vec<TokenIdentifier>>>()?;
 
@@ -145,11 +144,7 @@ impl QuoterGraph {
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
                         })
-                        .ok_or_else(|| {
-                            crate::error::EthPricesError::Internal(
-                                "Missing quoter in router".to_string(),
-                            )
-                        })?;
+                        .ok_or_else(|| crate::error::EthPricesError::MissingQuoterInRoute)?;
 
                     path.push(RouteStep {
                         quoter: quoter.clone(),
@@ -163,9 +158,7 @@ impl QuoterGraph {
                 }
 
                 if path.len() != node_path.len() - 1 {
-                    return Err(crate::error::EthPricesError::Internal(
-                        "Path length mismatch".to_string(),
-                    ));
+                    return Err(crate::error::EthPricesError::PathLengthMismatch);
                 }
 
                 Ok(Route {

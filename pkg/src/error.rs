@@ -21,8 +21,23 @@ pub enum EthPricesError {
     #[error(transparent)]
     AlloyError(#[from] alloy::transports::TransportError),
 
-    #[error("Internal error: {0}")]
-    Internal(String),
+    #[error("Routing error: Token missing in computed path")]
+    MissingTokenInRoute,
+
+    #[error("Routing error: Quoter missing between path tokens")]
+    MissingQuoterInRoute,
+
+    #[error("Routing error: Path length mismatch during computation")]
+    PathLengthMismatch,
+
+    #[error("Parsing error: Invalid fiat symbol")]
+    InvalidFiatSymbol,
+
+    #[error("Parsing error: Invalid address - {0}")]
+    InvalidAddress(String),
+
+    #[error("ERC4626 vault token must have an on-chain address")]
+    MissingVaultAddress,
 }
 
 pub type Result<T, E = EthPricesError> = std::result::Result<T, E>;

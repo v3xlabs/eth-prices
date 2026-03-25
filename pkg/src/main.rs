@@ -86,9 +86,7 @@ pub async fn main() -> anyhow::Result<()> {
                 continue;
             }
 
-            let route = router
-                .compute(&token, &token_out)
-                .expect("Failed to compute route");
+            let route = router.compute(&token, &token_out)?;
             info!("route: {:?}", route);
             routes.push(route);
         }

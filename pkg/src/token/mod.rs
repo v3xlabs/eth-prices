@@ -72,12 +72,12 @@ impl Token {
 
     /// Returns the ERC-20 contract address.
     ///
-    /// This panics for fiat and native assets, which do not have an address.
-    pub fn unwrap_address(&self) -> Address {
+    /// Returns the underlying contract address, if applicable.
+    pub fn address(&self) -> Option<Address> {
         match &self.identifier {
-            TokenIdentifier::ERC20 { address } => *address,
-            TokenIdentifier::Fiat { symbol: _ } => panic!("Fiat tokens do not have an address"),
-            TokenIdentifier::Native => panic!("Native tokens do not have an address"),
+            TokenIdentifier::ERC20 { address } => Some(*address),
+            TokenIdentifier::Fiat { .. } => None,
+            TokenIdentifier::Native => None,
         }
     }
 }

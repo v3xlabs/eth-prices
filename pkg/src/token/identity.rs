@@ -21,7 +21,7 @@ impl From<Address> for TokenIdentifier {
 }
 
 impl TryFrom<String> for TokenIdentifier {
-    type Error = anyhow::Error;
+    type Error = crate::error::EthPricesError;
 
     /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or `native`.
     fn try_from(input: String) -> Result<Self, Self::Error> {
@@ -31,18 +31,18 @@ impl TryFrom<String> for TokenIdentifier {
             let symbol = input
                 .split("fiat:")
                 .nth(1)
-                .ok_or(anyhow::anyhow!("Invalid fiat symbol"))?
+                .ok_or(crate::error::EthPricesError::InvalidFiatSymbol)?
                 .to_string();
 
             Ok(TokenIdentifier::Fiat { symbol })
         } else if input.starts_with("0x") {
             let address = input
                 .parse::<Address>()
-                .map_err(|e| anyhow::anyhow!("Invalid address: {}", e))?;
+                .map_err(|e| crate::error::EthPricesError::InvalidAddress(e.to_string()))?;
 
             Ok(TokenIdentifier::ERC20 { address })
         } else {
-            Err(anyhow::anyhow!("Invalid token: {}", input))
+            Err(crate::error::EthPricesError::TokenNotFound(input))
         }
     }
 }

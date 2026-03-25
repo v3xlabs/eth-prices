@@ -95,7 +95,12 @@ impl Quoter for ERC4626Quoter {
         direction: RateDirection,
         block: BlockNumber,
     ) -> Result<U256> {
-        let vault = ERC4626::new(self.vault_address.unwrap_address(), &self.provider);
+        let vault = ERC4626::new(
+            self.vault_address
+                .address()
+                .ok_or(crate::error::EthPricesError::MissingVaultAddress)?,
+            &self.provider,
+        );
         Ok(match direction {
             RateDirection::Forward => {
                 vault
