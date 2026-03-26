@@ -84,8 +84,6 @@ pub struct TokenConfig {
 impl Config {
     pub async fn load(path: &str) -> Result<Self> {
         let figment = Figment::new().merge(Toml::file(path));
-        figment
-            .extract::<Config>()
-            .map_err(|e| EthPricesError::ConfigError(e.to_string()))
+        figment.extract::<Config>().map_err(Into::into)
     }
 }
