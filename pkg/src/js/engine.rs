@@ -21,7 +21,7 @@ use crate::{
 use super::{
     convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
     route::Route,
-    types::{CreateEngineConfig, QuoteRequest},
+    types::{CreateEngineConfig, JsCreateEngineConfig, QuoteRequest},
 };
 
 #[wasm_bindgen]
@@ -222,6 +222,11 @@ impl Engine {
 }
 
 #[wasm_bindgen(js_name = createEngine)]
-pub async fn create_engine(config: CreateEngineConfig) -> Result<Engine, JsError> {
+pub async fn create_engine(config: JsCreateEngineConfig) -> Result<Engine, JsError> {
+    let config: CreateEngineConfig = serde_wasm_bindgen::from_value(config.into())
+        .map_err(|e| JsError::new(&e.to_string()))?;
+    if config.rpc_url.is_empty() {
+        return Err(JsError::new("rpcUrl is required"));
+    }
     Engine::from_config(config).await
 }

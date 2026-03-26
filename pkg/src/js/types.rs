@@ -1,6 +1,7 @@
 use alloy::primitives::Address;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
+use wasm_bindgen::prelude::*;
 
 use crate::{
     quoter::{
@@ -11,7 +12,6 @@ use crate::{
 };
 
 #[derive(Debug, Deserialize, Tsify)]
-#[tsify(from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateEngineConfig {
     pub rpc_url: String,
@@ -19,8 +19,13 @@ pub struct CreateEngineConfig {
     pub quoters: QuotersConfig,
 }
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "CreateEngineConfig")]
+    pub type JsCreateEngineConfig;
+}
+
 #[derive(Debug, Deserialize, Tsify, Default)]
-#[tsify(from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct QuotersConfig {
     #[serde(default)]

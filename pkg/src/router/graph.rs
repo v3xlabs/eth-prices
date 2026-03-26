@@ -88,12 +88,12 @@ impl QuoterGraph {
         input_token: &TokenIdentifier,
         output_token: &TokenIdentifier,
     ) -> Result<Route> {
-        let token_a_index = self.get_token_index(input_token).ok_or(
-            crate::error::EthPricesError::TokenNotFound("Token missing in graph".to_string()),
-        )?;
-        let token_b_index = self.get_token_index(output_token).ok_or(
-            crate::error::EthPricesError::TokenNotFound("Token missing in graph".to_string()),
-        )?;
+        let token_a_index = self
+            .get_token_index(input_token)
+            .ok_or_else(|| crate::error::EthPricesError::TokenNotFound(input_token.to_string()))?;
+        let token_b_index = self
+            .get_token_index(output_token)
+            .ok_or_else(|| crate::error::EthPricesError::TokenNotFound(output_token.to_string()))?;
 
         info!(
             target: "router::compute_start",
@@ -158,7 +158,10 @@ impl QuoterGraph {
                 }
 
                 if path.len() != node_path.len() - 1 {
-                    return Err(crate::error::EthPricesError::PathLengthMismatch);
+                    return Err(crate::error::EthPricesError::PathLengthMismatch {
+                        expected: node_path.len() - 1,
+                        actual: path.len(),
+                    });
                 }
 
                 Ok(Route {

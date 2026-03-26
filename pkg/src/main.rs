@@ -7,6 +7,7 @@ use alloy::{
 use tracing::info;
 
 use eth_prices::{
+    Result,
     config::Config,
     quoter::{Quoter, RateDirection},
     router::graph::QuoterGraph,
@@ -14,7 +15,7 @@ use eth_prices::{
 };
 
 #[tokio::main]
-pub async fn main() -> anyhow::Result<()> {
+pub async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let config = Config::load("config.toml").await;
@@ -49,16 +50,16 @@ pub async fn main() -> anyhow::Result<()> {
             let reverse_rate = quoter.rate(amount_b, RateDirection::Reverse, block).await?;
             info!(
                 "forward_rate: {:?} {} = {:?} {}",
-                token_a.format_amount(amount_a, precision).await,
+                token_a.format_amount(amount_a, precision),
                 token_a.symbol,
-                token_b.format_amount(forward_rate, precision).await,
+                token_b.format_amount(forward_rate, precision),
                 token_b.symbol,
             );
             info!(
                 "reverse_rate: {:?} {} = {:?} {}",
-                token_b.format_amount(amount_b, precision).await,
+                token_b.format_amount(amount_b, precision),
                 token_b.symbol,
-                token_a.format_amount(reverse_rate, precision).await,
+                token_a.format_amount(reverse_rate, precision),
                 token_a.symbol,
             );
         }
@@ -100,7 +101,7 @@ pub async fn main() -> anyhow::Result<()> {
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,
-                token_b.format_amount(token_output, precision).await
+                token_b.format_amount(token_output, precision)
             );
         }
     }

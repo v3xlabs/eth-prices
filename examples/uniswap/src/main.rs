@@ -36,9 +36,9 @@ pub async fn main() {
 
     println!(
         "rate: {} {} = {} {}",
-        token_a.format_amount(amount_in, 4).await.unwrap(),
+        token_a.format_amount(amount_in, 4).unwrap(),
         token_a.symbol,
-        token_b.format_amount(rate, 4).await.unwrap(),
+        token_b.format_amount(rate, 4).unwrap(),
         token_b.symbol
     );
 }

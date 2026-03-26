@@ -61,7 +61,7 @@ impl Token {
     }
 
     /// Formats a raw integer amount into a human-readable decimal string.
-    pub async fn format_amount(&self, amount: U256, precision: usize) -> crate::Result<String> {
+    pub fn format_amount(&self, amount: U256, precision: usize) -> crate::Result<String> {
         let amount = amount
             .to_string()
             .parse::<f64>()

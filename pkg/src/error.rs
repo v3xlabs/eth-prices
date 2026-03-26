@@ -27,8 +27,8 @@ pub enum EthPricesError {
     #[error("Routing error: Quoter missing between path tokens")]
     MissingQuoterInRoute,
 
-    #[error("Routing error: Path length mismatch during computation")]
-    PathLengthMismatch,
+    #[error("Routing error: Path length mismatch (expected {expected}, got {actual})")]
+    PathLengthMismatch { expected: usize, actual: usize },
 
     #[error("Parsing error: Invalid fiat symbol")]
     InvalidFiatSymbol,

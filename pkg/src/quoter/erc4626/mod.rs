@@ -158,13 +158,13 @@ mod tests {
         let precision = 4;
         println!(
             "forward_rate: {:?} = {:?}",
-            token_a.format_amount(token_a_amount, precision).await,
-            token_b.format_amount(forward_rate, precision).await
+            token_a.format_amount(token_a_amount, precision),
+            token_b.format_amount(forward_rate, precision)
         );
         println!(
             "reverse_rate: {:?} = {:?}",
-            token_b.format_amount(token_b_amount, precision).await,
-            token_a.format_amount(reverse_rate, precision).await
+            token_b.format_amount(token_b_amount, precision),
+            token_a.format_amount(reverse_rate, precision)
         );
     }
 }
