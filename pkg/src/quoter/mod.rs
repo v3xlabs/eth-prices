@@ -70,7 +70,7 @@ impl Display for RateDirection {
 ///
 /// Implementors expose which two assets they connect and can quote an input amount at a
 /// specific block height.
-pub trait Quoter: Send + Sync {
+pub trait Quoter: Send + Sync + Display + Sized {
     /// Returns the pair of assets connected by this quoter.
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
 
@@ -82,7 +82,7 @@ pub trait Quoter: Send + Sync {
         block: BlockNumber,
     ) -> impl Future<Output = Result<U256>>;
 
-    fn id(&self) -> String;
+    fn try_from(s: String) -> impl Future<Output = Result<Self>>;
 }
 
 /// An owned enum wrapper around all supported quote source implementations.

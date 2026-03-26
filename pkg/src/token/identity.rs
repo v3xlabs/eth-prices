@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
 use alloy::primitives::Address;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// A lightweight token identifier used by quoters and config.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash)]
 pub enum TokenIdentifier {
     /// An ERC-20 token identified by contract address.
     ERC20 { address: Address },

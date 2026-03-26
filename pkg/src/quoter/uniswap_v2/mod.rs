@@ -9,7 +9,7 @@ use alloy::{
     providers::DynProvider,
 };
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tracing::info;
 
 use crate::{

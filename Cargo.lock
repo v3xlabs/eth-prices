@@ -1482,6 +1482,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "examples-router"
+version = "0.0.1"
+dependencies = [
+ "alloy",
+ "eth-prices",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "examples-uniswap"
 version = "0.0.1"
 dependencies = [

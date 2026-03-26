@@ -1,0 +1,16 @@
+[package]
+name = "examples-router"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+eth-prices = { path = "../../pkg" }
+tokio = { version = "1", features = ["full"] }
+alloy = { version = "1", features = [
+    "contract",
+    "provider-http",
+    "reqwest-rustls-tls",
+], default-features = false }
+tracing-subscriber = "0.3.23"
+tracing = "0.1.44"

@@ -30,9 +30,15 @@ pub struct FixedQuoter {
     pub fixed_rate: f64,
 }
 
+impl Display for FixedQuoter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "fixed:{}:{}:{}", self.token_in, self.token_out, self.fixed_rate)
+    }
+}
+
 impl Quoter for FixedQuoter {
-    fn id(&self) -> String {
-        format!("fixed:{}:{}", self.token_in, self.token_out)
+    async fn try_from(s: String) -> Result<Self> {
+        
     }
 
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
