@@ -5,7 +5,6 @@ use alloy::{
     primitives::BlockNumber,
     providers::{DynProvider, Provider, ProviderBuilder},
 };
-use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -163,8 +162,12 @@ impl Engine {
     }
 
     async fn from_config(config: CreateEngineConfig) -> Result<Self, JsError> {
+        let rpc_url = config.rpc_url.unwrap_or_default();
+        if rpc_url.trim().is_empty() {
+            return Err(JsError::new("rpcUrl is required"));
+        }
         let provider = ProviderBuilder::new()
-            .connect(&config.rpc_url)
+            .connect(&rpc_url)
             .await
             .map_err(into_js_error)?
             .erased();
@@ -224,27 +227,7 @@ impl Engine {
 
 #[wasm_bindgen(js_name = createEngine)]
 pub async fn create_engine(config: JsCreateEngineConfig) -> Result<Engine, JsError> {
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct CreateEngineConfigPreflight {
-        rpc_url: Option<String>,
-    }
-
-    let config = JsValue::from(config);
-    if config.is_undefined() || config.is_null() {
-        return Err(JsError::new("createEngine config is required"));
-    }
-
-    let preflight: CreateEngineConfigPreflight = serde_wasm_bindgen::from_value(config.clone())
-        .map_err(|_| JsError::new("createEngine config must be an object"))?;
-    let rpc_url = preflight
-        .rpc_url
-        .ok_or_else(|| JsError::new("rpcUrl is required"))?;
-    if rpc_url.trim().is_empty() {
-        return Err(JsError::new("rpcUrl is required"));
-    }
-
     let config: CreateEngineConfig =
-        serde_wasm_bindgen::from_value(config).map_err(|e| JsError::new(&e.to_string()))?;
+        serde_wasm_bindgen::from_value(config.into()).map_err(|e| JsError::new(&e.to_string()))?;
     Engine::from_config(config).await
 }
