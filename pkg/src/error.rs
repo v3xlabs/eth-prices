@@ -1,7 +1,7 @@
 #[derive(thiserror::Error, Debug)]
 pub enum EthPricesError {
     #[error("Failed to parse configuration: {0}")]
-    ConfigError(#[from] figment::Error),
+    ConfigError(String),
 
     #[error("Route computation failed: no path found between {0} and {1}")]
     NoRouteFound(String, String),
