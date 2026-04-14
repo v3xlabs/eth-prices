@@ -215,7 +215,7 @@ impl Engine {
             let quoter = ERC4626Quoter::new(vault_address, &self.provider)
                 .await
                 .map_err(into_js_error)?;
-                self.push_quoter(quoter.into());
+            self.push_quoter(quoter.into());
         }
         Ok(())
     }
