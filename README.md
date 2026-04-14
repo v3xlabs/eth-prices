@@ -1,6 +1,15 @@
-# eth-prices
+<h1 align="center">
+    eth-prices
+</h1>
 
-A smol rust crate for fetching Ethereum asset prices directly from rpc.
+<p align="center">
+  A smol rust crate for fetching Ethereum asset prices directly from rpc.
+</p>
+<p align="center">
+    <a href="https://github.com/v3xlabs/eth-prices"><img src="https://img.shields.io/badge/Repository-v3xlabs/eth--prices-blue?style=flat" alt="Repository"></a>
+    <a href="#"><img src="https://img.shields.io/badge/Status-In%20Development-blue?style=flat" alt="Status: In Development"></a>
+    <a href="#"><img src="https://img.shields.io/badge/License-LGPL--3.0-hotpink?style=flat" alt="License: LGPL-3.0"></a>
+</p>
 
 ## Quickstart
 
