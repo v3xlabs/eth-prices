@@ -80,7 +80,7 @@ impl ERC4626Quoter {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Quoter for ERC4626Quoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (

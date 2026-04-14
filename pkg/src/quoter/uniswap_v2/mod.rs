@@ -139,7 +139,7 @@ impl ToQuoter for UniswapV2Quoter {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Quoter for UniswapV2Quoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (

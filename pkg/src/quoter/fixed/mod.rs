@@ -38,7 +38,7 @@ pub struct FixedQuoter {
     pub fixed_rate: f64,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Quoter for FixedQuoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token_in.clone(), self.token_out.clone())

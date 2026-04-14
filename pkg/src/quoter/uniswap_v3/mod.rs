@@ -61,7 +61,7 @@ impl ToQuoter for UniswapV3Quoter {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Quoter for UniswapV3Quoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token0.into(), self.token1.into())
