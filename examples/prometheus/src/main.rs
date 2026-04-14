@@ -15,7 +15,6 @@ use prometheus_client::{
 use std::{
     collections::{HashMap, HashSet},
     io::Error,
-    ops::Deref,
     sync::{Arc, atomic::AtomicU64},
 };
 use tracing::info;
