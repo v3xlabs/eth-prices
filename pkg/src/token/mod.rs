@@ -1,12 +1,11 @@
 //! Token metadata and identifier helpers.
 
-use crate::Result;
 use alloy::{
     primitives::{Address, U256},
     providers::DynProvider,
 };
 
-use crate::token::erc20::ERC20;
+use crate::{Result, token::erc20::ERC20};
 
 pub mod erc20;
 pub mod identity;
@@ -31,7 +30,8 @@ const FIAT_DECIMALS: u8 = 6;
 impl Token {
     /// Resolves token metadata for the provided identifier.
     ///
-    /// ERC-20 metadata is loaded from chain, while fiat and native assets use local defaults.
+    /// ERC-20 metadata is loaded from chain, while fiat and native assets use
+    /// local defaults.
     pub async fn new(identifier: TokenIdentifier, provider: &DynProvider) -> Result<Self> {
         let (name, symbol, decimals) = match &identifier {
             TokenIdentifier::ERC20 { address } => {

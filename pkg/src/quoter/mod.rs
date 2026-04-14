@@ -1,7 +1,7 @@
 //! Quote sources for converting one asset into another at a given block height.
 //!
-//! A quoter is a single-hop pricing primitive. Examples include a fixed fiat peg,
-//! an on-chain Uniswap pool, or an ERC-4626 vault conversion.
+//! A quoter is a single-hop pricing primitive. Examples include a fixed fiat
+//! peg, an on-chain Uniswap pool, or an ERC-4626 vault conversion.
 //!
 //! The [`Quoter`] trait is implemented by all supported data sources.
 //!
@@ -30,7 +30,6 @@
 //! println!("rate: {token_a.symbol} = {rate_formatted} {token_b.symbol}");
 //! }
 //! ```
-//!
 
 use std::{
     fmt::{self, Debug, Display},
@@ -38,10 +37,9 @@ use std::{
     sync::Arc,
 };
 
-use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
 
-use crate::token::identity::TokenIdentifier;
+use crate::{Result, token::identity::TokenIdentifier};
 
 pub mod erc4626;
 pub mod fixed;
@@ -50,8 +48,8 @@ pub mod uniswap_v3;
 
 /// The direction to quote along a quoter edge.
 ///
-/// `Forward` means `token0 -> token1` for the pair returned by [`Quoter::get_tokens`].
-/// `Reverse` means the inverse direction.
+/// `Forward` means `token0 -> token1` for the pair returned by
+/// [`Quoter::get_tokens`]. `Reverse` means the inverse direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateDirection {
     Forward,
@@ -66,8 +64,8 @@ impl Display for RateDirection {
 
 /// A single-hop quote source.
 ///
-/// Implementors expose which two assets they connect and can quote an input amount at a
-/// specific block height.
+/// Implementors expose which two assets they connect and can quote an input
+/// amount at a specific block height.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait Quoter: Send + Sync + Debug {

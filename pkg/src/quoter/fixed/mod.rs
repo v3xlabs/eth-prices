@@ -2,18 +2,19 @@
 
 use std::fmt::{self, Display};
 
-use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
 use serde::Deserialize;
 
 use crate::{
+    Result,
     quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };
 
 /// A static conversion rate between two assets.
 ///
-/// This is mainly useful for synthetic edges such as fiat pegs or test fixtures.
+/// This is mainly useful for synthetic edges such as fiat pegs or test
+/// fixtures.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[cfg_attr(
     target_arch = "wasm32",

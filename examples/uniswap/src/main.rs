@@ -4,7 +4,8 @@ use alloy::{
 };
 use eth_prices::{
     quoter::{
-        Quoter, RateDirection,
+        Quoter,
+        RateDirection,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
     },
     token::Token,

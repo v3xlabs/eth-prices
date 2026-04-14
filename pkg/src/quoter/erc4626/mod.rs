@@ -1,6 +1,7 @@
 //! ERC-4626 Vault Quoter
 //!
-//! The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
+//! The [`ERC4626Quoter`] struct is used to quote conversion rates between a
+//! vault's shares and underlying asset.
 //!
 //! ```rust,ignore
 //! use eth_prices::quoter::erc4626::ERC4626Quoter;
@@ -24,15 +25,18 @@
 //! println!("rate: {}", rate);
 //! ```
 
-use alloy::primitives::{Address, BlockNumber, U256};
-use alloy::providers::DynProvider;
-use alloy::sol;
+use alloy::{
+    primitives::{Address, BlockNumber, U256},
+    providers::DynProvider,
+    sol,
+};
 use serde::Deserialize;
 
-use crate::Result;
-use crate::quoter::{Quoter, RateDirection};
-use crate::token::Token;
-use crate::token::identity::TokenIdentifier;
+use crate::{
+    Result,
+    quoter::{Quoter, RateDirection},
+    token::{Token, identity::TokenIdentifier},
+};
 
 sol! {
     #[sol(rpc)]
@@ -50,7 +54,8 @@ pub struct ERC4626Config {
     pub vault_address: Address,
 }
 
-/// Quotes conversions between an ERC-4626 vault share token and its underlying asset.
+/// Quotes conversions between an ERC-4626 vault share token and its underlying
+/// asset.
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
     /// Vault share token metadata.
@@ -122,9 +127,10 @@ impl Quoter for ERC4626Quoter {
 
 #[cfg(test)]
 mod tests {
+    use alloy::primitives::address;
+
     use super::*;
     use crate::{tests::get_test_provider, token::Token};
-    use alloy::primitives::address;
 
     #[tokio::test]
     async fn test_get_rate() {

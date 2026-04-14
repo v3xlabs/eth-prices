@@ -5,7 +5,9 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     quoter::{
-        RateDirection, fixed::FixedQuoter, uniswap_v2::UniswapV2Selector,
+        RateDirection,
+        fixed::FixedQuoter,
+        uniswap_v2::UniswapV2Selector,
         uniswap_v3::factory::UniswapV3Selector,
     },
     router::Route as RouterRoute,

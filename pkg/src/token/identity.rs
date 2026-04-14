@@ -23,7 +23,8 @@ impl From<Address> for TokenIdentifier {
 impl TryFrom<String> for TokenIdentifier {
     type Error = crate::error::EthPricesError;
 
-    /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or `native`.
+    /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or
+    /// `native`.
     fn try_from(input: String) -> Result<Self, Self::Error> {
         if input == "native" {
             Ok(TokenIdentifier::Native)

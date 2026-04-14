@@ -1,3 +1,9 @@
+use std::{
+    collections::{HashMap, HashSet},
+    io::Error,
+    sync::{Arc, atomic::AtomicU64},
+};
+
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
     config::Config,
@@ -5,17 +11,18 @@ use eth_prices::{
     token::{Token, TokenIdentifier},
 };
 use poem::{
-    EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
+    EndpointExt,
+    Route as PoemRoute,
+    Server,
+    get,
+    handler,
+    listener::TcpListener,
+    web::Data,
 };
 use prometheus_client::{
     encoding::{EncodeLabelSet, text::encode},
     metrics::{family::Family, gauge::Gauge},
     registry::Registry,
-};
-use std::{
-    collections::{HashMap, HashSet},
-    io::Error,
-    sync::{Arc, atomic::AtomicU64},
 };
 use tracing::info;
 

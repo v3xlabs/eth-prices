@@ -3,7 +3,6 @@
 pub mod factory;
 pub mod pair;
 
-use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
@@ -13,6 +12,7 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::{
+    Result,
     quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };
@@ -88,7 +88,8 @@ impl UniswapV2Quoter {
 impl UniswapV2Quoter {
     /// Builds a quoter from a selector.
     ///
-    /// When a token pair is provided, the configured factory is used to discover the pair address.
+    /// When a token pair is provided, the configured factory is used to
+    /// discover the pair address.
     pub async fn from_selector(
         provider: &DynProvider,
         selector: UniswapV2Selector,
