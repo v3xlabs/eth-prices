@@ -28,7 +28,7 @@ describe("wasm quoter real rpc", () => {
       const quoter = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
-          uniswap_v2: [{ pair_address: USDC_WETH_V2_PAIR }],
+          uniswapV2: [{ pairAddress: USDC_WETH_V2_PAIR }],
         },
       });
 
@@ -48,9 +48,9 @@ describe("wasm quoter real rpc", () => {
       const quoter = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
-          uniswap_v3: [
-            { pool_address: XAUT_USDT_V3_POOL },
-            { token_in: USDT, token_out: USDC, fee: 500 },
+          uniswapV3: [
+            { poolAddress: XAUT_USDT_V3_POOL },
+            { tokenIn: USDT, tokenOut: USDC, fee: 500 },
           ],
         },
       });
@@ -76,10 +76,10 @@ describe("wasm quoter real rpc", () => {
       const engine = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
-          fixed: [{ token_in: USDC, token_out: "fiat:usd", fixed_rate: 1 }],
-          uniswap_v3: [
-            { pool_address: XAUT_USDT_V3_POOL },
-            { token_in: USDT, token_out: USDC, fee: 500 },
+          fixed: [{ tokenIn: USDC, tokenOut: "fiat:usd", fixedRate: 1 }],
+          uniswapV3: [
+            { poolAddress: XAUT_USDT_V3_POOL },
+            { tokenIn: USDT, tokenOut: USDC, fee: 500 },
           ],
         },
       });
@@ -106,8 +106,8 @@ describe("wasm quoter real rpc", () => {
       const engine = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
-          fixed: [{ token_in: USDC, token_out: "fiat:usd", fixed_rate: 1 }],
-          uniswap_v3: [{ token_in: EURC, token_out: USDC, fee: 500 }],
+          fixed: [{ tokenIn: USDC, tokenOut: "fiat:usd", fixedRate: 1 }],
+          uniswapV3: [{ tokenIn: EURC, tokenOut: USDC, fee: 500 }],
           erc4626: [KPK_VAULT_EURC],
         },
       });

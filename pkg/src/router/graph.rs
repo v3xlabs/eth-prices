@@ -1,6 +1,5 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use anyhow::Result;
 use petgraph::{
     dot::Dot,
     graph::{NodeIndex, UnGraph},
@@ -8,14 +7,15 @@ use petgraph::{
 use tracing::info;
 
 use crate::{
-    quoter::{Quoter, QuoterInstance, RateDirection},
+    Result,
+    quoter::{AnyQuoter, RateDirection},
     router::{Route, RouteStep},
     token::TokenIdentifier,
 };
 
 #[derive(Debug, Clone)]
 pub struct QuoterGraph {
-    pub quoters: Vec<Arc<QuoterInstance>>,
+    pub quoters: Vec<AnyQuoter>,
     pub graph: UnGraph<String, String>,
     pub token_map: HashMap<String, NodeIndex<u32>>,
 }
@@ -30,12 +30,11 @@ impl Default for QuoterGraph {
     }
 }
 
-impl FromIterator<QuoterInstance> for QuoterGraph {
-    fn from_iter<T: IntoIterator<Item = QuoterInstance>>(iter: T) -> Self {
+impl FromIterator<AnyQuoter> for QuoterGraph {
+    fn from_iter<T: IntoIterator<Item = AnyQuoter>>(iter: T) -> Self {
         let mut graph = Self::default();
         for quoter in iter {
-            graph.add_quoter(&quoter);
-            graph.quoters.push(Arc::new(quoter));
+            graph.add_quoter(quoter);
         }
         graph
     }
@@ -67,9 +66,10 @@ impl QuoterGraph {
         }
     }
 
-    pub fn add_quoter(&mut self, quoter: &impl Quoter) {
-        let slug = quoter.id();
+    pub fn add_quoter(&mut self, quoter: AnyQuoter) {
+        let slug = quoter.to_string();
         let (token_in, token_out) = quoter.tokens();
+        self.quoters.push(quoter);
 
         let token_in_index = self.add_token(&token_in);
         let token_out_index = self.add_token(&token_out);
@@ -90,10 +90,10 @@ impl QuoterGraph {
     ) -> Result<Route> {
         let token_a_index = self
             .get_token_index(input_token)
-            .ok_or(anyhow::anyhow!("Token not found"))?;
+            .ok_or_else(|| crate::error::EthPricesError::TokenNotFound(input_token.to_string()))?;
         let token_b_index = self
             .get_token_index(output_token)
-            .ok_or(anyhow::anyhow!("Token not found"))?;
+            .ok_or_else(|| crate::error::EthPricesError::TokenNotFound(output_token.to_string()))?;
 
         info!(
             target: "router::compute_start",
@@ -110,7 +110,10 @@ impl QuoterGraph {
         );
 
         match path {
-            None => Err(anyhow::anyhow!("No path found")),
+            None => Err(crate::error::EthPricesError::NoRouteFound(
+                input_token.to_string(),
+                output_token.to_string(),
+            )),
             Some((_cost, node_path)) => {
                 info!(
                     target: "router::compute_end",
@@ -118,8 +121,11 @@ impl QuoterGraph {
                 );
                 let token_route = node_path
                     .iter()
-                    .map(|x| self.get_token_by_index(*x).unwrap())
-                    .collect::<Vec<TokenIdentifier>>();
+                    .map(|x| {
+                        self.get_token_by_index(*x)
+                            .ok_or_else(|| crate::error::EthPricesError::MissingTokenInRoute)
+                    })
+                    .collect::<Result<Vec<TokenIdentifier>>>()?;
 
                 let mut path = Vec::new();
 
@@ -138,7 +144,7 @@ impl QuoterGraph {
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
                         })
-                        .unwrap();
+                        .ok_or_else(|| crate::error::EthPricesError::MissingQuoterInRoute)?;
 
                     path.push(RouteStep {
                         quoter: quoter.clone(),
@@ -152,11 +158,10 @@ impl QuoterGraph {
                 }
 
                 if path.len() != node_path.len() - 1 {
-                    return Err(anyhow::anyhow!(
-                        "Path length mismatch {} != {}",
-                        path.len(),
-                        node_path.len() - 1
-                    ));
+                    return Err(crate::error::EthPricesError::PathLengthMismatch {
+                        expected: node_path.len() - 1,
+                        actual: path.len(),
+                    });
                 }
 
                 Ok(Route {

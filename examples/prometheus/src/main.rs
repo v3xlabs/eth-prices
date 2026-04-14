@@ -1,7 +1,12 @@
+use std::{
+    collections::{HashMap, HashSet},
+    io::Error,
+    sync::{Arc, atomic::AtomicU64},
+};
+
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
     config::Config,
-    quoter::Quoter,
     router::{Route, graph::QuoterGraph},
     token::{Token, TokenIdentifier},
 };
@@ -12,11 +17,6 @@ use prometheus_client::{
     encoding::{EncodeLabelSet, text::encode},
     metrics::{family::Family, gauge::Gauge},
     registry::Registry,
-};
-use std::{
-    collections::{HashMap, HashSet},
-    io::Error,
-    sync::{Arc, atomic::AtomicU64},
 };
 use tracing::info;
 
@@ -55,7 +55,7 @@ struct Labels {
 }
 
 pub async fn setup() -> AppState {
-    let config = Config::load("config.toml").await;
+    let config = Config::load("config.toml").await.unwrap();
     let mut chains = HashMap::new();
 
     for (chain_slug, chain_config) in &config.chains {
@@ -65,7 +65,7 @@ pub async fn setup() -> AppState {
             let token_address = token_config.address.clone();
             println!("token: {:?}", token_address);
         }
-        let quoters = chain_config.quoters.all(&provider).await;
+        let quoters = chain_config.quoters.clone().all(&provider).await.unwrap();
         let router = QuoterGraph::from_iter(quoters);
 
         let mut all_tokens = HashSet::new();

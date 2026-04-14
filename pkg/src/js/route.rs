@@ -1,8 +1,7 @@
 use wasm_bindgen::prelude::*;
 
+use super::types::RouteView;
 use crate::router::Route as RouterRoute;
-
-use super::{bindings::JsRouteView, convert::into_js_error, types::RouteView};
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -23,10 +22,8 @@ impl Route {
     }
 
     #[wasm_bindgen(js_name = toJSON)]
-    pub fn to_json(&self) -> Result<JsRouteView, JsError> {
-        serde_wasm_bindgen::to_value(&RouteView::from(&self.inner))
-            .map(Into::into)
-            .map_err(into_js_error)
+    pub fn to_json(&self) -> Result<RouteView, JsError> {
+        Ok(RouteView::from(&self.inner))
     }
 }
 

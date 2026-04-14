@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use alloy::primitives::{BlockNumber, U256};
-use anyhow::Result;
 use tracing::info;
 
 use crate::{
-    quoter::{Quoter, QuoterInstance, RateDirection},
+    Result,
+    quoter::{AnyQuoter, RateDirection},
     token::TokenIdentifier,
 };
 
@@ -13,7 +11,7 @@ pub mod graph;
 
 #[derive(Debug, Clone)]
 pub struct RouteStep {
-    pub quoter: Arc<QuoterInstance>,
+    pub quoter: AnyQuoter,
     pub direction: RateDirection,
 }
 
@@ -30,7 +28,7 @@ impl Route {
         let mut amount_out = amount_in;
 
         for step in self.path.iter() {
-            let quoter_slug = step.quoter.id();
+            let quoter_slug = step.quoter.to_string();
 
             info!(
                 target: "router::quote_start",

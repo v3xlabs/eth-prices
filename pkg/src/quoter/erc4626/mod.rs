@@ -24,16 +24,18 @@
 //! println!("rate: {}", rate);
 //! ```
 
-use alloy::primitives::{Address, BlockNumber, U256};
-use alloy::providers::DynProvider;
-
-use alloy::sol;
-use anyhow::Result;
+use alloy::{
+    primitives::{Address, BlockNumber, U256},
+    providers::DynProvider,
+    sol,
+};
 use serde::Deserialize;
 
-use crate::quoter::{Quoter, RateDirection};
-use crate::token::Token;
-use crate::token::identity::TokenIdentifier;
+use crate::{
+    Result,
+    quoter::{Quoter, RateDirection},
+    token::{Token, identity::TokenIdentifier},
+};
 
 sol! {
     #[sol(rpc)]
@@ -45,7 +47,7 @@ sol! {
 }
 
 /// Configuration for a single ERC-4626 vault quoter.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct ERC4626Config {
     /// Vault contract address.
     pub vault_address: Address,
@@ -64,21 +66,23 @@ pub struct ERC4626Quoter {
 
 impl ERC4626Quoter {
     /// Creates a quoter by loading the vault's underlying asset.
-    pub async fn new(vault_address: Address, provider: &DynProvider) -> Self {
+    pub async fn new(vault_address: Address, provider: &DynProvider) -> Result<Self> {
         let vault = ERC4626::new(vault_address, provider);
-        let token_address = vault.asset().call().await.unwrap();
-        let token_address = Token::new(token_address.into(), provider).await.unwrap();
-        let vault_address = Token::new(vault_address.into(), provider).await.unwrap();
-        Self {
+        let token_address = vault.asset().call().await?;
+        let token_address = Token::new(token_address.into(), provider).await?;
+        let vault_address = Token::new(vault_address.into(), provider).await?;
+        Ok(Self {
             vault_address,
             token_address,
             provider: provider.clone(),
-        }
+        })
     }
 }
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Quoter for ERC4626Quoter {
-    fn id(&self) -> String {
+    fn identity(&self) -> String {
         format!("erc4626:{}", self.vault_address.identifier)
     }
 
@@ -88,14 +92,18 @@ impl Quoter for ERC4626Quoter {
             self.token_address.identifier.clone(),
         )
     }
-
     async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
     ) -> Result<U256> {
-        let vault = ERC4626::new(self.vault_address.unwrap_address(), &self.provider);
+        let vault = ERC4626::new(
+            self.vault_address
+                .address()
+                .ok_or(crate::error::EthPricesError::MissingVaultAddress)?,
+            &self.provider,
+        );
         Ok(match direction {
             RateDirection::Forward => {
                 vault
@@ -117,9 +125,10 @@ impl Quoter for ERC4626Quoter {
 
 #[cfg(test)]
 mod tests {
+    use alloy::primitives::address;
+
     use super::*;
     use crate::{tests::get_test_provider, token::Token};
-    use alloy::primitives::address;
 
     #[tokio::test]
     async fn test_get_rate() {
@@ -127,7 +136,7 @@ mod tests {
         let vault_address = address!("0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1");
 
         let provider = get_test_provider().await;
-        let quoter = ERC4626Quoter::new(vault_address, &provider).await;
+        let quoter = ERC4626Quoter::new(vault_address, &provider).await.unwrap();
 
         let token_a = Token::new(quoter.vault_address.identifier.clone(), &provider)
             .await
@@ -153,13 +162,13 @@ mod tests {
         let precision = 4;
         println!(
             "forward_rate: {:?} = {:?}",
-            token_a.format_amount(token_a_amount, precision).await,
-            token_b.format_amount(forward_rate, precision).await
+            token_a.format_amount(token_a_amount, precision),
+            token_b.format_amount(forward_rate, precision)
         );
         println!(
             "reverse_rate: {:?} = {:?}",
-            token_b.format_amount(token_b_amount, precision).await,
-            token_a.format_amount(reverse_rate, precision).await
+            token_b.format_amount(token_b_amount, precision),
+            token_a.format_amount(reverse_rate, precision)
         );
     }
 }
