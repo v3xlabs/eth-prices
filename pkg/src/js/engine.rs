@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     quoter::{
-        Quoter as QuoterTrait, QuoterInstance,
+        AnyQuoter, Quoter as QuoterTrait,
         erc4626::ERC4626Quoter,
         fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
@@ -34,7 +34,7 @@ pub struct Engine {
 impl Engine {
     #[wasm_bindgen(js_name = addFixedQuoter)]
     pub fn add_fixed_quoter(&mut self, quoter: FixedQuoter) -> Result<(), JsError> {
-        self.push_quoter(QuoterInstance::Fixed(quoter));
+        self.push_quoter(quoter.strip());
         Ok(())
     }
 
@@ -46,7 +46,7 @@ impl Engine {
         let quoter = UniswapV2Quoter::from_selector(&self.provider, selector)
             .await
             .map_err(into_js_error)?;
-        self.push_quoter(QuoterInstance::UniswapV2(quoter));
+        self.push_quoter(quoter.strip());
         Ok(())
     }
 
@@ -58,7 +58,7 @@ impl Engine {
         let quoter = UniswapV3Quoter::from_selector(&self.provider, selector)
             .await
             .map_err(into_js_error)?;
-        self.push_quoter(QuoterInstance::UniswapV3(quoter));
+        self.push_quoter(quoter.strip());
         Ok(())
     }
 
@@ -68,7 +68,7 @@ impl Engine {
         let quoter = ERC4626Quoter::new(vault_address, &self.provider)
             .await
             .map_err(into_js_error)?;
-        self.push_quoter(QuoterInstance::ERC4626(quoter));
+        self.push_quoter(quoter.strip());
         Ok(())
     }
 
@@ -139,13 +139,13 @@ impl Engine {
         self.router
             .quoters
             .iter()
-            .map(|quoter| quoter.id())
+            .map(|quoter| quoter.to_string())
             .collect()
     }
 }
 
 impl Engine {
-    fn push_quoter(&mut self, quoter: QuoterInstance) {
+    fn push_quoter(&mut self, quoter: AnyQuoter) {
         self.router.add_quoter(&quoter);
         self.router.quoters.push(Arc::new(quoter));
     }
@@ -187,7 +187,7 @@ impl Engine {
 
     fn load_fixed(&mut self, quoters: Vec<FixedQuoter>) {
         for quoter in quoters {
-            self.push_quoter(QuoterInstance::Fixed(quoter));
+            self.push_quoter(quoter.strip());
         }
     }
 
@@ -196,7 +196,7 @@ impl Engine {
             let quoter = UniswapV2Quoter::from_selector(&self.provider, selector)
                 .await
                 .map_err(into_js_error)?;
-            self.push_quoter(QuoterInstance::UniswapV2(quoter));
+            self.push_quoter(quoter.strip());
         }
         Ok(())
     }
@@ -206,7 +206,7 @@ impl Engine {
             let quoter = UniswapV3Quoter::from_selector(&self.provider, selector)
                 .await
                 .map_err(into_js_error)?;
-            self.push_quoter(QuoterInstance::UniswapV3(quoter));
+            self.push_quoter(quoter.strip());
         }
         Ok(())
     }
@@ -219,7 +219,7 @@ impl Engine {
             let quoter = ERC4626Quoter::new(vault_address, &self.provider)
                 .await
                 .map_err(into_js_error)?;
-            self.push_quoter(QuoterInstance::ERC4626(quoter));
+            self.push_quoter(quoter.strip());
         }
         Ok(())
     }

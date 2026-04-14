@@ -9,7 +9,7 @@ use tracing::info;
 use eth_prices::{
     Result,
     config::Config,
-    quoter::{Quoter, RateDirection},
+    quoter::RateDirection,
     router::graph::QuoterGraph,
     token::{Token, TokenIdentifier},
 };
