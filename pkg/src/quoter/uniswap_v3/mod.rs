@@ -1,6 +1,5 @@
 //! Uniswap v3 quote sources.
 
-use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512},
     providers::DynProvider,
@@ -8,6 +7,7 @@ use alloy::{
 use pool::UniswapV3Pool;
 
 use crate::{
+    Result,
     quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
     token::identity::TokenIdentifier,
 };

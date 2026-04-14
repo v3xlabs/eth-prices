@@ -34,10 +34,9 @@
 
 use std::fmt::{self, Debug, Display};
 
-use crate::{Result};
 use alloy::primitives::{BlockNumber, U256};
 
-use crate::token::identity::TokenIdentifier;
+use crate::{Result, token::identity::TokenIdentifier};
 
 // Submodules
 

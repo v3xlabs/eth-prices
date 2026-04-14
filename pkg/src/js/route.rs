@@ -1,8 +1,7 @@
 use wasm_bindgen::prelude::*;
 
-use crate::router::Route as RouterRoute;
-
 use super::types::RouteView;
+use crate::router::Route as RouterRoute;
 
 #[wasm_bindgen]
 #[derive(Clone)]

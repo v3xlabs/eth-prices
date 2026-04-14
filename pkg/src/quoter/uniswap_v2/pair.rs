@@ -57,10 +57,10 @@ pub async fn fetch_pair_info(
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::get_test_provider;
     use alloy::primitives::address;
 
     use super::*;
+    use crate::tests::get_test_provider;
 
     #[tokio::test]
     async fn test_fetch_pair_info() {

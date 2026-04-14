@@ -2,11 +2,11 @@
 
 use std::fmt::{self, Display};
 
-use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
 use serde::Deserialize;
 
 use crate::{
+    Result,
     quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };

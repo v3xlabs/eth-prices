@@ -1,11 +1,16 @@
-use crate::Result;
 use alloy::{
     primitives::BlockNumber,
     providers::{DynProvider, Provider, ProviderBuilder},
 };
 use wasm_bindgen::prelude::*;
 
+use super::{
+    convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
+    route::Route,
+    types::{CreateEngineConfig, JsCreateEngineConfig, QuoteRequest},
+};
 use crate::{
+    Result,
     quoter::{
         AnyQuoter,
         erc4626::ERC4626Quoter,
@@ -14,12 +19,6 @@ use crate::{
         uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector},
     },
     router::graph::QuoterGraph,
-};
-
-use super::{
-    convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
-    route::Route,
-    types::{CreateEngineConfig, JsCreateEngineConfig, QuoteRequest},
 };
 
 #[wasm_bindgen]

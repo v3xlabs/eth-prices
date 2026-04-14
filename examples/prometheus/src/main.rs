@@ -1,3 +1,9 @@
+use std::{
+    collections::{HashMap, HashSet},
+    io::Error,
+    sync::{Arc, atomic::AtomicU64},
+};
+
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
     config::Config,
@@ -11,11 +17,6 @@ use prometheus_client::{
     encoding::{EncodeLabelSet, text::encode},
     metrics::{family::Family, gauge::Gauge},
     registry::Registry,
-};
-use std::{
-    collections::{HashMap, HashSet},
-    io::Error,
-    sync::{Arc, atomic::AtomicU64},
 };
 use tracing::info;
 

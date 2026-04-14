@@ -4,8 +4,6 @@ use alloy::{
     primitives::address,
     providers::{Provider, ProviderBuilder},
 };
-use tracing::info;
-
 use eth_prices::{
     Result,
     config::Config,
@@ -13,6 +11,7 @@ use eth_prices::{
     router::graph::QuoterGraph,
     token::{Token, TokenIdentifier},
 };
+use tracing::info;
 
 #[tokio::main]
 pub async fn main() -> Result<()> {

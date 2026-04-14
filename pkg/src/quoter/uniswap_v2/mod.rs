@@ -3,7 +3,6 @@
 pub mod factory;
 pub mod pair;
 
-use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
@@ -13,6 +12,7 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::{
+    Result,
     quoter::{Quoter, RateDirection},
     token::identity::TokenIdentifier,
 };

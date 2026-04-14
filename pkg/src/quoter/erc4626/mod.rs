@@ -24,15 +24,18 @@
 //! println!("rate: {}", rate);
 //! ```
 
-use alloy::primitives::{Address, BlockNumber, U256};
-use alloy::providers::DynProvider;
-use alloy::sol;
+use alloy::{
+    primitives::{Address, BlockNumber, U256},
+    providers::DynProvider,
+    sol,
+};
 use serde::Deserialize;
 
-use crate::Result;
-use crate::quoter::{Quoter, RateDirection};
-use crate::token::Token;
-use crate::token::identity::TokenIdentifier;
+use crate::{
+    Result,
+    quoter::{Quoter, RateDirection},
+    token::{Token, identity::TokenIdentifier},
+};
 
 sol! {
     #[sol(rpc)]
@@ -122,9 +125,10 @@ impl Quoter for ERC4626Quoter {
 
 #[cfg(test)]
 mod tests {
+    use alloy::primitives::address;
+
     use super::*;
     use crate::{tests::get_test_provider, token::Token};
-    use alloy::primitives::address;
 
     #[tokio::test]
     async fn test_get_rate() {

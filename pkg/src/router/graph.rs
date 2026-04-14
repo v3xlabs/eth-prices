@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use crate::{Result, quoter::AnyQuoter};
 use petgraph::{
     dot::Dot,
     graph::{NodeIndex, UnGraph},
@@ -8,7 +7,8 @@ use petgraph::{
 use tracing::info;
 
 use crate::{
-    quoter::RateDirection,
+    Result,
+    quoter::{AnyQuoter, RateDirection},
     router::{Route, RouteStep},
     token::TokenIdentifier,
 };

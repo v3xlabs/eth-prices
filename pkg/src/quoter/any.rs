@@ -1,5 +1,6 @@
-use crate::quoter::Quoter;
 use std::{ops::Deref, sync::Arc};
+
+use crate::quoter::Quoter;
 
 #[derive(Debug, Clone)]
 pub struct AnyQuoter(pub Arc<dyn Quoter>);
