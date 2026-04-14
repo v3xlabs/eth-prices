@@ -1,25 +1,17 @@
-use alloy::{
-    primitives::BlockNumber,
-    providers::{DynProvider, Provider, ProviderBuilder},
-};
+use super::convert::{into_js_error, parse_address, parse_token_identifier, parse_u256};
+use super::route::Route;
+use super::types::{CreateEngineConfig, JsCreateEngineConfig, QuoteRequest};
+use crate::Result;
+use crate::quoter::AnyQuoter;
+use crate::quoter::erc4626::ERC4626Quoter;
+use crate::quoter::fixed::FixedQuoter;
+use crate::quoter::uniswap_v2::{UniswapV2Quoter, UniswapV2Selector};
+use crate::quoter::uniswap_v3::UniswapV3Quoter;
+use crate::quoter::uniswap_v3::factory::UniswapV3Selector;
+use crate::router::graph::QuoterGraph;
+use alloy::primitives::BlockNumber;
+use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use wasm_bindgen::prelude::*;
-
-use super::{
-    convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
-    route::Route,
-    types::{CreateEngineConfig, JsCreateEngineConfig, QuoteRequest},
-};
-use crate::{
-    Result,
-    quoter::{
-        AnyQuoter,
-        erc4626::ERC4626Quoter,
-        fixed::FixedQuoter,
-        uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-        uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector},
-    },
-    router::graph::QuoterGraph,
-};
 
 #[wasm_bindgen]
 pub struct Engine {

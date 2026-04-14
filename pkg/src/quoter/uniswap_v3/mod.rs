@@ -1,16 +1,12 @@
 //! Uniswap v3 quote sources.
 
-use alloy::{
-    primitives::{Address, BlockNumber, U256, U512},
-    providers::DynProvider,
-};
+use crate::Result;
+use crate::quoter::uniswap_v3::factory::UniswapV3Selector;
+use crate::quoter::{Quoter, RateDirection};
+use crate::token::identity::TokenIdentifier;
+use alloy::primitives::{Address, BlockNumber, U256, U512};
+use alloy::providers::DynProvider;
 use pool::UniswapV3Pool;
-
-use crate::{
-    Result,
-    quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
-    token::identity::TokenIdentifier,
-};
 
 pub mod factory;
 pub mod pool;

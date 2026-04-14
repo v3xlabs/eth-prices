@@ -1,8 +1,6 @@
-use alloy::{
-    primitives::{Address, U256},
-    providers::DynProvider,
-    sol,
-};
+use alloy::primitives::{Address, U256};
+use alloy::providers::DynProvider;
+use alloy::sol;
 use async_stream::stream;
 use futures::Stream;
 
@@ -51,11 +49,10 @@ pub async fn fetch_pair(
 
 #[cfg(test)]
 mod tests {
-    use alloy::primitives::address;
-    use futures::StreamExt;
-
     use super::*;
     use crate::tests::get_test_provider;
+    use alloy::primitives::address;
+    use futures::StreamExt;
 
     const FACTORY_ADDRESS: Address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 

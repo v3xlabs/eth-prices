@@ -1,11 +1,8 @@
+use crate::Result;
+use crate::quoter::{AnyQuoter, RateDirection};
+use crate::token::TokenIdentifier;
 use alloy::primitives::{BlockNumber, U256};
 use tracing::info;
-
-use crate::{
-    Result,
-    quoter::{AnyQuoter, RateDirection},
-    token::TokenIdentifier,
-};
 
 pub mod graph;
 

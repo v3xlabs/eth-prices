@@ -1,6 +1,5 @@
 # Merge imports from the same module
-imports_granularity = "Crate"
-
+imports_granularity = "Module"   # even more aggressive merging
 # Reorder imports alphabetically
 reorder_imports = true
 
@@ -8,10 +7,7 @@ reorder_imports = true
 reorder_imported_names = true
 
 # Normalize grouping (std, external, crate)
-group_imports = "StdExternalCrate"
+group_imports = "One"            # everything in one block
 
 # Remove redundant `self` imports where possible
 imports_layout = "HorizontalVertical"
-
-# Optional: wrap long imports cleanly
-wrap_comments = true

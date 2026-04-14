@@ -1,21 +1,16 @@
-use alloy::{primitives::map::HashMap, providers::DynProvider};
-use figment::{
-    Figment,
-    providers::{Format, Toml},
-};
+use crate::Result;
+use crate::error::EthPricesError;
+use crate::quoter::AnyQuoter;
+use crate::quoter::erc4626::{ERC4626Config, ERC4626Quoter};
+use crate::quoter::fixed::FixedQuoter;
+use crate::quoter::uniswap_v2::{UniswapV2Config, UniswapV2Quoter};
+use crate::quoter::uniswap_v3::UniswapV3Quoter;
+use crate::quoter::uniswap_v3::factory::UniswapV3Config;
+use alloy::primitives::map::HashMap;
+use alloy::providers::DynProvider;
+use figment::Figment;
+use figment::providers::{Format, Toml};
 use serde::Deserialize;
-
-use crate::{
-    Result,
-    error::EthPricesError,
-    quoter::{
-        AnyQuoter,
-        erc4626::{ERC4626Config, ERC4626Quoter},
-        fixed::FixedQuoter,
-        uniswap_v2::{UniswapV2Config, UniswapV2Quoter},
-        uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Config},
-    },
-};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Config {

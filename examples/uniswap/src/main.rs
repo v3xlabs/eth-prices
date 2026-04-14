@@ -1,15 +1,8 @@
-use alloy::{
-    primitives::address,
-    providers::{Provider, ProviderBuilder},
-};
-use eth_prices::{
-    quoter::{
-        Quoter,
-        RateDirection,
-        uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-    },
-    token::Token,
-};
+use alloy::primitives::address;
+use alloy::providers::{Provider, ProviderBuilder};
+use eth_prices::quoter::uniswap_v2::{UniswapV2Quoter, UniswapV2Selector};
+use eth_prices::quoter::{Quoter, RateDirection};
+use eth_prices::token::Token;
 
 #[tokio::main]
 pub async fn main() {

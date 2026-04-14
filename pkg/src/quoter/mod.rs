@@ -31,15 +31,12 @@
 //! }
 //! ```
 
-use std::{
-    fmt::{self, Debug, Display},
-    ops::Deref,
-    sync::Arc,
-};
-
+use crate::Result;
+use crate::token::identity::TokenIdentifier;
 use alloy::primitives::{BlockNumber, U256};
-
-use crate::{Result, token::identity::TokenIdentifier};
+use std::fmt::{self, Debug, Display};
+use std::ops::Deref;
+use std::sync::Arc;
 
 pub mod erc4626;
 pub mod fixed;

@@ -1,15 +1,11 @@
 //! Fixed rate quote sources.
 
-use std::fmt::{self, Display};
-
+use crate::Result;
+use crate::quoter::{Quoter, RateDirection};
+use crate::token::identity::TokenIdentifier;
 use alloy::primitives::{BlockNumber, U256};
 use serde::Deserialize;
-
-use crate::{
-    Result,
-    quoter::{Quoter, RateDirection},
-    token::identity::TokenIdentifier,
-};
+use std::fmt::{self, Display};
 
 /// A static conversion rate between two assets.
 ///
@@ -76,9 +72,8 @@ impl Display for FixedQuoter {
 
 #[cfg(test)]
 mod tests {
-    use alloy::primitives::address;
-
     use super::*;
+    use alloy::primitives::address;
 
     #[tokio::test]
     async fn test_get_rate() {

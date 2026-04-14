@@ -1,16 +1,11 @@
+use alloy::primitives::address;
+use alloy::providers::{Provider, ProviderBuilder};
+use eth_prices::Result;
+use eth_prices::config::Config;
+use eth_prices::quoter::RateDirection;
+use eth_prices::router::graph::QuoterGraph;
+use eth_prices::token::{Token, TokenIdentifier};
 use std::collections::HashSet;
-
-use alloy::{
-    primitives::address,
-    providers::{Provider, ProviderBuilder},
-};
-use eth_prices::{
-    Result,
-    config::Config,
-    quoter::RateDirection,
-    router::graph::QuoterGraph,
-    token::{Token, TokenIdentifier},
-};
 use tracing::info;
 
 #[tokio::main]

@@ -1,17 +1,11 @@
+use crate::Result;
+use crate::quoter::{AnyQuoter, RateDirection};
+use crate::router::{Route, RouteStep};
+use crate::token::TokenIdentifier;
+use petgraph::dot::Dot;
+use petgraph::graph::{NodeIndex, UnGraph};
 use std::collections::HashMap;
-
-use petgraph::{
-    dot::Dot,
-    graph::{NodeIndex, UnGraph},
-};
 use tracing::info;
-
-use crate::{
-    Result,
-    quoter::{AnyQuoter, RateDirection},
-    router::{Route, RouteStep},
-    token::TokenIdentifier,
-};
 
 #[derive(Debug, Clone)]
 pub struct QuoterGraph {

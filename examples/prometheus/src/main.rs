@@ -1,29 +1,20 @@
-use std::{
-    collections::{HashMap, HashSet},
-    io::Error,
-    sync::{Arc, atomic::AtomicU64},
-};
-
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
-use eth_prices::{
-    config::Config,
-    router::{Route, graph::QuoterGraph},
-    token::{Token, TokenIdentifier},
-};
-use poem::{
-    EndpointExt,
-    Route as PoemRoute,
-    Server,
-    get,
-    handler,
-    listener::TcpListener,
-    web::Data,
-};
-use prometheus_client::{
-    encoding::{EncodeLabelSet, text::encode},
-    metrics::{family::Family, gauge::Gauge},
-    registry::Registry,
-};
+use eth_prices::config::Config;
+use eth_prices::router::Route;
+use eth_prices::router::graph::QuoterGraph;
+use eth_prices::token::{Token, TokenIdentifier};
+use poem::listener::TcpListener;
+use poem::web::Data;
+use poem::{EndpointExt, Route as PoemRoute, Server, get, handler};
+use prometheus_client::encoding::EncodeLabelSet;
+use prometheus_client::encoding::text::encode;
+use prometheus_client::metrics::family::Family;
+use prometheus_client::metrics::gauge::Gauge;
+use prometheus_client::registry::Registry;
+use std::collections::{HashMap, HashSet};
+use std::io::Error;
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use tracing::info;
 
 pub struct ChainState {

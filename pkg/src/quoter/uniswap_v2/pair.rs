@@ -1,8 +1,7 @@
-use alloy::{
-    primitives::{Address, U256, aliases::U112},
-    providers::DynProvider,
-    sol,
-};
+use alloy::primitives::aliases::U112;
+use alloy::primitives::{Address, U256};
+use alloy::providers::DynProvider;
+use alloy::sol;
 
 sol! {
    #[sol(rpc)]
@@ -57,10 +56,9 @@ pub async fn fetch_pair_info(
 
 #[cfg(test)]
 mod tests {
-    use alloy::primitives::address;
-
     use super::*;
     use crate::tests::get_test_provider;
+    use alloy::primitives::address;
 
     #[tokio::test]
     async fn test_fetch_pair_info() {

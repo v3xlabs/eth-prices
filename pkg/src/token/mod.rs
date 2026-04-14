@@ -1,11 +1,9 @@
 //! Token metadata and identifier helpers.
 
-use alloy::{
-    primitives::{Address, U256},
-    providers::DynProvider,
-};
-
-use crate::{Result, token::erc20::ERC20};
+use crate::Result;
+use crate::token::erc20::ERC20;
+use alloy::primitives::{Address, U256};
+use alloy::providers::DynProvider;
 
 pub mod erc20;
 pub mod identity;

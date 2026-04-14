@@ -1,17 +1,12 @@
+use crate::quoter::RateDirection;
+use crate::quoter::fixed::FixedQuoter;
+use crate::quoter::uniswap_v2::UniswapV2Selector;
+use crate::quoter::uniswap_v3::factory::UniswapV3Selector;
+use crate::router::Route as RouterRoute;
 use alloy::primitives::Address;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
-
-use crate::{
-    quoter::{
-        RateDirection,
-        fixed::FixedQuoter,
-        uniswap_v2::UniswapV2Selector,
-        uniswap_v3::factory::UniswapV3Selector,
-    },
-    router::Route as RouterRoute,
-};
 
 #[derive(Debug, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]

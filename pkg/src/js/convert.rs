@@ -1,7 +1,6 @@
+use crate::token::TokenIdentifier;
 use alloy::primitives::{Address, U256};
 use wasm_bindgen::prelude::*;
-
-use crate::token::TokenIdentifier;
 
 pub fn into_js_error(err: impl std::fmt::Display) -> JsError {
     JsError::new(&err.to_string())

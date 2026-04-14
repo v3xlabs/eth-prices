@@ -3,19 +3,14 @@
 pub mod factory;
 pub mod pair;
 
-use alloy::{
-    primitives::{Address, BlockNumber, U256, U512, address},
-    providers::DynProvider,
-};
+use crate::Result;
+use crate::quoter::{Quoter, RateDirection};
+use crate::token::identity::TokenIdentifier;
+use alloy::primitives::{Address, BlockNumber, U256, U512, address};
+use alloy::providers::DynProvider;
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 use tracing::info;
-
-use crate::{
-    Result,
-    quoter::{Quoter, RateDirection},
-    token::identity::TokenIdentifier,
-};
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
 #[derive(Debug, Deserialize, PartialEq, Clone)]

@@ -1,7 +1,6 @@
-use std::fmt::Display;
-
 use alloy::primitives::Address;
 use serde::{Deserialize, Deserializer};
+use std::fmt::Display;
 
 /// A lightweight token identifier used by quoters and config.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
