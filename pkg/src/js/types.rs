@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     quoter::{
-        Quoter as QuoterTrait, RateDirection, fixed::FixedQuoter, uniswap_v2::UniswapV2Selector,
+        RateDirection, fixed::FixedQuoter, uniswap_v2::UniswapV2Selector,
         uniswap_v3::factory::UniswapV3Selector,
     },
     router::Route as RouterRoute,
@@ -78,7 +78,7 @@ impl From<&RouterRoute> for RouteView {
                 .path
                 .iter()
                 .map(|step| RouteStepView {
-                    quoter_id: step.quoter.id(),
+                    quoter_id: step.quoter.to_string(),
                     direction: direction_label(step.direction),
                 })
                 .collect(),

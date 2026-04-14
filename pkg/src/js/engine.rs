@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     quoter::{
-        AnyQuoter, Quoter as QuoterTrait,
+        AnyQuoter, ToQuoter,
         erc4626::ERC4626Quoter,
         fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
