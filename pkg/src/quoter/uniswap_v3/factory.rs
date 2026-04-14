@@ -1,10 +1,11 @@
-use crate::Result;
 use alloy::{
     primitives::{Address, address, aliases::U24},
     providers::DynProvider,
     sol,
 };
 use serde::Deserialize;
+
+use crate::Result;
 
 /// Configuration for a set of Uniswap v3 pools on a single chain.
 #[derive(Debug, Deserialize, PartialEq, Clone)]

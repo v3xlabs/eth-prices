@@ -1,6 +1,4 @@
-use alloy::providers::DynProvider;
-use alloy::providers::Provider;
-use alloy::providers::ProviderBuilder;
+use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 
 pub async fn get_test_provider() -> DynProvider {
     let rpc_url =

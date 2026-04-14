@@ -1,5 +1,4 @@
 use alloy::primitives::{Address, U256};
-
 use wasm_bindgen::prelude::*;
 
 use crate::token::TokenIdentifier;

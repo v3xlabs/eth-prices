@@ -32,37 +32,25 @@
 //! ```
 //!
 
-use std::{
-    fmt::{self, Debug, Display},
-    ops::Deref,
-    sync::Arc,
-};
+use std::fmt::{self, Debug, Display};
 
-use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
 
-use crate::token::identity::TokenIdentifier;
+use crate::{Result, token::identity::TokenIdentifier};
+
+// Submodules
+
+pub mod any;
+pub mod direction;
+pub use any::AnyQuoter;
+pub use direction::RateDirection;
+
+// Quoters
 
 pub mod erc4626;
 pub mod fixed;
 pub mod uniswap_v2;
 pub mod uniswap_v3;
-
-/// The direction to quote along a quoter edge.
-///
-/// `Forward` means `token0 -> token1` for the pair returned by [`Quoter::get_tokens`].
-/// `Reverse` means the inverse direction.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum RateDirection {
-    Forward,
-    Reverse,
-}
-
-impl Display for RateDirection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
 
 /// A single-hop quote source.
 ///
@@ -70,7 +58,9 @@ impl Display for RateDirection {
 /// specific block height.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-pub trait Quoter: Send + Sync + Debug + Display {
+pub trait Quoter: Send + Sync + Debug {
+    fn identity(&self) -> String;
+
     /// Returns the pair of assets connected by this quoter.
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
 
@@ -83,17 +73,8 @@ pub trait Quoter: Send + Sync + Debug + Display {
     ) -> Result<U256>;
 }
 
-#[derive(Debug, Clone)]
-pub struct AnyQuoter(pub Arc<dyn Quoter>);
-
-impl Deref for AnyQuoter {
-    type Target = Arc<dyn Quoter>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl Display for dyn Quoter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.identity())
     }
-}
-
-pub trait ToQuoter {
-    fn strip(self) -> AnyQuoter;
 }
