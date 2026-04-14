@@ -30,7 +30,7 @@ pub struct ChainConfig {
     pub quoters: QuotersConfig,
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct QuotersConfig {
     pub fixed: Vec<FixedQuoter>,
     pub uniswap_v2: Option<UniswapV2Config>,

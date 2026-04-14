@@ -26,7 +26,7 @@ use crate::{
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct UniswapV2Config {
     /// Factory contract used when resolving pools from token pairs.
     pub factory_address: Address,

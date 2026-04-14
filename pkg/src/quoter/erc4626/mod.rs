@@ -48,7 +48,7 @@ sol! {
 }
 
 /// Configuration for a single ERC-4626 vault quoter.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct ERC4626Config {
     /// Vault contract address.
     pub vault_address: Address,
