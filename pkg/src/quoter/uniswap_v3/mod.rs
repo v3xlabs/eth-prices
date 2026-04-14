@@ -92,10 +92,6 @@ impl Quoter for UniswapV3Quoter {
 
 impl Display for UniswapV3Quoter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "uniswap_v3:{}:{}:{}",
-            self.pool_address, self.token0, self.token1
-        )
+        write!(f, "uniswap_v3:{}", self.pool_address)
     }
 }

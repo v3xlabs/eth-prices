@@ -193,10 +193,6 @@ impl Quoter for UniswapV2Quoter {
 
 impl Display for UniswapV2Quoter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "uniswap_v2:{}:{}:{}",
-            self.pair_address, self.token0, self.token1
-        )
+        write!(f, "uniswap_v2:{}", self.pair_address)
     }
 }
