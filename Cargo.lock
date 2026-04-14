@@ -1453,6 +1453,7 @@ dependencies = [
  "alloy",
  "anyhow",
  "async-stream",
+ "async-trait",
  "figment",
  "futures",
  "getrandom 0.2.17",

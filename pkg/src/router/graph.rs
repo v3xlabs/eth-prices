@@ -1,6 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use crate::Result;
+use crate::{Result, quoter::AnyQuoter};
 use petgraph::{
     dot::Dot,
     graph::{NodeIndex, UnGraph},
@@ -8,14 +8,14 @@ use petgraph::{
 use tracing::info;
 
 use crate::{
-    quoter::{Quoter, QuoterInstance, RateDirection},
+    quoter::RateDirection,
     router::{Route, RouteStep},
     token::TokenIdentifier,
 };
 
 #[derive(Debug, Clone)]
 pub struct QuoterGraph {
-    pub quoters: Vec<Arc<QuoterInstance>>,
+    pub quoters: Vec<AnyQuoter>,
     pub graph: UnGraph<String, String>,
     pub token_map: HashMap<String, NodeIndex<u32>>,
 }
@@ -30,12 +30,11 @@ impl Default for QuoterGraph {
     }
 }
 
-impl FromIterator<QuoterInstance> for QuoterGraph {
-    fn from_iter<T: IntoIterator<Item = QuoterInstance>>(iter: T) -> Self {
+impl FromIterator<AnyQuoter> for QuoterGraph {
+    fn from_iter<T: IntoIterator<Item = AnyQuoter>>(iter: T) -> Self {
         let mut graph = Self::default();
         for quoter in iter {
-            graph.add_quoter(&quoter);
-            graph.quoters.push(Arc::new(quoter));
+            graph.add_quoter(quoter);
         }
         graph
     }
@@ -67,9 +66,10 @@ impl QuoterGraph {
         }
     }
 
-    pub fn add_quoter(&mut self, quoter: &impl Quoter) {
-        let slug = quoter.id();
-        let (token_in, token_out) = quoter.tokens();
+    pub fn add_quoter(&mut self, quoter: AnyQuoter) {
+        let slug = quoter.0.to_string();
+        let (token_in, token_out) = quoter.0.tokens();
+        self.quoters.push(quoter);
 
         let token_in_index = self.add_token(&token_in);
         let token_out_index = self.add_token(&token_out);
@@ -139,7 +139,7 @@ impl QuoterGraph {
                         .quoters
                         .iter()
                         .find(|x| {
-                            let (token_in, token_out) = x.tokens();
+                            let (token_in, token_out) = x.0.tokens();
 
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
@@ -148,7 +148,7 @@ impl QuoterGraph {
 
                     path.push(RouteStep {
                         quoter: quoter.clone(),
-                        direction: if *previous_token == quoter.tokens().0 {
+                        direction: if *previous_token == quoter.0.tokens().0 {
                             RateDirection::Forward
                         } else {
                             RateDirection::Reverse
