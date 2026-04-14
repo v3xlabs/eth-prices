@@ -24,17 +24,13 @@
 //! println!("rate: {}", rate);
 //! ```
 
-use std::fmt::{self, Display};
-use std::sync::Arc;
-
 use alloy::primitives::{Address, BlockNumber, U256};
 use alloy::providers::DynProvider;
-
-use crate::Result;
 use alloy::sol;
 use serde::Deserialize;
 
-use crate::quoter::{AnyQuoter, Quoter, RateDirection, ToQuoter};
+use crate::Result;
+use crate::quoter::{Quoter, RateDirection};
 use crate::token::Token;
 use crate::token::identity::TokenIdentifier;
 
@@ -83,6 +79,10 @@ impl ERC4626Quoter {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Quoter for ERC4626Quoter {
+    fn identity(&self) -> String {
+        format!("erc4626:{}", self.vault_address.identifier)
+    }
+
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             self.vault_address.identifier.clone(),
@@ -117,18 +117,6 @@ impl Quoter for ERC4626Quoter {
                     .await?
             }
         })
-    }
-}
-
-impl Display for ERC4626Quoter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "erc4626:{}", self.vault_address.identifier)
-    }
-}
-
-impl ToQuoter for ERC4626Quoter {
-    fn strip(self) -> AnyQuoter {
-        AnyQuoter(Arc::new(self))
     }
 }
 

@@ -70,7 +70,9 @@ impl Display for RateDirection {
 /// specific block height.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-pub trait Quoter: Send + Sync + Debug + Display {
+pub trait Quoter: Send + Sync + Debug {
+    fn identity(&self) -> String;
+
     /// Returns the pair of assets connected by this quoter.
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
 
@@ -83,17 +85,26 @@ pub trait Quoter: Send + Sync + Debug + Display {
     ) -> Result<U256>;
 }
 
+impl Display for dyn Quoter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.identity())
+    }
+}
+
+impl dyn Quoter {
+    // consumes self, does not borrow
+    pub fn strip(self: Box<Self>) -> AnyQuoter {
+        AnyQuoter(Arc::new(self))
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct AnyQuoter(pub Arc<dyn Quoter>);
+pub struct AnyQuoter(pub Arc<Box<dyn Quoter>>);
 
 impl Deref for AnyQuoter {
-    type Target = Arc<dyn Quoter>;
+    type Target = Arc<Box<dyn Quoter>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
-}
-
-pub trait ToQuoter {
-    fn strip(self) -> AnyQuoter;
 }

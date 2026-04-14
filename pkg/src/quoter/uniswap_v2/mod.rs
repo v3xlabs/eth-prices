@@ -3,15 +3,7 @@
 pub mod factory;
 pub mod pair;
 
-use std::{
-    fmt::{self, Display},
-    sync::Arc,
-};
-
-use crate::{
-    Result,
-    quoter::{AnyQuoter, ToQuoter},
-};
+use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
@@ -133,15 +125,13 @@ impl UniswapV2Quoter {
     }
 }
 
-impl ToQuoter for UniswapV2Quoter {
-    fn strip(self) -> AnyQuoter {
-        AnyQuoter(Arc::new(self))
-    }
-}
-
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Quoter for UniswapV2Quoter {
+    fn identity(&self) -> String {
+        format!("uniswap_v2:{}", self.pair_address)
+    }
+
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             TokenIdentifier::ERC20 {
@@ -188,11 +178,5 @@ impl Quoter for UniswapV2Quoter {
                 Ok(U256::from(amount_out))
             }
         }
-    }
-}
-
-impl Display for UniswapV2Quoter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "uniswap_v2:{}", self.pair_address)
     }
 }
