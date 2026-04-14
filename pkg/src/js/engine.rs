@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::Result;
 use alloy::{
     primitives::BlockNumber,
@@ -146,8 +144,7 @@ impl Engine {
 
 impl Engine {
     fn push_quoter(&mut self, quoter: AnyQuoter) {
-        self.router.add_quoter(&quoter);
-        self.router.quoters.push(Arc::new(quoter));
+        self.router.add_quoter(quoter);
     }
 
     async fn resolve_block(&self, block: Option<u64>) -> Result<BlockNumber, JsError> {

@@ -80,7 +80,8 @@ impl ERC4626Quoter {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Quoter for ERC4626Quoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (

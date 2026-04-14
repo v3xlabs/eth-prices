@@ -68,7 +68,8 @@ impl Display for RateDirection {
 ///
 /// Implementors expose which two assets they connect and can quote an input amount at a
 /// specific block height.
-#[async_trait::async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait Quoter: Send + Sync + Debug + Display {
     /// Returns the pair of assets connected by this quoter.
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
