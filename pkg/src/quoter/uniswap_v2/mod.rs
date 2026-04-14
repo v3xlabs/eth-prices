@@ -3,11 +3,11 @@
 pub mod factory;
 pub mod pair;
 
+use crate::Result;
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
 };
-use anyhow::Result;
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 use tracing::info;
@@ -29,14 +29,28 @@ pub struct UniswapV2Config {
 /// Selects a Uniswap v2 pool either by tokens or by pair address.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(untagged)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(tsify::Tsify),
+    serde(rename_all = "camelCase"),
+    tsify(from_wasm_abi)
+)]
 pub enum UniswapV2Selector {
     /// Resolve the pair address from token addresses.
     ByTokens {
+        #[cfg_attr(target_arch = "wasm32", serde(rename = "tokenIn"))]
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_in: Address,
+        #[cfg_attr(target_arch = "wasm32", serde(rename = "tokenOut"))]
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_out: Address,
     },
     /// Use an already-known pair contract address.
-    Pair { pair_address: Address },
+    Pair {
+        #[cfg_attr(target_arch = "wasm32", serde(rename = "pairAddress"))]
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
+        pair_address: Address,
+    },
 }
 
 /// Quotes spot rates from a Uniswap v2 pair contract at a given block height.
@@ -57,17 +71,17 @@ impl UniswapV2Quoter {
     pub async fn from_contract(
         contract: UniswapV2PairInstance<&DynProvider>,
         provider: &DynProvider,
-    ) -> Self {
+    ) -> Result<Self> {
         let pair_address = *contract.address();
-        let token0 = contract.token0().call().await.unwrap();
-        let token1 = contract.token1().call().await.unwrap();
+        let token0 = contract.token0().call().await?;
+        let token1 = contract.token1().call().await?;
 
-        Self {
+        Ok(Self {
             pair_address,
             token0,
             token1,
             provider: provider.clone(),
-        }
+        })
     }
 }
 
@@ -75,7 +89,10 @@ impl UniswapV2Quoter {
     /// Builds a quoter from a selector.
     ///
     /// When a token pair is provided, the configured factory is used to discover the pair address.
-    pub async fn from_selector(provider: &DynProvider, selector: UniswapV2Selector) -> Self {
+    pub async fn from_selector(
+        provider: &DynProvider,
+        selector: UniswapV2Selector,
+    ) -> Result<Self> {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 
         match selector {
@@ -84,9 +101,7 @@ impl UniswapV2Quoter {
                 token_out,
             } => {
                 let pair_address =
-                    factory::fetch_pair(provider, factory_address, token_in, token_out)
-                        .await
-                        .unwrap();
+                    factory::fetch_pair(provider, factory_address, token_in, token_out).await?;
 
                 let (token0, token1) = if token_in < token_out {
                     (token_in, token_out)
@@ -94,12 +109,12 @@ impl UniswapV2Quoter {
                     (token_out, token_in)
                 };
 
-                Self {
+                Ok(Self {
                     pair_address,
                     token0,
                     token1,
                     provider: provider.clone(),
-                }
+                })
             }
             UniswapV2Selector::Pair { pair_address } => {
                 let pair = UniswapV2Pair::new(pair_address, provider);

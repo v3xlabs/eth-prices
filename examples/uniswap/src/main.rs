@@ -20,7 +20,9 @@ pub async fn main() {
         .unwrap()
         .erased();
     let quoter =
-        UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address }).await;
+        UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address })
+            .await
+            .unwrap();
 
     let (token_a, token_b) = quoter.tokens();
     let token_a = Token::new(token_a, &provider).await.unwrap();
@@ -34,9 +36,9 @@ pub async fn main() {
 
     println!(
         "rate: {} {} = {} {}",
-        token_a.format_amount(amount_in, 4).await,
+        token_a.format_amount(amount_in, 4).unwrap(),
         token_a.symbol,
-        token_b.format_amount(rate, 4).await,
+        token_b.format_amount(rate, 4).unwrap(),
         token_b.symbol
     );
 }

@@ -1,7 +1,7 @@
 //! Fixed rate quote sources.
 
+use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
-use anyhow::Result;
 use serde::Deserialize;
 
 use crate::{
@@ -13,10 +13,18 @@ use crate::{
 ///
 /// This is mainly useful for synthetic edges such as fiat pegs or test fixtures.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
+#[cfg_attr(
+    target_arch = "wasm32",
+    derive(tsify::Tsify),
+    serde(rename_all = "camelCase"),
+    tsify(from_wasm_abi)
+)]
 pub struct FixedQuoter {
     /// Input asset for forward quotes.
+    #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
     pub token_in: TokenIdentifier,
     /// Output asset for forward quotes.
+    #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
     pub token_out: TokenIdentifier,
     /// Multiplier applied during forward quotes.
     pub fixed_rate: f64,
@@ -38,11 +46,18 @@ impl Quoter for FixedQuoter {
         _block: BlockNumber,
     ) -> Result<U256> {
         match direction {
+            // TODO: Check this math
             RateDirection::Forward => Ok(U256::from(
-                self.fixed_rate * amount_in.to_string().parse::<f64>()?,
+                self.fixed_rate
+                    * amount_in.to_string().parse::<f64>().map_err(|e| {
+                        crate::error::EthPricesError::InvalidTokenAmount(e.to_string())
+                    })?,
             )),
             RateDirection::Reverse => Ok(U256::from(
-                1.0 / self.fixed_rate * amount_in.to_string().parse::<f64>()?,
+                1.0 / self.fixed_rate
+                    * amount_in.to_string().parse::<f64>().map_err(|e| {
+                        crate::error::EthPricesError::InvalidTokenAmount(e.to_string())
+                    })?,
             )),
         }
     }

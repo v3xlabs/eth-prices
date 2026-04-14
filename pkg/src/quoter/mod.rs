@@ -14,7 +14,7 @@
 //! let quoter = FixedQuoter::new(config, provider).await;
 //!
 //! // Get the token pair data
-//! let (token_a, token_b) = quoter.get_tokens();
+//! let (token_a, token_b) = quoter.tokens();
 //! let token_a = Token::new(token_a, provider).await.unwrap();
 //! let token_b = Token::new(token_b, provider).await.unwrap();
 //!
@@ -23,10 +23,10 @@
 //! let block = provider.get_block_number().await.unwrap();
 //!
 //! // Quote the rate
-//! let rate = quoter.get_rate(amount_in, RateDirection::Forward, block).await.unwrap();
+//! let rate = quoter.rate(amount_in, RateDirection::Forward, block).await.unwrap();
 //!
 //! // Print the rate
-//! let rate_formatted = token_b.format_amount(rate, 4).await;
+//! let rate_formatted = token_b.format_amount(rate, 4).unwrap();
 //! println!("rate: {token_a.symbol} = {rate_formatted} {token_b.symbol}");
 //! }
 //! ```
@@ -34,8 +34,8 @@
 
 use std::fmt::{self, Display};
 
+use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
-use anyhow::Result;
 
 use crate::{
     quoter::{

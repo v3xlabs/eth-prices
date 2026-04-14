@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
-use anyhow::Result;
 use tracing::info;
 
 use crate::{
