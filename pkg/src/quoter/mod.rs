@@ -82,7 +82,7 @@ pub trait Quoter: Send + Sync + Display + Sized {
         block: BlockNumber,
     ) -> impl Future<Output = Result<U256>>;
 
-    fn try_from(s: String) -> impl Future<Output = Result<Self>>;
+    // fn try_from(s: String) -> impl Future<Output = Result<Self>>;
 }
 
 /// An owned enum wrapper around all supported quote source implementations.
@@ -99,15 +99,6 @@ pub enum QuoterInstance {
 }
 
 impl Quoter for QuoterInstance {
-    fn id(&self) -> String {
-        match self {
-            QuoterInstance::Fixed(tracker) => tracker.id(),
-            QuoterInstance::UniswapV2(quoter) => quoter.id(),
-            QuoterInstance::UniswapV3(quoter) => quoter.id(),
-            QuoterInstance::ERC4626(quoter) => quoter.id(),
-        }
-    }
-
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         match self {
             QuoterInstance::Fixed(tracker) => tracker.tokens(),
@@ -128,6 +119,17 @@ impl Quoter for QuoterInstance {
             QuoterInstance::UniswapV2(quoter) => quoter.rate(amount_in, direction, block).await,
             QuoterInstance::UniswapV3(quoter) => quoter.rate(amount_in, direction, block).await,
             QuoterInstance::ERC4626(quoter) => quoter.rate(amount_in, direction, block).await,
+        }
+    }
+}
+
+impl Display for QuoterInstance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            QuoterInstance::Fixed(quoter) => quoter.fmt(f),
+            QuoterInstance::UniswapV2(quoter) => quoter.fmt(f),
+            QuoterInstance::UniswapV3(quoter) => quoter.fmt(f),
+            QuoterInstance::ERC4626(quoter) => quoter.fmt(f),
         }
     }
 }

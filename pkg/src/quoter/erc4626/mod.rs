@@ -24,6 +24,8 @@
 //! println!("rate: {}", rate);
 //! ```
 
+use std::fmt::Display;
+
 use alloy::primitives::{Address, BlockNumber, U256};
 use alloy::providers::DynProvider;
 
@@ -78,10 +80,6 @@ impl ERC4626Quoter {
 }
 
 impl Quoter for ERC4626Quoter {
-    fn id(&self) -> String {
-        format!("erc4626:{}", self.vault_address.identifier)
-    }
-
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             self.vault_address.identifier.clone(),
@@ -117,6 +115,12 @@ impl Quoter for ERC4626Quoter {
                     .await?
             }
         })
+    }
+}
+
+impl Display for ERC4626Quoter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "erc4626:{}", self.vault_address.identifier)
     }
 }
 

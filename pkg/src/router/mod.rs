@@ -30,7 +30,7 @@ impl Route {
         let mut amount_out = amount_in;
 
         for step in self.path.iter() {
-            let quoter_slug = step.quoter.id();
+            let quoter_slug = step.quoter.to_string();
 
             info!(
                 target: "router::quote_start",

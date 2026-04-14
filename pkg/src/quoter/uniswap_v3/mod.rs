@@ -6,6 +6,7 @@ use alloy::{
     providers::DynProvider,
 };
 use pool::UniswapV3Pool;
+use std::fmt::Display;
 
 use crate::{
     quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
@@ -48,10 +49,6 @@ impl UniswapV3Quoter {
 }
 
 impl Quoter for UniswapV3Quoter {
-    fn id(&self) -> String {
-        format!("uniswap_v3:{}", self.pool_address)
-    }
-
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token0.into(), self.token1.into())
     }
@@ -75,5 +72,11 @@ impl Quoter for UniswapV3Quoter {
             RateDirection::Forward => U256::from(price0_in_1_raw),
             RateDirection::Reverse => U256::from(price1_in_0_raw),
         })
+    }
+}
+
+impl Display for UniswapV3Quoter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "uniswap_v3:{}:{}:{}", self.pool_address, self.token0, self.token1)
     }
 }

@@ -68,7 +68,7 @@ impl QuoterGraph {
     }
 
     pub fn add_quoter(&mut self, quoter: &impl Quoter) {
-        let slug = quoter.id();
+        let slug = quoter.to_string();
         let (token_in, token_out) = quoter.tokens();
 
         let token_in_index = self.add_token(&token_in);

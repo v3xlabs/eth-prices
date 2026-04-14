@@ -1,5 +1,7 @@
 //! Fixed rate quote sources.
 
+use std::fmt::Display;
+
 use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
 use serde::Deserialize;
@@ -37,10 +39,6 @@ impl Display for FixedQuoter {
 }
 
 impl Quoter for FixedQuoter {
-    async fn try_from(s: String) -> Result<Self> {
-        
-    }
-
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token_in.clone(), self.token_out.clone())
     }

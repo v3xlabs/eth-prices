@@ -9,7 +9,8 @@ use alloy::{
     providers::DynProvider,
 };
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::fmt::Display;
 use tracing::info;
 
 use crate::{
@@ -126,13 +127,6 @@ impl UniswapV2Quoter {
 }
 
 impl Quoter for UniswapV2Quoter {
-    fn id(&self) -> String {
-        format!(
-            "uniswap_v2:{}:{}:{}",
-            self.pair_address, self.token0, self.token1
-        )
-    }
-
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             TokenIdentifier::ERC20 {
@@ -179,5 +173,11 @@ impl Quoter for UniswapV2Quoter {
                 Ok(U256::from(amount_out))
             }
         }
+    }
+}
+
+impl Display for UniswapV2Quoter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "uniswap_v2:{}:{}:{}", self.pair_address, self.token0, self.token1)
     }
 }
