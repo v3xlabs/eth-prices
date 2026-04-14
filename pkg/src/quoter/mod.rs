@@ -32,37 +32,26 @@
 //! ```
 //!
 
-use std::{
-    fmt::{self, Debug, Display},
-    ops::Deref,
-    sync::Arc,
-};
+use std::fmt::{self, Debug, Display};
 
-use crate::Result;
+use crate::{Result};
 use alloy::primitives::{BlockNumber, U256};
 
 use crate::token::identity::TokenIdentifier;
+
+// Submodules
+
+pub mod any;
+pub mod direction;
+pub use any::AnyQuoter;
+pub use direction::RateDirection;
+
+// Quoters
 
 pub mod erc4626;
 pub mod fixed;
 pub mod uniswap_v2;
 pub mod uniswap_v3;
-
-/// The direction to quote along a quoter edge.
-///
-/// `Forward` means `token0 -> token1` for the pair returned by [`Quoter::get_tokens`].
-/// `Reverse` means the inverse direction.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum RateDirection {
-    Forward,
-    Reverse,
-}
-
-impl Display for RateDirection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
 
 /// A single-hop quote source.
 ///
@@ -88,25 +77,5 @@ pub trait Quoter: Send + Sync + Debug {
 impl Display for dyn Quoter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.identity())
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct AnyQuoter(pub Arc<dyn Quoter>);
-
-impl<T> From<T> for AnyQuoter
-where
-    T: Quoter + 'static,
-{
-    fn from(t: T) -> Self {
-        AnyQuoter(Arc::new(t))
-    }
-}
-
-impl Deref for AnyQuoter {
-    type Target = Arc<dyn Quoter>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
