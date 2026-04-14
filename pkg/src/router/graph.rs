@@ -67,8 +67,8 @@ impl QuoterGraph {
     }
 
     pub fn add_quoter(&mut self, quoter: AnyQuoter) {
-        let slug = quoter.0.to_string();
-        let (token_in, token_out) = quoter.0.tokens();
+        let slug = quoter.to_string();
+        let (token_in, token_out) = quoter.tokens();
         self.quoters.push(quoter);
 
         let token_in_index = self.add_token(&token_in);
@@ -139,7 +139,7 @@ impl QuoterGraph {
                         .quoters
                         .iter()
                         .find(|x| {
-                            let (token_in, token_out) = x.0.tokens();
+                            let (token_in, token_out) = x.tokens();
 
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
@@ -148,7 +148,7 @@ impl QuoterGraph {
 
                     path.push(RouteStep {
                         quoter: quoter.clone(),
-                        direction: if *previous_token == quoter.0.tokens().0 {
+                        direction: if *previous_token == quoter.tokens().0 {
                             RateDirection::Forward
                         } else {
                             RateDirection::Reverse

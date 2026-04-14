@@ -25,7 +25,7 @@ impl Route {
         let mut amount_out = amount_in;
 
         for step in self.path.iter() {
-            let quoter_slug = step.quoter.0.to_string();
+            let quoter_slug = step.quoter.to_string();
 
             info!(
                 target: "router::quote_start",
@@ -34,11 +34,7 @@ impl Route {
                 direction = %step.direction,
             );
 
-            let rate = step
-                .quoter
-                .0
-                .rate(amount_out, step.direction, block)
-                .await?;
+            let rate = step.quoter.rate(amount_out, step.direction, block).await?;
             amount_out = rate;
 
             info!(

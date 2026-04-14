@@ -34,6 +34,7 @@
 
 use std::{
     fmt::{self, Debug, Display},
+    ops::Deref,
     sync::Arc,
 };
 
@@ -81,10 +82,16 @@ pub trait Quoter: Send + Sync + Debug + Display {
     ) -> Result<U256>;
 }
 
-// pub type AnyQuoter = Arc<dyn Quoter>;
-
 #[derive(Debug, Clone)]
 pub struct AnyQuoter(pub Arc<dyn Quoter>);
+
+impl Deref for AnyQuoter {
+    type Target = Arc<dyn Quoter>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 pub trait ToQuoter {
     fn strip(self) -> AnyQuoter;
