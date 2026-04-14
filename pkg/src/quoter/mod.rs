@@ -91,18 +91,20 @@ impl Display for dyn Quoter {
     }
 }
 
-impl dyn Quoter {
-    // consumes self, does not borrow
-    pub fn strip(self: Box<Self>) -> AnyQuoter {
-        AnyQuoter(Arc::new(self))
+#[derive(Debug, Clone)]
+pub struct AnyQuoter(pub Arc<dyn Quoter>);
+
+impl<T> From<T> for AnyQuoter
+where
+    T: Quoter + 'static,
+{
+    fn from(t: T) -> Self {
+        AnyQuoter(Arc::new(t))
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct AnyQuoter(pub Arc<Box<dyn Quoter>>);
-
 impl Deref for AnyQuoter {
-    type Target = Arc<Box<dyn Quoter>>;
+    type Target = Arc<dyn Quoter>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
