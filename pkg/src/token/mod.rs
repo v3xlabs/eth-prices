@@ -14,6 +14,29 @@ pub mod identity;
 pub use identity::TokenIdentifier;
 
 /// A resolved asset with display metadata and decimal precision.
+///
+/// # Example
+///
+/// ```rust
+/// use alloy::primitives::U256;
+/// use eth_prices::token::{Token, TokenIdentifier};
+///
+/// #[tokio::main]
+/// async fn main() {
+///     let token = Token {
+///         identifier: "fiat:usd".to_string().try_into().unwrap(),
+///         name: "USD".to_string(),
+///         symbol: "USD".to_string(),
+///         decimals: 6,
+///     };
+///
+///     let one = token.nominal_amount().await;
+///     assert_eq!(one, U256::from(1_000_000u64));
+///
+///     let formatted = token.format_amount(U256::from(12_345_678u64), 2).unwrap();
+///     assert_eq!(formatted, "12.35");
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     /// Canonical identifier for the asset.
@@ -56,6 +79,8 @@ impl Token {
     }
 
     /// Returns one nominal unit for this token in base precision.
+    ///
+    /// For a token with 6 decimals this returns `1_000_000`.
     pub async fn nominal_amount(&self) -> U256 {
         U256::from(10).pow(U256::from(self.decimals))
     }

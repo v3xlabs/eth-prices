@@ -1,38 +1,61 @@
 /*!
-`eth-prices` is a pricing library & routing engine for EVM assets.
+`eth-prices` is a price routing and quoting engine for Ethereum assets.
 
-This crate currently exposes protocol-specific quoters that can read a rate at a
-specific block height.
+Given a set of on-chain quote sources, the engine finds a path between any two
+assets and quotes a conversion at a specific block height, including multi-hop
+routes that traverse intermediate tokens.
 
-# Overview
+# Building blocks
 
-Here is a simple example showing off some of the features of `eth-prices`:
-```rust,ignore
-use eth_prices::{quoter::Quoter, token::Token};
-use alloy::primitives::address;
+- [`quoter::Quoter`] is the trait implemented by every quote source.
+- [`quoter::QuoterInstance`] stores heterogeneous quoters together.
+- [`token::TokenIdentifier`] identifies ERC-20, fiat, and native assets.
+- [`router::graph::QuoterGraph`] discovers routes across the available quoters.
+- [`builder::build_graph`] assembles a [`router::graph::QuoterGraph`] from a
+  collection of initialized quoters.
 
-let quoter = UniswapV3Quoter::from_pool(address!());
+# Supported quoters
+
+- [`quoter::fixed`] static conversion rates.
+- [`quoter::uniswap_v2`] spot quotes from Uniswap v2 pairs.
+- [`quoter::uniswap_v3`] spot quotes from Uniswap v3 pools.
+- [`quoter::erc4626`] share/asset conversions for ERC-4626 vaults.
+
+# Example
+
+This example builds a two-hop routing graph with fixed rates and quotes a
+conversion from token A to USD.
+
+```rust
+use alloy::primitives::U256;
+use eth_prices::{
+    builder::build_graph,
+    quoter::{fixed::FixedQuoter, QuoterInstance},
+    token::TokenIdentifier,
+};
+use futures::executor::block_on;
+
+let token_a: TokenIdentifier = "0x0000000000000000000000000000000000000001".to_string().try_into().unwrap();
+let token_b: TokenIdentifier = "0x0000000000000000000000000000000000000002".to_string().try_into().unwrap();
+let token_c: TokenIdentifier = "fiat:usd".to_string().try_into().unwrap();
+
+let ab = FixedQuoter {
+    token_in: token_a.clone(),
+    token_out: token_b.clone(),
+    fixed_rate: 2.0,
+};
+let bc = FixedQuoter {
+    token_in: token_b.clone(),
+    token_out: token_c.clone(),
+    fixed_rate: 3.0,
+};
+
+let graph = build_graph(vec![QuoterInstance::Fixed(ab), QuoterInstance::Fixed(bc)]);
+let route = graph.compute(&token_a, &token_c).unwrap();
+
+let amount_out = block_on(route.quote(0, U256::from(10))).unwrap();
+assert_eq!(amount_out, U256::from(60));
 ```
-
-Today, the main building blocks are:
-- [`quoter::Quoter`] for single-hop quote sources.
-- [`quoter::QuoterInstance`] for storing heterogeneous quote sources together.
-- [`token::TokenIdentifier`] for identifying ERC-20, fiat, and native assets.
-- [`token::Token`] for token metadata and amount formatting helpers.
-# Quoters
-Currently supported quoters include:
-- [`quoter::fixed`] for static conversion rates.
-- [`quoter::uniswap_v2`] for Uniswap v2 pairs.
-- [`quoter::uniswap_v3`] for Uniswap v3 pools.
-- [`quoter::erc4626`] for ERC-4626 vaults.
-
-# Routing
-
-Routing is currently in-progress and will be available in a future release.
-
-# Examples
-
-You can find more examples in the [examples](https://github.com/v3xlabs/eth-prices/tree/master/examples) directory.
 */
 
 pub mod error;

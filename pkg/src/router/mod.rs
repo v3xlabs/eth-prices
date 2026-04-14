@@ -1,3 +1,8 @@
+//! Routing types for composing multiple quote sources.
+//!
+//! A [`Route`] is produced by [`crate::router::graph::QuoterGraph::compute`] and is
+//! then executed hop-by-hop with [`Route::quote`].
+
 use std::sync::Arc;
 
 use crate::Result;
