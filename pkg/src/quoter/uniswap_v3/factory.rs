@@ -7,7 +7,7 @@ use alloy::{
 use serde::Deserialize;
 
 /// Configuration for a set of Uniswap v3 pools on a single chain.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct UniswapV3Config {
     /// Pools to load as quoters.
     pub pools: Vec<UniswapV3Selector>,

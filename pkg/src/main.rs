@@ -9,7 +9,7 @@ use tracing::info;
 use eth_prices::{
     Result,
     config::Config,
-    quoter::{Quoter, RateDirection},
+    quoter::RateDirection,
     router::graph::QuoterGraph,
     token::{Token, TokenIdentifier},
 };
@@ -37,7 +37,7 @@ pub async fn main() -> Result<()> {
 
         let quoters = chain_config.quoters.all(&box_provider).await?;
         for quoter in &quoters {
-            info!("quoter: {:?}", quoter.id());
+            info!("quoter: {:?}", quoter.to_string());
             let (token_a, token_b) = quoter.tokens();
 
             let token_a = Token::new(token_a, &box_provider).await?;

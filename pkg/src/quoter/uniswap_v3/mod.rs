@@ -1,6 +1,14 @@
 //! Uniswap v3 quote sources.
 
-use crate::Result;
+use std::{
+    fmt::{self, Display},
+    sync::Arc,
+};
+
+use crate::{
+    Result,
+    quoter::{AnyQuoter, ToQuoter},
+};
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512},
     providers::DynProvider,
@@ -47,11 +55,15 @@ impl UniswapV3Quoter {
     }
 }
 
-impl Quoter for UniswapV3Quoter {
-    fn id(&self) -> String {
-        format!("uniswap_v3:{}", self.pool_address)
+impl ToQuoter for UniswapV3Quoter {
+    fn strip(self) -> AnyQuoter {
+        AnyQuoter(Arc::new(self))
     }
+}
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl Quoter for UniswapV3Quoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token0.into(), self.token1.into())
     }
@@ -75,5 +87,11 @@ impl Quoter for UniswapV3Quoter {
             RateDirection::Forward => U256::from(price0_in_1_raw),
             RateDirection::Reverse => U256::from(price1_in_0_raw),
         })
+    }
+}
+
+impl Display for UniswapV3Quoter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "uniswap_v3:{}", self.pool_address)
     }
 }

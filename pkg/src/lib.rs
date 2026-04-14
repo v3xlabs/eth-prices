@@ -38,7 +38,6 @@ You can find more examples in the [examples](https://github.com/v3xlabs/eth-pric
 pub mod error;
 pub use error::{EthPricesError, Result};
 
-pub mod builder;
 pub mod config;
 pub mod quoter;
 pub mod router;

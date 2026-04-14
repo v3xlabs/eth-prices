@@ -1,6 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use crate::Result;
+use crate::{Result, quoter::AnyQuoter};
 use petgraph::{
     dot::Dot,
     graph::{NodeIndex, UnGraph},
@@ -8,14 +8,14 @@ use petgraph::{
 use tracing::info;
 
 use crate::{
-    quoter::{Quoter, QuoterInstance, RateDirection},
+    quoter::RateDirection,
     router::{Route, RouteStep},
     token::TokenIdentifier,
 };
 
 #[derive(Debug, Clone)]
 pub struct QuoterGraph {
-    pub quoters: Vec<Arc<QuoterInstance>>,
+    pub quoters: Vec<AnyQuoter>,
     pub graph: UnGraph<String, String>,
     pub token_map: HashMap<String, NodeIndex<u32>>,
 }
@@ -30,12 +30,11 @@ impl Default for QuoterGraph {
     }
 }
 
-impl FromIterator<QuoterInstance> for QuoterGraph {
-    fn from_iter<T: IntoIterator<Item = QuoterInstance>>(iter: T) -> Self {
+impl FromIterator<AnyQuoter> for QuoterGraph {
+    fn from_iter<T: IntoIterator<Item = AnyQuoter>>(iter: T) -> Self {
         let mut graph = Self::default();
         for quoter in iter {
-            graph.add_quoter(&quoter);
-            graph.quoters.push(Arc::new(quoter));
+            graph.add_quoter(quoter);
         }
         graph
     }
@@ -67,9 +66,10 @@ impl QuoterGraph {
         }
     }
 
-    pub fn add_quoter(&mut self, quoter: &impl Quoter) {
-        let slug = quoter.id();
+    pub fn add_quoter(&mut self, quoter: AnyQuoter) {
+        let slug = quoter.to_string();
         let (token_in, token_out) = quoter.tokens();
+        self.quoters.push(quoter);
 
         let token_in_index = self.add_token(&token_in);
         let token_out_index = self.add_token(&token_out);

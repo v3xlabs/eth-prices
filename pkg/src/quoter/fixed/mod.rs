@@ -1,6 +1,14 @@
 //! Fixed rate quote sources.
 
-use crate::Result;
+use std::{
+    fmt::{self, Display},
+    sync::Arc,
+};
+
+use crate::{
+    Result,
+    quoter::{AnyQuoter, ToQuoter},
+};
 use alloy::primitives::{BlockNumber, U256};
 use serde::Deserialize;
 
@@ -30,11 +38,9 @@ pub struct FixedQuoter {
     pub fixed_rate: f64,
 }
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Quoter for FixedQuoter {
-    fn id(&self) -> String {
-        format!("fixed:{}:{}", self.token_in, self.token_out)
-    }
-
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (self.token_in.clone(), self.token_out.clone())
     }
@@ -60,6 +66,18 @@ impl Quoter for FixedQuoter {
                     })?,
             )),
         }
+    }
+}
+
+impl Display for FixedQuoter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "fixed:{}:{}", self.token_in, self.token_out)
+    }
+}
+
+impl ToQuoter for FixedQuoter {
+    fn strip(self) -> AnyQuoter {
+        AnyQuoter(Arc::new(self))
     }
 }
 

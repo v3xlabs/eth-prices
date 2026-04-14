@@ -3,7 +3,15 @@
 pub mod factory;
 pub mod pair;
 
-use crate::Result;
+use std::{
+    fmt::{self, Display},
+    sync::Arc,
+};
+
+use crate::{
+    Result,
+    quoter::{AnyQuoter, ToQuoter},
+};
 use alloy::{
     primitives::{Address, BlockNumber, U256, U512, address},
     providers::DynProvider,
@@ -18,7 +26,7 @@ use crate::{
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct UniswapV2Config {
     /// Factory contract used when resolving pools from token pairs.
     pub factory_address: Address,
@@ -125,14 +133,15 @@ impl UniswapV2Quoter {
     }
 }
 
-impl Quoter for UniswapV2Quoter {
-    fn id(&self) -> String {
-        format!(
-            "uniswap_v2:{}:{}:{}",
-            self.pair_address, self.token0, self.token1
-        )
+impl ToQuoter for UniswapV2Quoter {
+    fn strip(self) -> AnyQuoter {
+        AnyQuoter(Arc::new(self))
     }
+}
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl Quoter for UniswapV2Quoter {
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
         (
             TokenIdentifier::ERC20 {
@@ -179,5 +188,11 @@ impl Quoter for UniswapV2Quoter {
                 Ok(U256::from(amount_out))
             }
         }
+    }
+}
+
+impl Display for UniswapV2Quoter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "uniswap_v2:{}", self.pair_address)
     }
 }

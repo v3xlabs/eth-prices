@@ -32,18 +32,16 @@
 //! ```
 //!
 
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Debug, Display},
+    ops::Deref,
+    sync::Arc,
+};
 
 use crate::Result;
 use alloy::primitives::{BlockNumber, U256};
 
-use crate::{
-    quoter::{
-        erc4626::ERC4626Quoter, fixed::FixedQuoter, uniswap_v2::UniswapV2Quoter,
-        uniswap_v3::UniswapV3Quoter,
-    },
-    token::identity::TokenIdentifier,
-};
+use crate::token::identity::TokenIdentifier;
 
 pub mod erc4626;
 pub mod fixed;
@@ -70,64 +68,32 @@ impl Display for RateDirection {
 ///
 /// Implementors expose which two assets they connect and can quote an input amount at a
 /// specific block height.
-pub trait Quoter: Send + Sync {
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+pub trait Quoter: Send + Sync + Debug + Display {
     /// Returns the pair of assets connected by this quoter.
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
 
     /// Quotes `amount_in` at the provided block height.
-    fn rate(
-        &self,
-        amount_in: U256,
-        direction: RateDirection,
-        block: BlockNumber,
-    ) -> impl Future<Output = Result<U256>>;
-
-    fn id(&self) -> String;
-}
-
-/// An owned enum wrapper around all supported quote source implementations.
-#[derive(Debug, Clone)]
-pub enum QuoterInstance {
-    /// A fixed-rate synthetic quote source.
-    Fixed(FixedQuoter),
-    /// A Uniswap v2 pair-backed quote source.
-    UniswapV2(UniswapV2Quoter),
-    /// A Uniswap v3 pool-backed quote source.
-    UniswapV3(UniswapV3Quoter),
-    /// An ERC-4626 vault-backed quote source.
-    ERC4626(ERC4626Quoter),
-}
-
-impl Quoter for QuoterInstance {
-    fn id(&self) -> String {
-        match self {
-            QuoterInstance::Fixed(tracker) => tracker.id(),
-            QuoterInstance::UniswapV2(quoter) => quoter.id(),
-            QuoterInstance::UniswapV3(quoter) => quoter.id(),
-            QuoterInstance::ERC4626(quoter) => quoter.id(),
-        }
-    }
-
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
-        match self {
-            QuoterInstance::Fixed(tracker) => tracker.tokens(),
-            QuoterInstance::UniswapV2(quoter) => quoter.tokens(),
-            QuoterInstance::UniswapV3(quoter) => quoter.tokens(),
-            QuoterInstance::ERC4626(quoter) => quoter.tokens(),
-        }
-    }
-
     async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
-    ) -> Result<U256> {
-        match self {
-            QuoterInstance::Fixed(tracker) => tracker.rate(amount_in, direction, block).await,
-            QuoterInstance::UniswapV2(quoter) => quoter.rate(amount_in, direction, block).await,
-            QuoterInstance::UniswapV3(quoter) => quoter.rate(amount_in, direction, block).await,
-            QuoterInstance::ERC4626(quoter) => quoter.rate(amount_in, direction, block).await,
-        }
+    ) -> Result<U256>;
+}
+
+#[derive(Debug, Clone)]
+pub struct AnyQuoter(pub Arc<dyn Quoter>);
+
+impl Deref for AnyQuoter {
+    type Target = Arc<dyn Quoter>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
+}
+
+pub trait ToQuoter {
+    fn strip(self) -> AnyQuoter;
 }
