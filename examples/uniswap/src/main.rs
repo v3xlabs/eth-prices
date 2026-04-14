@@ -27,7 +27,7 @@ pub async fn main() {
     let (token_a, token_b) = quoter.tokens();
     let token_a = Token::new(token_a, &provider).await.unwrap();
     let token_b = Token::new(token_b, &provider).await.unwrap();
-    let amount_in = token_a.nominal_amount().await;
+    let amount_in = token_a.nominal_amount();
     let block = provider.get_block_number().await.unwrap();
     let rate = quoter
         .rate(amount_in, RateDirection::Forward, block)

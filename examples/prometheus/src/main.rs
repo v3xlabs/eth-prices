@@ -148,7 +148,7 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             let token_input = Token::new(token_input.clone(), &chain.provider)
                 .await
                 .unwrap();
-            let amount_in = token_input.nominal_amount().await;
+            let amount_in = token_input.nominal_amount();
             let token_output = route.quote(block, amount_in).await.unwrap();
 
             let rate: i64 = token_output.to_string().parse().unwrap();

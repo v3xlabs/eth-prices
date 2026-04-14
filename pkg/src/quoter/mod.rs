@@ -19,7 +19,7 @@
 //! let token_b = Token::new(token_b, provider).await.unwrap();
 //!
 //! // Inputs
-//! let amount_in = token_a.nominal_amount().await;
+//! let amount_in = token_a.nominal_amount();
 //! let block = provider.get_block_number().await.unwrap();
 //!
 //! // Quote the rate

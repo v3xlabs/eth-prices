@@ -14,7 +14,7 @@
 //! let (token_a, token_b) = quoter.get_tokens();
 //!
 //! // Get 1 of the token
-//! let amount_in = token_a.nominal_amount().await;
+//! let amount_in = token_a.nominal_amount();
 //!
 //! // Decide what block to query (latest in this case)
 //! let block = provider.get_block_number().await.unwrap();
@@ -141,7 +141,7 @@ mod tests {
         let token_a = Token::new(quoter.vault_address.identifier.clone(), &provider)
             .await
             .unwrap();
-        let token_a_amount = token_a.nominal_amount().await;
+        let token_a_amount = token_a.nominal_amount();
         let forward_rate = quoter
             .rate(token_a_amount, RateDirection::Forward, block)
             .await
@@ -150,7 +150,7 @@ mod tests {
         let token_b = Token::new(quoter.token_address.identifier.clone(), &provider)
             .await
             .unwrap();
-        let token_b_amount = token_b.nominal_amount().await;
+        let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
             .rate(token_b_amount, RateDirection::Reverse, block)
             .await
