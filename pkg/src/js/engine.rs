@@ -31,7 +31,7 @@ pub struct Engine {
 impl Engine {
     #[wasm_bindgen(js_name = addFixedQuoter)]
     pub fn add_fixed_quoter(&mut self, quoter: FixedQuoter) -> Result<(), JsError> {
-        self.push_quoter(quoter.strip());
+        self.push_quoter(quoter.into());
         Ok(())
     }
 
@@ -43,7 +43,7 @@ impl Engine {
         let quoter = UniswapV2Quoter::from_selector(&self.provider, selector)
             .await
             .map_err(into_js_error)?;
-        self.push_quoter(quoter.strip());
+        self.push_quoter(quoter.into());
         Ok(())
     }
 
@@ -55,7 +55,7 @@ impl Engine {
         let quoter = UniswapV3Quoter::from_selector(&self.provider, selector)
             .await
             .map_err(into_js_error)?;
-        self.push_quoter(quoter.strip());
+        self.push_quoter(quoter.into());
         Ok(())
     }
 
@@ -65,7 +65,7 @@ impl Engine {
         let quoter = ERC4626Quoter::new(vault_address, &self.provider)
             .await
             .map_err(into_js_error)?;
-        self.push_quoter(quoter.strip());
+        self.push_quoter(quoter.into());
         Ok(())
     }
 
@@ -183,7 +183,7 @@ impl Engine {
 
     fn load_fixed(&mut self, quoters: Vec<FixedQuoter>) {
         for quoter in quoters {
-            self.push_quoter(quoter.strip());
+            self.push_quoter(quoter.into());
         }
     }
 
@@ -192,7 +192,7 @@ impl Engine {
             let quoter = UniswapV2Quoter::from_selector(&self.provider, selector)
                 .await
                 .map_err(into_js_error)?;
-            self.push_quoter(quoter.strip());
+            self.push_quoter(quoter.into());
         }
         Ok(())
     }
@@ -202,7 +202,7 @@ impl Engine {
             let quoter = UniswapV3Quoter::from_selector(&self.provider, selector)
                 .await
                 .map_err(into_js_error)?;
-            self.push_quoter(quoter.strip());
+            self.push_quoter(quoter.into());
         }
         Ok(())
     }
@@ -215,7 +215,7 @@ impl Engine {
             let quoter = ERC4626Quoter::new(vault_address, &self.provider)
                 .await
                 .map_err(into_js_error)?;
-            self.push_quoter(quoter.strip());
+                self.push_quoter(quoter.into());
         }
         Ok(())
     }
