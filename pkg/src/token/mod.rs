@@ -55,7 +55,7 @@ impl Token {
     }
 
     /// Returns one nominal unit for this token in base precision.
-    pub async fn nominal_amount(&self) -> U256 {
+    pub fn nominal_amount(&self) -> U256 {
         U256::from(10).pow(U256::from(self.decimals))
     }
 

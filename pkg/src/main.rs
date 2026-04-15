@@ -42,8 +42,7 @@ pub async fn main() -> Result<()> {
             let token_a = Token::new(token_a, &box_provider).await?;
             let token_b = Token::new(token_b, &box_provider).await?;
 
-            let amount_a = token_a.nominal_amount().await;
-            let amount_b = token_b.nominal_amount().await;
+            let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
             let forward_rate = quoter.rate(amount_a, RateDirection::Forward, block).await?;
             let reverse_rate = quoter.rate(amount_b, RateDirection::Reverse, block).await?;
@@ -94,7 +93,7 @@ pub async fn main() -> Result<()> {
         for route in &routes {
             let token_input = &route.input_token;
             let token_a = Token::new(token_input.clone(), &box_provider).await?;
-            let token_input = token_a.nominal_amount().await;
+            let token_input = token_a.nominal_amount();
 
             let token_output = route.quote(block, token_input).await?;
             info!(
