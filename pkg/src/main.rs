@@ -44,8 +44,8 @@ pub async fn main() -> Result<()> {
 
             let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
-            let forward_rate = quoter.rate(amount_a, RateDirection::Forward, block).await?;
-            let reverse_rate = quoter.rate(amount_b, RateDirection::Reverse, block).await?;
+            let forward_rate = quoter.rate(amount_a, RateDirection::Forward, block, &box_provider).await?;
+            let reverse_rate = quoter.rate(amount_b, RateDirection::Reverse, block, &box_provider).await?;
             info!(
                 "forward_rate: {:?} {} = {:?} {}",
                 token_a.format_amount(amount_a, precision),
@@ -95,7 +95,7 @@ pub async fn main() -> Result<()> {
             let token_a = Token::new(token_input.clone(), &box_provider).await?;
             let token_input = token_a.nominal_amount();
 
-            let token_output = route.quote(block, token_input).await?;
+            let token_output = route.quote(&box_provider, block, token_input).await?;
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,
