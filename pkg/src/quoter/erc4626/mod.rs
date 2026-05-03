@@ -60,8 +60,6 @@ pub struct ERC4626Quoter {
     pub vault_address: Token,
     /// Underlying asset metadata returned by `asset()`.
     pub token_address: Token,
-    /// Provider used to fetch historical conversions.
-    pub provider: DynProvider,
 }
 
 impl ERC4626Quoter {
@@ -74,7 +72,6 @@ impl ERC4626Quoter {
         Ok(Self {
             vault_address,
             token_address,
-            provider: provider.clone(),
         })
     }
 }
@@ -97,12 +94,13 @@ impl Quoter for ERC4626Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
+        provider: &DynProvider,
     ) -> Result<U256> {
         let vault = ERC4626::new(
             self.vault_address
                 .address()
                 .ok_or(crate::error::EthPricesError::MissingVaultAddress)?,
-            &self.provider,
+            provider,
         );
         Ok(match direction {
             RateDirection::Forward => {
@@ -143,7 +141,7 @@ mod tests {
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
         let forward_rate = quoter
-            .rate(token_a_amount, RateDirection::Forward, block)
+            .rate(token_a_amount, RateDirection::Forward, block, &provider)
             .await
             .unwrap();
 
@@ -152,7 +150,7 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(token_b_amount, RateDirection::Reverse, block)
+            .rate(token_b_amount, RateDirection::Reverse, block, &provider)
             .await
             .unwrap();
 

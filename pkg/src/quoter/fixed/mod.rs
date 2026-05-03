@@ -2,7 +2,10 @@
 
 use std::fmt::{self, Display};
 
-use alloy::primitives::{BlockNumber, U256};
+use alloy::{
+    primitives::{BlockNumber, U256},
+    providers::DynProvider,
+};
 use serde::Deserialize;
 
 use crate::{
@@ -48,6 +51,7 @@ impl Quoter for FixedQuoter {
         amount_in: U256,
         direction: RateDirection,
         _block: BlockNumber,
+        _provider: &DynProvider,
     ) -> Result<U256> {
         match direction {
             // TODO: Check this math
@@ -77,6 +81,8 @@ impl Display for FixedQuoter {
 mod tests {
     use alloy::primitives::address;
 
+    use crate::tests::get_test_provider;
+
     use super::*;
 
     #[tokio::test]
@@ -91,11 +97,13 @@ mod tests {
             fixed_rate: 2.0,
         };
 
+        let provider = get_test_provider().await;
+
         let forwards = tracker
-            .rate(U256::from(100), RateDirection::Forward, 100)
+            .rate(U256::from(100), RateDirection::Forward, 100, &provider)
             .await;
         let backwards = tracker
-            .rate(U256::from(100), RateDirection::Reverse, 100)
+            .rate(U256::from(100), RateDirection::Reverse, 100, &provider)
             .await;
 
         assert_eq!(forwards.unwrap(), U256::from(200));

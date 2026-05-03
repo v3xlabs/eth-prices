@@ -62,16 +62,11 @@ pub struct UniswapV2Quoter {
     pub token0: Address,
     /// Second token in canonical pair order.
     pub token1: Address,
-    /// Provider used to fetch historical reserves.
-    pub provider: DynProvider,
 }
 
 impl UniswapV2Quoter {
     /// Builds a quoter from an instantiated pair contract.
-    pub async fn from_contract(
-        contract: UniswapV2PairInstance<&DynProvider>,
-        provider: &DynProvider,
-    ) -> Result<Self> {
+    pub async fn from_contract(contract: UniswapV2PairInstance<&DynProvider>) -> Result<Self> {
         let pair_address = *contract.address();
         let token0 = contract.token0().call().await?;
         let token1 = contract.token1().call().await?;
@@ -80,7 +75,6 @@ impl UniswapV2Quoter {
             pair_address,
             token0,
             token1,
-            provider: provider.clone(),
         })
     }
 }
@@ -113,13 +107,12 @@ impl UniswapV2Quoter {
                     pair_address,
                     token0,
                     token1,
-                    provider: provider.clone(),
                 })
             }
             UniswapV2Selector::Pair { pair_address } => {
                 let pair = UniswapV2Pair::new(pair_address, provider);
 
-                Self::from_contract(pair, provider).await
+                Self::from_contract(pair).await
             }
         }
     }
@@ -148,8 +141,9 @@ impl Quoter for UniswapV2Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
+        provider: &DynProvider,
     ) -> Result<U256> {
-        let pair = UniswapV2Pair::new(self.pair_address, &self.provider);
+        let pair = UniswapV2Pair::new(self.pair_address, provider);
         let reserves = pair.getReserves().call().block(block.into()).await?;
         let reserve0 = U512::from(reserves.reserve0);
         let reserve1 = U512::from(reserves.reserve1);

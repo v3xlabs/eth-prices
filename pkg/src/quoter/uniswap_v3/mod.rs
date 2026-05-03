@@ -24,8 +24,6 @@ pub struct UniswapV3Quoter {
     pub token0: Address,
     /// Second token in pool order.
     pub token1: Address,
-    /// Provider used to fetch historical pool state.
-    pub provider: DynProvider,
 }
 
 impl UniswapV3Quoter {
@@ -42,7 +40,6 @@ impl UniswapV3Quoter {
             pool_address,
             token0,
             token1,
-            provider: provider.clone(),
         })
     }
 }
@@ -63,8 +60,9 @@ impl Quoter for UniswapV3Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
+        provider: &DynProvider,
     ) -> Result<U256> {
-        let pool = UniswapV3Pool::new(self.pool_address, &self.provider);
+        let pool = UniswapV3Pool::new(self.pool_address, provider);
         let slot0 = pool.slot0().block(block.into()).call().await?;
         let sqrt_price_x96 = U512::from(slot0.sqrtPriceX96);
         let q192 = U512::from(1) << 192;
