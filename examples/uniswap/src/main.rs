@@ -32,7 +32,7 @@ pub async fn main() {
     let amount_in = token_a.nominal_amount();
     let block = provider.get_block_number().await.unwrap();
     let rate = quoter
-        .rate(amount_in, RateDirection::Forward, block)
+        .rate(amount_in, RateDirection::Forward, block, &provider)
         .await
         .unwrap();
 

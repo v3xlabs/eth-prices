@@ -34,7 +34,10 @@
 
 use std::fmt::{self, Debug, Display};
 
-use alloy::primitives::{BlockNumber, U256};
+use alloy::{
+    primitives::{BlockNumber, U256},
+    providers::DynProvider,
+};
 
 use crate::{Result, token::identity::TokenIdentifier};
 
@@ -70,6 +73,7 @@ pub trait Quoter: Send + Sync + Debug {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
+        provider: &DynProvider,
     ) -> Result<U256>;
 }
 

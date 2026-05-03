@@ -60,8 +60,6 @@ pub struct ERC4626Quoter {
     pub vault_address: Token,
     /// Underlying asset metadata returned by `asset()`.
     pub token_address: Token,
-    /// Provider used to fetch historical conversions.
-    pub provider: DynProvider,
 }
 
 impl ERC4626Quoter {
@@ -74,7 +72,6 @@ impl ERC4626Quoter {
         Ok(Self {
             vault_address,
             token_address,
-            provider: provider.clone(),
         })
     }
 }
@@ -97,12 +94,13 @@ impl Quoter for ERC4626Quoter {
         amount_in: U256,
         direction: RateDirection,
         block: BlockNumber,
+        provider: &DynProvider,
     ) -> Result<U256> {
         let vault = ERC4626::new(
             self.vault_address
                 .address()
                 .ok_or(crate::error::EthPricesError::MissingVaultAddress)?,
-            &self.provider,
+            provider,
         );
         Ok(match direction {
             RateDirection::Forward => {
@@ -132,7 +130,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_rate() {
-        let block = 24692474;
+        let block = 25000000;
         let vault_address = address!("0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1");
 
         let provider = get_test_provider().await;
@@ -143,7 +141,7 @@ mod tests {
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
         let forward_rate = quoter
-            .rate(token_a_amount, RateDirection::Forward, block)
+            .rate(token_a_amount, RateDirection::Forward, block, &provider)
             .await
             .unwrap();
 
@@ -152,12 +150,12 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(token_b_amount, RateDirection::Reverse, block)
+            .rate(token_b_amount, RateDirection::Reverse, block, &provider)
             .await
             .unwrap();
 
-        assert_eq!(forward_rate, U256::from(1020816));
-        assert_eq!(reverse_rate, U256::from(979608427435069667u64));
+        assert_eq!(forward_rate, U256::from(1023479));
+        assert_eq!(reverse_rate, U256::from(977058994841501187u64));
 
         let precision = 4;
         println!(

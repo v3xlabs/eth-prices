@@ -94,7 +94,7 @@ impl Engine {
         let block = self.resolve_block(block).await?;
         route
             .inner
-            .quote(block, amount_in)
+            .quote(&self.provider, block, amount_in)
             .await
             .map(|amount_out| amount_out.to_string())
             .map_err(into_js_error)
