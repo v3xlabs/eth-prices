@@ -34,6 +34,7 @@ pub struct FixedQuoter {
     pub token_out: TokenIdentifier,
     pub token_out_decimals: u8,
     /// Multiplier applied during forward quotes, scaled by `10^fixed_rate_decimals`.
+    #[cfg_attr(target_arch = "wasm32", tsify(type = "bigint"))]
     pub fixed_rate: U256,
     pub fixed_rate_decimals: u8,
 }
