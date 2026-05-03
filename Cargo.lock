@@ -1448,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "eth-prices"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "alloy",
  "anyhow",

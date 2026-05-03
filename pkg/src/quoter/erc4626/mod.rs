@@ -34,7 +34,7 @@ use serde::Deserialize;
 use crate::{
     Result,
     quoter::{Quoter, RateDirection},
-    token::{Token, identity::TokenIdentifier},
+    token::identity::TokenIdentifier,
 };
 
 sol! {
@@ -57,9 +57,9 @@ pub struct ERC4626Config {
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
     /// Vault share token metadata.
-    pub vault_address: Token,
+    pub vault_address: TokenIdentifier,
     /// Underlying asset metadata returned by `asset()`.
-    pub token_address: Token,
+    pub token_address: TokenIdentifier,
 }
 
 impl ERC4626Quoter {
@@ -67,8 +67,8 @@ impl ERC4626Quoter {
     pub async fn new(vault_address: Address, provider: &DynProvider) -> Result<Self> {
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await?;
-        let token_address = Token::new(token_address.into(), provider).await?;
-        let vault_address = Token::new(vault_address.into(), provider).await?;
+        let token_address = token_address.into();
+        let vault_address = vault_address.into();
         Ok(Self {
             vault_address,
             token_address,
@@ -80,14 +80,11 @@ impl ERC4626Quoter {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl Quoter for ERC4626Quoter {
     fn identity(&self) -> String {
-        format!("erc4626:{}", self.vault_address.identifier)
+        format!("erc4626:{}", self.vault_address)
     }
 
     fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
-        (
-            self.vault_address.identifier.clone(),
-            self.token_address.identifier.clone(),
-        )
+        (self.vault_address.clone(), self.token_address.clone())
     }
     async fn rate(
         &self,
@@ -97,9 +94,8 @@ impl Quoter for ERC4626Quoter {
         provider: &DynProvider,
     ) -> Result<U256> {
         let vault = ERC4626::new(
-            self.vault_address
-                .address()
-                .ok_or(crate::error::EthPricesError::MissingVaultAddress)?,
+            Address::try_from(&self.vault_address)
+                .map_err(|_| crate::error::EthPricesError::MissingVaultAddress)?,
             provider,
         );
         Ok(match direction {
@@ -136,7 +132,7 @@ mod tests {
         let provider = get_test_provider().await;
         let quoter = ERC4626Quoter::new(vault_address, &provider).await.unwrap();
 
-        let token_a = Token::new(quoter.vault_address.identifier.clone(), &provider)
+        let token_a = Token::new(quoter.vault_address.clone(), &provider)
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
@@ -145,7 +141,7 @@ mod tests {
             .await
             .unwrap();
 
-        let token_b = Token::new(quoter.token_address.identifier.clone(), &provider)
+        let token_b = Token::new(quoter.token_address.clone(), &provider)
             .await
             .unwrap();
         let token_b_amount = token_b.nominal_amount();

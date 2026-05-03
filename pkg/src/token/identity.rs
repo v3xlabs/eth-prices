@@ -66,3 +66,16 @@ impl<'de> Deserialize<'de> for TokenIdentifier {
         TokenIdentifier::try_from(s).map_err(serde::de::Error::custom)
     }
 }
+
+impl TryFrom<&TokenIdentifier> for Address {
+    type Error = crate::error::EthPricesError;
+
+    fn try_from(value: &TokenIdentifier) -> Result<Self, Self::Error> {
+        match value {
+            TokenIdentifier::ERC20 { address } => Ok(*address),
+            _ => Err(crate::error::EthPricesError::InvalidAddress(
+                "invalid token identifier".to_string(),
+            )),
+        }
+    }
+}
