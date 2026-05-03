@@ -47,7 +47,7 @@ impl Route {
 
             let rate = step
                 .quoter
-                .rate(amount_out, step.direction, block, &provider)
+                .rate(amount_out, step.direction, block, provider)
                 .await?;
             amount_out = rate;
 
