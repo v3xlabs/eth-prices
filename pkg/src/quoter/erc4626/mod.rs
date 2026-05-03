@@ -130,7 +130,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_rate() {
-        let block = 24692474;
+        let block = 25000000;
         let vault_address = address!("0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1");
 
         let provider = get_test_provider().await;
@@ -154,8 +154,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(forward_rate, U256::from(1020816));
-        assert_eq!(reverse_rate, U256::from(979608427435069667u64));
+        assert_eq!(forward_rate, U256::from(1023479));
+        assert_eq!(reverse_rate, U256::from(977058994841501187u64));
 
         let precision = 4;
         println!(
