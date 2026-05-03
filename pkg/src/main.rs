@@ -44,8 +44,12 @@ pub async fn main() -> Result<()> {
 
             let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
-            let forward_rate = quoter.rate(amount_a, RateDirection::Forward, block, &box_provider).await?;
-            let reverse_rate = quoter.rate(amount_b, RateDirection::Reverse, block, &box_provider).await?;
+            let forward_rate = quoter
+                .rate(amount_a, RateDirection::Forward, block, &box_provider)
+                .await?;
+            let reverse_rate = quoter
+                .rate(amount_b, RateDirection::Reverse, block, &box_provider)
+                .await?;
             info!(
                 "forward_rate: {:?} {} = {:?} {}",
                 token_a.format_amount(amount_a, precision),
