@@ -1,6 +1,6 @@
 {
   "name": "eth-prices",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "type": "module",
   "description": "js bindings for eth-prices rust crate",
   "main": "./dist/index.js",
