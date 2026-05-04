@@ -1,4 +1,7 @@
-use alloy::{primitives::map::HashMap, providers::DynProvider};
+use alloy::{
+    primitives::{U256, map::HashMap},
+    providers::DynProvider,
+};
 use figment::{
     Figment,
     providers::{Format, Toml},
@@ -42,7 +45,7 @@ impl QuotersConfig {
     pub async fn all(self, provider: &DynProvider) -> Result<Vec<AnyQuoter>> {
         let mut quoters: Vec<AnyQuoter> = Vec::new();
         for tracker in self.fixed {
-            if tracker.fixed_rate <= 0.0 {
+            if tracker.fixed_rate <= U256::from(0) {
                 return Err(EthPricesError::InvalidConfiguration(format!(
                     "Fixed rate for {} to {} must be > 0.0",
                     tracker.token_in, tracker.token_out

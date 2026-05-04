@@ -76,7 +76,7 @@ describe("wasm quoter real rpc", () => {
       const engine = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
-          fixed: [{ tokenIn: USDC, tokenOut: "fiat:usd", fixedRate: 1 }],
+          fixed: [{ tokenIn: USDC, tokenOut: "fiat:usd", fixedRate: "0x1", fixedRateDecimals: 0, tokenInDecimals: 6, tokenOutDecimals: 6 }],
           uniswapV3: [
             { poolAddress: XAUT_USDT_V3_POOL },
             { tokenIn: USDT, tokenOut: USDC, fee: 500 },
@@ -106,7 +106,7 @@ describe("wasm quoter real rpc", () => {
       const engine = await createEngine({
         rpcUrl: RPC_URL,
         quoters: {
-          fixed: [{ tokenIn: USDC, tokenOut: "fiat:usd", fixedRate: 1 }],
+          fixed: [{ tokenIn: USDC, tokenOut: "fiat:usd", fixedRate: "0x1", fixedRateDecimals: 0, tokenInDecimals: 6, tokenOutDecimals: 6 }],
           uniswapV3: [{ tokenIn: EURC, tokenOut: USDC, fee: 500 }],
           erc4626: [KPK_VAULT_EURC],
         },
