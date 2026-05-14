@@ -18,13 +18,14 @@ use crate::{
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
         uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector},
     },
-    router::graph::QuoterGraph,
+    router::Router,
+    network::Network,
 };
 
 #[wasm_bindgen]
 pub struct Engine {
     provider: DynProvider,
-    router: QuoterGraph,
+    router: Router,
 }
 
 #[wasm_bindgen]
@@ -92,9 +93,10 @@ impl Engine {
     ) -> Result<String, JsError> {
         let amount_in = parse_u256(&amount_in)?;
         let block = self.resolve_block(block).await?;
+        let network = Network::EVM(1, block, self.provider.clone());
         route
             .inner
-            .quote(&self.provider, block, amount_in)
+            .quote(&network, amount_in)
             .await
             .map(|amount_out| amount_out.to_string())
             .map_err(into_js_error)
@@ -170,7 +172,7 @@ impl Engine {
 
         let mut quoter = Self {
             provider,
-            router: QuoterGraph::default(),
+            router: Router::default(),
         };
 
         quoter.load_fixed(config.quoters.fixed);

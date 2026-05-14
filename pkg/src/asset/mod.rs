@@ -64,7 +64,7 @@ impl Asset {
         let amount = amount
             .to_string()
             .parse::<f64>()
-            .map_err(|e| crate::error::EthPricesError::InvalidTokenAmount(e.to_string()))?;
+            .map_err(|e| crate::error::EthPricesError::InvalidAssetAmount(e.to_string()))?;
         let amount = amount / 10_f64.powf(self.decimals as f64);
         Ok(format!("{:.precision$}", amount))
     }

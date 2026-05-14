@@ -1,14 +1,14 @@
 use alloy::primitives::{Address, U256};
 use wasm_bindgen::prelude::*;
 
-use crate::token::TokenIdentifier;
+use crate::asset::AssetIdentifier;
 
 pub fn into_js_error(err: impl std::fmt::Display) -> JsError {
     JsError::new(&err.to_string())
 }
 
-pub fn parse_token_identifier(token: &str) -> Result<TokenIdentifier, JsError> {
-    TokenIdentifier::try_from(token.to_string()).map_err(into_js_error)
+pub fn parse_token_identifier(token: &str) -> Result<AssetIdentifier, JsError> {
+    AssetIdentifier::try_from(token.to_string()).map_err(into_js_error)
 }
 
 pub fn parse_u256(amount: &str) -> Result<U256, JsError> {

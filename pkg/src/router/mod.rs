@@ -92,10 +92,10 @@ impl Router {
     ) -> Result<Route> {
         let token_a_index = self
             .get_token_index(input_token)
-            .ok_or_else(|| crate::error::EthPricesError::TokenNotFound(input_token.to_string()))?;
+            .ok_or_else(|| crate::error::EthPricesError::AssetNotFound(input_token.to_string()))?;
         let token_b_index = self
             .get_token_index(output_token)
-            .ok_or_else(|| crate::error::EthPricesError::TokenNotFound(output_token.to_string()))?;
+            .ok_or_else(|| crate::error::EthPricesError::AssetNotFound(output_token.to_string()))?;
 
         info!(
             target: "router::compute_start",

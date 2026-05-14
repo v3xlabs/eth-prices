@@ -22,7 +22,7 @@ cargo add eth-prices
 ```rust
 use eth_prices::{
     quoter::{Quoter, RateDirection},
-    token::Token,
+    asset::Asset,
 };
 
 // Define your data sources

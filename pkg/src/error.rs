@@ -12,11 +12,11 @@ pub enum EthPricesError {
     #[error("Invalid network: {0}")]
     InvalidNetwork(String),
 
-    #[error("Token not found: {0}")]
-    TokenNotFound(String),
+    #[error("Asset not found: {0}")]
+    AssetNotFound(String),
 
-    #[error("Invalid token amount: {0}")]
-    InvalidTokenAmount(String),
+    #[error("Invalid asset amount: {0}")]
+    InvalidAssetAmount(String),
 
     #[error("RPC/Contract error: {0}")]
     ContractError(#[from] alloy::contract::Error),

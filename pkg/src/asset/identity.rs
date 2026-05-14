@@ -42,7 +42,7 @@ impl TryFrom<&str> for AssetIdentifier {
 
             Ok(AssetIdentifier::ERC20 { address })
         } else {
-            Err(crate::error::EthPricesError::TokenNotFound(input.to_string()))
+            Err(crate::error::EthPricesError::AssetNotFound(input.to_string()))
         }
     }
 }
