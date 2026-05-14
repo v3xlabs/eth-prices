@@ -1493,6 +1493,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "examples-fiat"
+version = "0.0.1"
+dependencies = [
+ "alloy",
+ "eth-prices",
+ "poem",
+ "prometheus-client",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "examples-prometheus"
 version = "0.0.1"
 dependencies = [

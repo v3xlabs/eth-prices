@@ -6,9 +6,7 @@ use std::{
 
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
-    config::Config,
-    router::{Route, graph::QuoterGraph},
-    asset::{Asset, AssetIdentifier},
+    asset::{Asset, AssetIdentifier}, config::Config, network::Network, router::{Router, route::Route}
 };
 use poem::{
     EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
@@ -23,7 +21,7 @@ use tracing::info;
 pub struct ChainState {
     provider: DynProvider,
     #[allow(dead_code)]
-    router: QuoterGraph,
+    router: Router,
     routes: Vec<Route>,
 }
 
@@ -66,7 +64,7 @@ pub async fn setup() -> AppState {
             println!("token: {:?}", token_address);
         }
         let quoters = chain_config.quoters.clone().all(&provider).await.unwrap();
-        let router = QuoterGraph::from_iter(quoters);
+        let router = Router::from_iter(quoters);
 
         let mut all_tokens = HashSet::new();
         for quoter in &router.quoters {

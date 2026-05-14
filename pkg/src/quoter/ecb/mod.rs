@@ -2,7 +2,7 @@
 //! 
 //! The [`EcbRateSource`] struct is used to fetch rates from the European Central Bank (ECB) API.
 //! 
-//! ```rust,ignore
+//! ```rust
 //! use eth_prices::quoter::ecb::EcbRateSource;
 //! 
 //! let rates = EcbRateSource::default();
@@ -27,7 +27,7 @@ use std::{
 use alloy::primitives::{U256, aliases::U2048};
 
 use crate::{
-    Result, error::EthPricesError, network::Network, quoter::{AnyQuoter, Quoter, RateDirection}, router::graph::QuoterGraph, asset::identity::AssetIdentifier
+    Result, error::EthPricesError, network::Network, quoter::{AnyQuoter, Quoter, RateDirection}, router::Router, asset::identity::AssetIdentifier
 };
 
 const ECB_BASE_URL: &str = "https://data-api.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A";
@@ -51,8 +51,8 @@ pub struct EcbRateSource {
 }
 
 impl EcbRateSource {
-    pub fn graph(&self) -> QuoterGraph {
-        let mut graph = QuoterGraph::default();
+    pub fn graph(&self) -> Router {
+        let mut graph = Router::default();
         for quoter in self.quoters() {
             graph.add_quoter(AnyQuoter(Arc::new(quoter)));
         }

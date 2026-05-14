@@ -1,0 +1,18 @@
+[package]
+name = "examples-fiat"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+eth-prices = { path = "../../pkg", features = ["ecb"] }
+tokio = { version = "1", features = ["full"] }
+alloy = { version = "1", features = [
+    "contract",
+    "provider-http",
+    "reqwest-rustls-tls",
+], default-features = false }
+prometheus-client = "0.24.0"
+poem = "3.1.12"
+tracing-subscriber = "0.3.23"
+tracing = "0.1.44"

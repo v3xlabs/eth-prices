@@ -3,11 +3,10 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    asset::Asset,
-    quoter::{
+    asset::Asset, network::Network, quoter::{
         Quoter, RateDirection,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-    },
+    }
 };
 
 #[tokio::main]

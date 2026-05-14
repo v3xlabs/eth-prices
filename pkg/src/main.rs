@@ -5,7 +5,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    Result, config::Config, network::Network, quoter::RateDirection, router::graph::QuoterGraph, asset::{Asset, AssetIdentifier}
+    Result, config::Config, network::Network, quoter::RateDirection, router::graph::Router, asset::{Asset, AssetIdentifier}
 };
 use tracing::info;
 
@@ -63,7 +63,7 @@ pub async fn main() -> Result<()> {
             );
         }
 
-        let router = QuoterGraph::from_iter(quoters);
+        let router = Router::from_iter(quoters);
 
         info!("{}", router.to_graphviz());
 
