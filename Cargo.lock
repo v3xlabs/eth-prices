@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "eth-prices"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "alloy",
  "anyhow",
