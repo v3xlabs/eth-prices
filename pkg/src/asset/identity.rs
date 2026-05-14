@@ -20,11 +20,11 @@ impl From<Address> for AssetIdentifier {
     }
 }
 
-impl TryFrom<String> for AssetIdentifier {
+impl TryFrom<&str> for AssetIdentifier {
     type Error = crate::error::EthPricesError;
 
     /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or `native`.
-    fn try_from(input: String) -> Result<Self, Self::Error> {
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
         if input == "native" {
             Ok(AssetIdentifier::Native)
         } else if input.starts_with("fiat:") {
@@ -42,8 +42,16 @@ impl TryFrom<String> for AssetIdentifier {
 
             Ok(AssetIdentifier::ERC20 { address })
         } else {
-            Err(crate::error::EthPricesError::TokenNotFound(input))
+            Err(crate::error::EthPricesError::TokenNotFound(input.to_string()))
         }
+    }
+}
+
+impl TryFrom<String> for AssetIdentifier {
+    type Error = crate::error::EthPricesError;
+
+    fn try_from(input: String) -> Result<Self, Self::Error> {
+        AssetIdentifier::try_from(input.as_str())
     }
 }
 
@@ -63,7 +71,7 @@ impl<'de> Deserialize<'de> for AssetIdentifier {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        AssetIdentifier::try_from(s).map_err(serde::de::Error::custom)
+        AssetIdentifier::try_from(s.as_str()).map_err(serde::de::Error::custom)
     }
 }
 

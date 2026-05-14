@@ -1,23 +1,27 @@
-//! European Central Bank (ECB) Quoter
-//! 
-//! The [`EcbRateSource`] struct is used to fetch rates from the European Central Bank (ECB) API.
-//! 
-//! ```rust
-//! use eth_prices::quoter::ecb::EcbRateSource;
-//! 
-//! let rates = EcbRateSource::default();
-//! let fiat_graph = rates.graph();
-//! 
-//! let token_in: TokenIdentifier = "fiat:eur".try_into().unwrap();
-//! let token_out: TokenIdentifier = "fiat:czk".try_into().unwrap();
-//! let network = Network::Fiat(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
-//! 
-//! let route = fiat_graph.compute(&token_in, &token_out).unwrap();
-//! let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();
-//! 
-//! println!("quote: {:?}", quote);
-//! ```
-//! 
+/*! European Central Bank (ECB) Quoter
+ 
+The [`EcbRateSource`] struct is used to fetch rates from the European Central Bank (ECB) API.
+ 
+```rust
+use eth_prices::{quoter::ecb::EcbRateSource, asset::AssetIdentifier, network::Network};
+use alloy::primitives::U256;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[tokio::main]
+pub async fn main() {
+    let rates = EcbRateSource::default();
+    let fiat_graph = rates.graph();
+
+    let token_in: AssetIdentifier = "fiat:eur".try_into().unwrap();
+    let token_out: AssetIdentifier = "fiat:czk".try_into().unwrap();
+    let network = Network::Fiat(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
+
+    let route = fiat_graph.compute(&token_in, &token_out).unwrap();
+    let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();
+    println!("quote: {:?}", quote);
+}
+```
+*/
 
 use std::{
     collections::HashMap,

@@ -8,22 +8,29 @@ specific block height.
 
 Here is a simple example showing off some of the features of `eth-prices`:
 ```rust
-use eth_prices::{quoter::Quoter, router::Router};
-use alloy::primitives::address;
+use eth_prices::{quoter::Quoter, router::Router, asset::AssetIdentifier, network::Network, quoter::uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector}};
+use alloy::primitives::{address, U256};
+use alloy::providers::{ProviderBuilder, Provider};
 
-let quoter = UniswapV3Quoter::from_pool(address!("0x1234567890123456789012345678901234567890")).await;
-let router = Router::from_iter(vec![quoter]);
+#[tokio::main]
+pub async fn main() {
+    println!("Hello, world!");
+    let provider = ProviderBuilder::new().connect("https://ethereum-rpc.publicnode.com").await.unwrap().erased();
+    let selector = UniswapV3Selector::Pool { pool_address: address!("0x99ac8ca7087fa4a2a1fb6357269965a2014abc35") };
+    let quoter = UniswapV3Quoter::from_selector(&provider, selector).await.unwrap();
+    let router = Router::from_iter(vec![quoter.into()]);
 
-let token_in: AssetIdentifier = "erc20:0x1234567890123456789012345678901234567890".try_into().unwrap();
-let token_out: AssetIdentifier = "erc20:0x1234567890123456789012345678901234567890".try_into().unwrap();
-let route = router.compute(&token_in, &token_out).await.unwrap();
+    let token_in = AssetIdentifier::try_from("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599").unwrap();
+    let token_out = AssetIdentifier::try_from("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+    let route = router.compute(&token_in, &token_out).unwrap();
 
-let block = provider.get_block_number().await.unwrap();
-let network = Network::EVM(1, block, provider);
-let amount = U256::from(1_000_000);
-let quote = route.quote(&network, amount).await.unwrap();
+    let block = provider.get_block_number().await.unwrap();
+    let network = Network::EVM(1, block, provider);
+    let amount = U256::from(1_000_000);
+    let quote = route.quote(&network, amount).await.unwrap();
 
-println!("quote: {:?}", quote);
+    println!("quote: {:?}", quote);
+}
 ```
 
 Today, the main building blocks are:
