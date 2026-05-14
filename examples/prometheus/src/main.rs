@@ -6,7 +6,10 @@ use std::{
 
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
-    asset::{Asset, AssetIdentifier}, config::Config, network::Network, router::{Router, route::Route}
+    asset::{Asset, AssetIdentifier},
+    config::Config,
+    network::Network,
+    router::{Router, route::Route},
 };
 use poem::{
     EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
@@ -148,10 +151,7 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
                 .await
                 .unwrap();
             let amount_in = token_input.nominal_amount();
-            let token_output = route
-                .quote(&network, amount_in)
-                .await
-                .unwrap();
+            let token_output = route.quote(&network, amount_in).await.unwrap();
 
             let rate: i64 = token_output.to_string().parse().unwrap();
             let rate = rate as f64 / 10_f64.powf(6_f64);
