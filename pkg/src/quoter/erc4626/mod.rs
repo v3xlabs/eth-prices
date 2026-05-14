@@ -1,4 +1,6 @@
-/*! ERC-4626 Vault Quoter
+/*!
+ERC-4626 Vault Quoter
+
 The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
 ```rust
 use eth_prices::quoter::erc4626::ERC4626Quoter;
