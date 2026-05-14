@@ -9,9 +9,7 @@ use alloy::{
 use serde::Deserialize;
 
 use crate::{
-    Result,
-    quoter::{Quoter, RateDirection},
-    token::identity::TokenIdentifier,
+    Result, network::Network, quoter::{Quoter, RateDirection}, token::identity::TokenIdentifier
 };
 
 /// A static conversion rate between two assets.
@@ -54,8 +52,7 @@ impl Quoter for FixedQuoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        _block: BlockNumber,
-        _provider: &DynProvider,
+        _network: &Network,
     ) -> Result<U256> {
         let ten = U2048::from(10);
         let token_in_scale = ten.pow(U2048::from(self.token_in_decimals));
@@ -110,10 +107,10 @@ mod tests {
         let provider = get_test_provider().await;
 
         let forwards = tracker
-            .rate(U256::from(100), RateDirection::Forward, 100, &provider)
+            .rate(U256::from(100), RateDirection::Forward, &Network::EVM(1, 100, provider.clone()))
             .await;
         let backwards = tracker
-            .rate(U256::from(100), RateDirection::Reverse, 100, &provider)
+            .rate(U256::from(100), RateDirection::Reverse, &Network::EVM(1, 100, provider.clone()))
             .await;
 
         assert_eq!(forwards.unwrap(), U256::from(200));
@@ -142,16 +139,14 @@ mod tests {
             .rate(
                 U256::from(1_000_000_000_000_000_000u128),
                 RateDirection::Forward,
-                100,
-                &provider,
+                &Network::EVM(1, 100, provider.clone()),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(1_000_000),
                 RateDirection::Reverse,
-                100,
-                &provider,
+                &Network::EVM(1, 100, provider.clone()),
             )
             .await;
 

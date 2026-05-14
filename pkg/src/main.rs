@@ -5,11 +5,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    Result,
-    config::Config,
-    quoter::RateDirection,
-    router::graph::QuoterGraph,
-    token::{Token, TokenIdentifier},
+    Result, config::Config, network::Network, quoter::RateDirection, router::graph::QuoterGraph, token::{Token, TokenIdentifier}
 };
 use tracing::info;
 
@@ -28,9 +24,10 @@ pub async fn main() -> Result<()> {
             info!("token: {:?}", token_address);
         }
 
-        let box_provider = Box::new(provider.erased());
+        let box_provider = provider.erased();
 
         let block = box_provider.get_block_number().await?;
+        let network = Network::EVM(1, block, box_provider.clone());
 
         let precision = 10;
 
@@ -45,10 +42,10 @@ pub async fn main() -> Result<()> {
             let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
             let forward_rate = quoter
-                .rate(amount_a, RateDirection::Forward, block, &box_provider)
+                .rate(amount_a, RateDirection::Forward, &network)
                 .await?;
             let reverse_rate = quoter
-                .rate(amount_b, RateDirection::Reverse, block, &box_provider)
+                .rate(amount_b, RateDirection::Reverse, &network)
                 .await?;
             info!(
                 "forward_rate: {:?} {} = {:?} {}",
@@ -99,7 +96,7 @@ pub async fn main() -> Result<()> {
             let token_a = Token::new(token_input.clone(), &box_provider).await?;
             let token_input = token_a.nominal_amount();
 
-            let token_output = route.quote(&box_provider, block, token_input).await?;
+            let token_output = route.quote(&network, token_input).await?;
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,

@@ -7,9 +7,7 @@ use alloy::{
 use pool::UniswapV3Pool;
 
 use crate::{
-    Result,
-    quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
-    token::identity::TokenIdentifier,
+    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector}, token::identity::TokenIdentifier
 };
 
 pub mod factory;
@@ -59,11 +57,11 @@ impl Quoter for UniswapV3Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        block: BlockNumber,
-        provider: &DynProvider,
+        network: &Network,
     ) -> Result<U256> {
+        let (chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
         let pool = UniswapV3Pool::new(self.pool_address, provider);
-        let slot0 = pool.slot0().block(block.into()).call().await?;
+        let slot0 = pool.slot0().block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number))).call().await?;
         let sqrt_price_x96 = U512::from(slot0.sqrtPriceX96);
         let q192 = U512::from(1) << 192;
         let sqrt_price_squared = sqrt_price_x96 * sqrt_price_x96;

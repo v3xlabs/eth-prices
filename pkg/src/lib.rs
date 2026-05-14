@@ -42,6 +42,7 @@ pub mod config;
 pub mod quoter;
 pub mod router;
 pub mod token;
+pub mod network;
 
 #[cfg(target_arch = "wasm32")]
 pub mod js;

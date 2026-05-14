@@ -32,9 +32,7 @@ use alloy::{
 use serde::Deserialize;
 
 use crate::{
-    Result,
-    quoter::{Quoter, RateDirection},
-    token::identity::TokenIdentifier,
+    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, token::identity::TokenIdentifier
 };
 
 sol! {
@@ -90,9 +88,9 @@ impl Quoter for ERC4626Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        block: BlockNumber,
-        provider: &DynProvider,
+        network: &Network,
     ) -> Result<U256> {
+        let (chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
         let vault = ERC4626::new(
             Address::try_from(&self.vault_address)
                 .map_err(|_| crate::error::EthPricesError::MissingVaultAddress)?,
@@ -102,14 +100,14 @@ impl Quoter for ERC4626Quoter {
             RateDirection::Forward => {
                 vault
                     .convertToAssets(amount_in)
-                    .block(block.into())
+                    .block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number)))
                     .call()
                     .await?
             }
             RateDirection::Reverse => {
                 vault
                     .convertToShares(amount_in)
-                    .block(block.into())
+                    .block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number)))
                     .call()
                     .await?
             }
@@ -137,7 +135,7 @@ mod tests {
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
         let forward_rate = quoter
-            .rate(token_a_amount, RateDirection::Forward, block, &provider)
+            .rate(token_a_amount, RateDirection::Forward, &Network::EVM(1, block, provider.clone()))
             .await
             .unwrap();
 
@@ -146,7 +144,7 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(token_b_amount, RateDirection::Reverse, block, &provider)
+            .rate(token_b_amount, RateDirection::Reverse, &Network::EVM(1, block, provider.clone()))
             .await
             .unwrap();
 

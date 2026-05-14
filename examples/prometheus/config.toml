@@ -1,6 +1,6 @@
 [chains.ethereum]
 chain_id = 1
-rpc_url = "https://reth-ethereum.ithaca.xyz/rpc"
+rpc_url = "https://ethereum-rpc.publicnode.com"
 
 [[chains.ethereum.tokens]]
 address = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"

@@ -1,13 +1,10 @@
 use alloy::{
-    primitives::{BlockNumber, U256},
-    providers::DynProvider,
+    primitives::U256,
 };
 use tracing::info;
 
 use crate::{
-    Result,
-    quoter::{AnyQuoter, RateDirection},
-    token::TokenIdentifier,
+    Result, network::Network, quoter::{AnyQuoter, RateDirection}, token::TokenIdentifier
 };
 
 pub mod graph;
@@ -29,8 +26,7 @@ impl Route {
     /// calculate a quote for a given route
     pub async fn quote(
         &self,
-        provider: &DynProvider,
-        block: BlockNumber,
+        network: &Network,
         amount_in: U256,
     ) -> Result<U256> {
         let mut amount_out = amount_in;
@@ -47,7 +43,7 @@ impl Route {
 
             let rate = step
                 .quoter
-                .rate(amount_out, step.direction, block, provider)
+                .rate(amount_out, step.direction, network)
                 .await?;
             amount_out = rate;
 
