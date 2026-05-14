@@ -11,6 +11,7 @@ use super::{
 };
 use crate::{
     Result,
+    network::Network,
     quoter::{
         AnyQuoter,
         erc4626::ERC4626Quoter,
@@ -19,7 +20,6 @@ use crate::{
         uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector},
     },
     router::Router,
-    network::Network,
 };
 
 #[wasm_bindgen]

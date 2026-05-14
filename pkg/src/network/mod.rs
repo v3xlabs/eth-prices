@@ -11,7 +11,9 @@ pub enum Network {
 impl Network {
     pub fn as_evm(&self) -> Option<(&u64, &BlockNumber, &DynProvider)> {
         match self {
-            Network::EVM(chain_id, block_number, provider) => Some((chain_id, block_number, provider)),
+            Network::EVM(chain_id, block_number, provider) => {
+                Some((chain_id, block_number, provider))
+            }
             _ => None,
         }
     }

@@ -2,7 +2,7 @@ use std::fmt::{self, Debug, Display};
 
 use alloy::primitives::U256;
 
-use crate::{Result, network::Network, quoter::RateDirection, asset::identity::AssetIdentifier};
+use crate::{Result, asset::identity::AssetIdentifier, network::Network, quoter::RateDirection};
 
 /// A single-hop quote source.
 ///

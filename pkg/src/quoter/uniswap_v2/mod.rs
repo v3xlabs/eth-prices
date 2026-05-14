@@ -12,7 +12,10 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::{
-    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, asset::identity::AssetIdentifier
+    EthPricesError, Result,
+    asset::identity::AssetIdentifier,
+    network::Network,
+    quoter::{Quoter, RateDirection},
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -140,9 +143,21 @@ impl Quoter for UniswapV2Quoter {
         direction: RateDirection,
         network: &Network,
     ) -> Result<U256> {
-        let (_chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
+        let (_chain_id, block_number, provider) =
+            network
+                .as_evm()
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    network
+                )))?;
         let pair = UniswapV2Pair::new(self.pair_address, provider);
-        let reserves = pair.getReserves().call().block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number))).await?;
+        let reserves = pair
+            .getReserves()
+            .call()
+            .block(alloy::eips::BlockId::Number(
+                alloy::eips::BlockNumberOrTag::Number(*block_number),
+            ))
+            .await?;
         let reserve0 = U512::from(reserves.reserve0);
         let reserve1 = U512::from(reserves.reserve1);
         let amount_in = U512::from(amount_in);

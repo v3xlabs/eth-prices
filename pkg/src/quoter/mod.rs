@@ -1,4 +1,4 @@
-/*! 
+/*!
 Quote sources for converting one asset into another at a given block height.
 
 A quoter is a single-hop pricing primitive. Examples include a fixed fiat peg,
@@ -20,6 +20,6 @@ pub use quoter::Quoter;
 pub mod ecb;
 pub mod erc4626;
 pub mod fixed;
+pub mod quoter;
 pub mod uniswap_v2;
 pub mod uniswap_v3;
-pub mod quoter;

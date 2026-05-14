@@ -45,7 +45,10 @@ use alloy::{
 use serde::Deserialize;
 
 use crate::{
-    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, asset::identity::AssetIdentifier
+    EthPricesError, Result,
+    asset::identity::AssetIdentifier,
+    network::Network,
+    quoter::{Quoter, RateDirection},
 };
 
 sol! {
@@ -103,7 +106,13 @@ impl Quoter for ERC4626Quoter {
         direction: RateDirection,
         network: &Network,
     ) -> Result<U256> {
-        let (_chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
+        let (_chain_id, block_number, provider) =
+            network
+                .as_evm()
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    network
+                )))?;
         let vault = ERC4626::new(
             Address::try_from(&self.vault_address)
                 .map_err(|_| crate::error::EthPricesError::MissingVaultAddress)?,
@@ -113,14 +122,18 @@ impl Quoter for ERC4626Quoter {
             RateDirection::Forward => {
                 vault
                     .convertToAssets(amount_in)
-                    .block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number)))
+                    .block(alloy::eips::BlockId::Number(
+                        alloy::eips::BlockNumberOrTag::Number(*block_number),
+                    ))
                     .call()
                     .await?
             }
             RateDirection::Reverse => {
                 vault
                     .convertToShares(amount_in)
-                    .block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number)))
+                    .block(alloy::eips::BlockId::Number(
+                        alloy::eips::BlockNumberOrTag::Number(*block_number),
+                    ))
                     .call()
                     .await?
             }
@@ -133,7 +146,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::{tests::get_test_provider, asset::Asset};
+    use crate::{asset::Asset, tests::get_test_provider};
 
     #[tokio::test]
     async fn test_get_rate() {
@@ -148,7 +161,11 @@ mod tests {
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
         let forward_rate = quoter
-            .rate(token_a_amount, RateDirection::Forward, &Network::EVM(1, block, provider.clone()))
+            .rate(
+                token_a_amount,
+                RateDirection::Forward,
+                &Network::EVM(1, block, provider.clone()),
+            )
             .await
             .unwrap();
 
@@ -157,7 +174,11 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(token_b_amount, RateDirection::Reverse, &Network::EVM(1, block, provider.clone()))
+            .rate(
+                token_b_amount,
+                RateDirection::Reverse,
+                &Network::EVM(1, block, provider.clone()),
+            )
             .await
             .unwrap();
 

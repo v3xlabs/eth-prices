@@ -64,11 +64,11 @@ You can find more examples in the [examples](https://github.com/v3xlabs/eth-pric
 pub mod error;
 pub use error::{EthPricesError, Result};
 
+pub mod asset;
 pub mod config;
+pub mod network;
 pub mod quoter;
 pub mod router;
-pub mod asset;
-pub mod network;
 
 #[cfg(target_arch = "wasm32")]
 pub mod js;

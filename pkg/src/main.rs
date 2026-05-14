@@ -5,7 +5,12 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    Result, config::Config, network::Network, quoter::RateDirection, router::graph::Router, asset::{Asset, AssetIdentifier}
+    Result,
+    asset::{Asset, AssetIdentifier},
+    config::Config,
+    network::Network,
+    quoter::RateDirection,
+    router::graph::Router,
 };
 use tracing::info;
 

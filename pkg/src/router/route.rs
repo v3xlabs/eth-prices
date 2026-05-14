@@ -1,10 +1,11 @@
-use alloy::{
-    primitives::U256,
-};
+use alloy::primitives::U256;
 use tracing::info;
 
 use crate::{
-    Result, network::Network, quoter::{AnyQuoter, RateDirection}, asset::AssetIdentifier
+    Result,
+    asset::AssetIdentifier,
+    network::Network,
+    quoter::{AnyQuoter, RateDirection},
 };
 
 #[derive(Debug, Clone)]
@@ -22,11 +23,7 @@ pub struct Route {
 
 impl Route {
     /// calculate a quote for a given route
-    pub async fn quote(
-        &self,
-        network: &Network,
-        amount_in: U256,
-    ) -> Result<U256> {
+    pub async fn quote(&self, network: &Network, amount_in: U256) -> Result<U256> {
         let mut amount_out = amount_in;
 
         for step in self.path.iter() {

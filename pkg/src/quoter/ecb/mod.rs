@@ -1,7 +1,7 @@
 /*! European Central Bank (ECB) Quoter
- 
+
 The [`EcbRateSource`] struct is used to fetch rates from the European Central Bank (ECB) API.
- 
+
 ```rust
 use eth_prices::{quoter::ecb::EcbRateSource, asset::AssetIdentifier, network::Network};
 use alloy::primitives::U256;
@@ -31,7 +31,12 @@ use std::{
 use alloy::primitives::{U256, aliases::U2048};
 
 use crate::{
-    Result, error::EthPricesError, network::Network, quoter::{AnyQuoter, Quoter, RateDirection}, router::Router, asset::identity::AssetIdentifier
+    Result,
+    asset::identity::AssetIdentifier,
+    error::EthPricesError,
+    network::Network,
+    quoter::{AnyQuoter, Quoter, RateDirection},
+    router::Router,
 };
 
 const ECB_BASE_URL: &str = "https://data-api.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A";
@@ -73,11 +78,7 @@ impl EcbRateSource {
             .collect()
     }
 
-    async fn rate_for(
-        &self,
-        symbol: &str,
-        network: &Network,
-    ) -> Result<U256> {
+    async fn rate_for(&self, symbol: &str, network: &Network) -> Result<U256> {
         let key = EcbCacheKey::Date(unix_timestamp_to_date(*network.as_fiat().unwrap()));
 
         if let Some(rates) = self
@@ -135,10 +136,7 @@ impl Quoter for EcbQuoter {
         direction: RateDirection,
         network: &Network,
     ) -> Result<U256> {
-        let rate = self
-            .rates
-            .rate_for(&self.quote_symbol, network)
-            .await?;
+        let rate = self.rates.rate_for(&self.quote_symbol, network).await?;
         let amount_in = U2048::from(amount_in);
         let scale = U2048::from(10).pow(U2048::from(RATE_DECIMALS));
         let quoted = match direction {
@@ -256,13 +254,20 @@ mod tests {
         let graph = rates.graph();
         // assert_eq!(graph.quoters().len(), ECB_CURRENCIES.len());
 
-        let token_in = AssetIdentifier::Fiat { symbol: "eur".to_string() };
-        let token_out = AssetIdentifier::Fiat { symbol: "czk".to_string() };
+        let token_in = AssetIdentifier::Fiat {
+            symbol: "eur".to_string(),
+        };
+        let token_out = AssetIdentifier::Fiat {
+            symbol: "czk".to_string(),
+        };
 
         // quote 1 eur to sek
         let route = graph.compute(&token_in, &token_out).unwrap();
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         let network = Network::Fiat(now);
 
         let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();

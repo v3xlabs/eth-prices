@@ -6,7 +6,10 @@ use alloy::primitives::{U256, U512, aliases::U2048};
 use serde::Deserialize;
 
 use crate::{
-    Result, network::Network, quoter::{Quoter, RateDirection}, asset::identity::AssetIdentifier
+    Result,
+    asset::identity::AssetIdentifier,
+    network::Network,
+    quoter::{Quoter, RateDirection},
 };
 
 /// A static conversion rate between two assets.
@@ -104,10 +107,18 @@ mod tests {
         let provider = get_test_provider().await;
 
         let forwards = tracker
-            .rate(U256::from(100), RateDirection::Forward, &Network::EVM(1, 100, provider.clone()))
+            .rate(
+                U256::from(100),
+                RateDirection::Forward,
+                &Network::EVM(1, 100, provider.clone()),
+            )
             .await;
         let backwards = tracker
-            .rate(U256::from(100), RateDirection::Reverse, &Network::EVM(1, 100, provider.clone()))
+            .rate(
+                U256::from(100),
+                RateDirection::Reverse,
+                &Network::EVM(1, 100, provider.clone()),
+            )
             .await;
 
         assert_eq!(forwards.unwrap(), U256::from(200));
