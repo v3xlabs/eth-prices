@@ -2,14 +2,11 @@
 
 use std::fmt::{self, Display};
 
-use alloy::{
-    primitives::{BlockNumber, U256, U512, aliases::U2048},
-    providers::DynProvider,
-};
+use alloy::primitives::{U256, U512, aliases::U2048};
 use serde::Deserialize;
 
 use crate::{
-    Result, network::Network, quoter::{Quoter, RateDirection}, token::identity::TokenIdentifier
+    Result, network::Network, quoter::{Quoter, RateDirection}, asset::identity::AssetIdentifier
 };
 
 /// A static conversion rate between two assets.
@@ -25,11 +22,11 @@ use crate::{
 pub struct FixedQuoter {
     /// Input asset for forward quotes.
     #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
-    pub token_in: TokenIdentifier,
+    pub token_in: AssetIdentifier,
     pub token_in_decimals: u8,
     /// Output asset for forward quotes.
     #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
-    pub token_out: TokenIdentifier,
+    pub token_out: AssetIdentifier,
     pub token_out_decimals: u8,
     /// Multiplier applied during forward quotes, scaled by `10^fixed_rate_decimals`.
     #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
@@ -44,7 +41,7 @@ impl Quoter for FixedQuoter {
         format!("fixed:{}:{}", self.token_in, self.token_out)
     }
 
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (AssetIdentifier, AssetIdentifier) {
         (self.token_in.clone(), self.token_out.clone())
     }
 
@@ -92,11 +89,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_rate() {
         let tracker = FixedQuoter {
-            token_in: TokenIdentifier::ERC20 {
+            token_in: AssetIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000001"),
             },
             token_in_decimals: 6,
-            token_out: TokenIdentifier::ERC20 {
+            token_out: AssetIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000002"),
             },
             token_out_decimals: 6,
@@ -121,11 +118,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_rate_with_decimals() {
         let tracker = FixedQuoter {
-            token_in: TokenIdentifier::ERC20 {
+            token_in: AssetIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000001"),
             },
             token_in_decimals: 18,
-            token_out: TokenIdentifier::ERC20 {
+            token_out: AssetIdentifier::ERC20 {
                 address: address!("0x0000000000000000000000000000000000000002"),
             },
             fixed_rate_decimals: 6,

@@ -4,7 +4,7 @@ use alloy::{
 use tracing::info;
 
 use crate::{
-    Result, network::Network, quoter::{AnyQuoter, RateDirection}, token::TokenIdentifier
+    Result, network::Network, quoter::{AnyQuoter, RateDirection}, asset::AssetIdentifier
 };
 
 pub mod graph;
@@ -18,8 +18,8 @@ pub struct RouteStep {
 #[derive(Debug, Clone)]
 pub struct Route {
     pub path: Vec<RouteStep>,
-    pub input_token: TokenIdentifier,
-    pub output_token: TokenIdentifier,
+    pub input_token: AssetIdentifier,
+    pub output_token: AssetIdentifier,
 }
 
 impl Route {

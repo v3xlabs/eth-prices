@@ -27,7 +27,7 @@ use std::{
 use alloy::primitives::{U256, aliases::U2048};
 
 use crate::{
-    Result, error::EthPricesError, network::Network, quoter::{AnyQuoter, Quoter, RateDirection}, router::graph::QuoterGraph, token::identity::TokenIdentifier
+    Result, error::EthPricesError, network::Network, quoter::{AnyQuoter, Quoter, RateDirection}, router::graph::QuoterGraph, asset::identity::AssetIdentifier
 };
 
 const ECB_BASE_URL: &str = "https://data-api.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A";
@@ -114,12 +114,12 @@ impl Quoter for EcbQuoter {
         format!("ecb:fiat:{EUR}:fiat:{}", self.quote_symbol)
     }
 
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (AssetIdentifier, AssetIdentifier) {
         (
-            TokenIdentifier::Fiat {
+            AssetIdentifier::Fiat {
                 symbol: EUR.to_string(),
             },
-            TokenIdentifier::Fiat {
+            AssetIdentifier::Fiat {
                 symbol: self.quote_symbol.clone(),
             },
         )
@@ -235,10 +235,10 @@ mod tests {
         assert_eq!(
             usd.tokens(),
             (
-                TokenIdentifier::Fiat {
+                AssetIdentifier::Fiat {
                     symbol: "eur".to_string()
                 },
-                TokenIdentifier::Fiat {
+                AssetIdentifier::Fiat {
                     symbol: "usd".to_string()
                 }
             )
@@ -252,8 +252,8 @@ mod tests {
         let graph = rates.graph();
         // assert_eq!(graph.quoters().len(), ECB_CURRENCIES.len());
 
-        let token_in = TokenIdentifier::Fiat { symbol: "eur".to_string() };
-        let token_out = TokenIdentifier::Fiat { symbol: "czk".to_string() };
+        let token_in = AssetIdentifier::Fiat { symbol: "eur".to_string() };
+        let token_out = AssetIdentifier::Fiat { symbol: "czk".to_string() };
 
         // quote 1 eur to sek
         let route = graph.compute(&token_in, &token_out).unwrap();

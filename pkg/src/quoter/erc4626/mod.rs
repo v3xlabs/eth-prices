@@ -25,14 +25,14 @@
 //! ```
 
 use alloy::{
-    primitives::{Address, BlockNumber, U256},
+    primitives::{Address, U256},
     providers::DynProvider,
     sol,
 };
 use serde::Deserialize;
 
 use crate::{
-    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, token::identity::TokenIdentifier
+    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, asset::identity::AssetIdentifier
 };
 
 sol! {
@@ -55,9 +55,9 @@ pub struct ERC4626Config {
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
     /// Vault share token metadata.
-    pub vault_address: TokenIdentifier,
+    pub vault_address: AssetIdentifier,
     /// Underlying asset metadata returned by `asset()`.
-    pub token_address: TokenIdentifier,
+    pub token_address: AssetIdentifier,
 }
 
 impl ERC4626Quoter {
@@ -81,7 +81,7 @@ impl Quoter for ERC4626Quoter {
         format!("erc4626:{}", self.vault_address)
     }
 
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (AssetIdentifier, AssetIdentifier) {
         (self.vault_address.clone(), self.token_address.clone())
     }
     async fn rate(
@@ -90,7 +90,7 @@ impl Quoter for ERC4626Quoter {
         direction: RateDirection,
         network: &Network,
     ) -> Result<U256> {
-        let (chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
+        let (_chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
         let vault = ERC4626::new(
             Address::try_from(&self.vault_address)
                 .map_err(|_| crate::error::EthPricesError::MissingVaultAddress)?,
@@ -120,7 +120,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::{tests::get_test_provider, token::Token};
+    use crate::{tests::get_test_provider, asset::Asset};
 
     #[tokio::test]
     async fn test_get_rate() {
@@ -130,7 +130,7 @@ mod tests {
         let provider = get_test_provider().await;
         let quoter = ERC4626Quoter::new(vault_address, &provider).await.unwrap();
 
-        let token_a = Token::new(quoter.vault_address.clone(), &provider)
+        let token_a = Asset::new(quoter.vault_address.clone(), &provider)
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
@@ -139,7 +139,7 @@ mod tests {
             .await
             .unwrap();
 
-        let token_b = Token::new(quoter.token_address.clone(), &provider)
+        let token_b = Asset::new(quoter.token_address.clone(), &provider)
             .await
             .unwrap();
         let token_b_amount = token_b.nominal_amount();

@@ -8,7 +8,7 @@ use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
     config::Config,
     router::{Route, graph::QuoterGraph},
-    token::{Token, TokenIdentifier},
+    asset::{Asset, AssetIdentifier},
 };
 use poem::{
     EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
@@ -75,7 +75,7 @@ pub async fn setup() -> AppState {
             all_tokens.insert(token_out);
         }
 
-        let token_out = TokenIdentifier::Fiat {
+        let token_out = AssetIdentifier::Fiat {
             symbol: "usd".to_string(),
         };
         let mut routes = Vec::new();
@@ -143,13 +143,15 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             })
             .set(block);
 
+        let network = Network::EVM(1, block, chain.provider.clone());
+
         for route in &chain.routes {
-            let token_input = Token::new(route.input_token.clone(), &chain.provider)
+            let token_input = Asset::new(route.input_token.clone(), &chain.provider)
                 .await
                 .unwrap();
             let amount_in = token_input.nominal_amount();
             let token_output = route
-                .quote(&chain.provider, block, amount_in)
+                .quote(&network, amount_in)
                 .await
                 .unwrap();
 

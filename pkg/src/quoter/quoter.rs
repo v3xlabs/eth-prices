@@ -2,7 +2,7 @@ use std::fmt::{self, Debug, Display};
 
 use alloy::primitives::U256;
 
-use crate::{Result, network::Network, quoter::RateDirection, token::identity::TokenIdentifier};
+use crate::{Result, network::Network, quoter::RateDirection, asset::identity::AssetIdentifier};
 
 /// A single-hop quote source.
 ///
@@ -14,7 +14,7 @@ pub trait Quoter: Send + Sync + Debug {
     fn identity(&self) -> String;
 
     /// Returns the pair of assets connected by this quoter.
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier);
+    fn tokens(&self) -> (AssetIdentifier, AssetIdentifier);
 
     /// Quotes `amount_in` at the provided block height.
     async fn rate(

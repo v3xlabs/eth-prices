@@ -16,15 +16,18 @@ let quoter = UniswapV3Quoter::from_pool(address!());
 
 Today, the main building blocks are:
 - [`quoter::Quoter`] for single-hop quote sources.
-- [`quoter::QuoterInstance`] for storing heterogeneous quote sources together.
 - [`token::TokenIdentifier`] for identifying ERC-20, fiat, and native assets.
 - [`token::Token`] for token metadata and amount formatting helpers.
 # Quoters
 Currently supported quoters include:
-- [`quoter::fixed`] for static conversion rates.
-- [`quoter::uniswap_v2`] for Uniswap v2 pairs.
-- [`quoter::uniswap_v3`] for Uniswap v3 pools.
-- [`quoter::erc4626`] for ERC-4626 vaults.
+- [`quoter::fixed::FixedQuoter`] for static conversion rates.
+- [`quoter::uniswap_v2::UniswapV2Quoter`] for Uniswap v2 pairs.
+- [`quoter::uniswap_v3::UniswapV3Quoter`] for Uniswap v3 pools.
+- [`quoter::erc4626::ERC4626Quoter`] for ERC-4626 vaults.
+
+# Features
+
+- `ecb` - Enable European Central Bank (ECB) quoters.
 
 # Routing
 
@@ -41,7 +44,7 @@ pub use error::{EthPricesError, Result};
 pub mod config;
 pub mod quoter;
 pub mod router;
-pub mod token;
+pub mod asset;
 pub mod network;
 
 #[cfg(target_arch = "wasm32")]

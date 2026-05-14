@@ -10,7 +10,7 @@ use crate::{
     Result,
     quoter::{AnyQuoter, RateDirection},
     router::{Route, RouteStep},
-    token::TokenIdentifier,
+    asset::AssetIdentifier,
 };
 
 #[derive(Debug, Clone)]
@@ -41,20 +41,20 @@ impl FromIterator<AnyQuoter> for QuoterGraph {
 }
 
 impl QuoterGraph {
-    pub fn get_token_index(&self, token: &TokenIdentifier) -> Option<NodeIndex<u32>> {
+    pub fn get_token_index(&self, token: &AssetIdentifier) -> Option<NodeIndex<u32>> {
         self.token_map.get(&token.to_string()).copied()
     }
 
-    pub fn get_token_by_index(&self, index: NodeIndex<u32>) -> Option<TokenIdentifier> {
+    pub fn get_token_by_index(&self, index: NodeIndex<u32>) -> Option<AssetIdentifier> {
         self.token_map
             .iter()
             .find(|x| *x.1 == index)
             .map(|(token, _)| token.clone())
-            .map(TokenIdentifier::try_from)
+            .map(AssetIdentifier::try_from)
             .and_then(|x| x.ok())
     }
 
-    pub fn add_token(&mut self, token: &TokenIdentifier) -> NodeIndex<u32> {
+    pub fn add_token(&mut self, token: &AssetIdentifier) -> NodeIndex<u32> {
         match self.token_map.get(&token.to_string()) {
             Some(node_index) => *node_index,
             None => {
@@ -85,8 +85,8 @@ impl QuoterGraph {
     /// compute a route given an input and output token
     pub fn compute(
         &self,
-        input_token: &TokenIdentifier,
-        output_token: &TokenIdentifier,
+        input_token: &AssetIdentifier,
+        output_token: &AssetIdentifier,
     ) -> Result<Route> {
         let token_a_index = self
             .get_token_index(input_token)
@@ -125,7 +125,7 @@ impl QuoterGraph {
                         self.get_token_by_index(*x)
                             .ok_or_else(|| crate::error::EthPricesError::MissingTokenInRoute)
                     })
-                    .collect::<Result<Vec<TokenIdentifier>>>()?;
+                    .collect::<Result<Vec<AssetIdentifier>>>()?;
 
                 let mut path = Vec::new();
 

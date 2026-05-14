@@ -5,7 +5,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    Result, config::Config, network::Network, quoter::RateDirection, router::graph::QuoterGraph, token::{Token, TokenIdentifier}
+    Result, config::Config, network::Network, quoter::RateDirection, router::graph::QuoterGraph, asset::{Asset, AssetIdentifier}
 };
 use tracing::info;
 
@@ -36,8 +36,8 @@ pub async fn main() -> Result<()> {
             info!("quoter: {:?}", quoter.to_string());
             let (token_a, token_b) = quoter.tokens();
 
-            let token_a = Token::new(token_a, &box_provider).await?;
-            let token_b = Token::new(token_b, &box_provider).await?;
+            let token_a = Asset::new(token_a, &box_provider).await?;
+            let token_b = Asset::new(token_b, &box_provider).await?;
 
             let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
@@ -75,10 +75,10 @@ pub async fn main() -> Result<()> {
             all_tokens.insert(token_out);
         }
 
-        let token_out = TokenIdentifier::ERC20 {
+        let token_out = AssetIdentifier::ERC20 {
             address: address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
         };
-        let token_b = Token::new(token_out.clone(), &box_provider).await?;
+        let token_b = Asset::new(token_out.clone(), &box_provider).await?;
         let mut routes = Vec::new();
 
         for token in all_tokens {
@@ -93,7 +93,7 @@ pub async fn main() -> Result<()> {
 
         for route in &routes {
             let token_input = &route.input_token;
-            let token_a = Token::new(token_input.clone(), &box_provider).await?;
+            let token_a = Asset::new(token_input.clone(), &box_provider).await?;
             let token_input = token_a.nominal_amount();
 
             let token_output = route.quote(&network, token_input).await?;

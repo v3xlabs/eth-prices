@@ -4,7 +4,7 @@ pub mod factory;
 pub mod pair;
 
 use alloy::{
-    primitives::{Address, BlockNumber, U256, U512, address},
+    primitives::{Address, U256, U512, address},
     providers::DynProvider,
 };
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
@@ -12,7 +12,7 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::{
-    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, token::identity::TokenIdentifier
+    EthPricesError, Result, network::Network, quoter::{Quoter, RateDirection}, asset::identity::AssetIdentifier
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -123,12 +123,12 @@ impl Quoter for UniswapV2Quoter {
         format!("uniswap_v2:{}", self.pair_address)
     }
 
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (AssetIdentifier, AssetIdentifier) {
         (
-            TokenIdentifier::ERC20 {
+            AssetIdentifier::ERC20 {
                 address: self.token0,
             },
-            TokenIdentifier::ERC20 {
+            AssetIdentifier::ERC20 {
                 address: self.token1,
             },
         )
@@ -140,7 +140,7 @@ impl Quoter for UniswapV2Quoter {
         direction: RateDirection,
         network: &Network,
     ) -> Result<U256> {
-        let (chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
+        let (_chain_id, block_number, provider) = network.as_evm().ok_or(EthPricesError::InvalidNetwork(format!("Network: {:?}", network)))?;
         let pair = UniswapV2Pair::new(self.pair_address, provider);
         let reserves = pair.getReserves().call().block(alloy::eips::BlockId::Number(alloy::eips::BlockNumberOrTag::Number(*block_number))).await?;
         let reserve0 = U512::from(reserves.reserve0);
