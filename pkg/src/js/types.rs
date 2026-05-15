@@ -8,7 +8,7 @@ use crate::{
         RateDirection, fixed::FixedQuoter, uniswap_v2::UniswapV2Selector,
         uniswap_v3::factory::UniswapV3Selector,
     },
-    router::Route as RouterRoute,
+    router::route::Route as RouterRoute,
 };
 
 #[derive(Debug, Deserialize, Tsify)]

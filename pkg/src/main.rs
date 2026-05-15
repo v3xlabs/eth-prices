@@ -6,10 +6,11 @@ use alloy::{
 };
 use eth_prices::{
     Result,
+    asset::{Asset, AssetIdentifier},
     config::Config,
+    network::Network,
     quoter::RateDirection,
-    router::graph::QuoterGraph,
-    token::{Token, TokenIdentifier},
+    router::graph::Router,
 };
 use tracing::info;
 
@@ -28,9 +29,10 @@ pub async fn main() -> Result<()> {
             info!("token: {:?}", token_address);
         }
 
-        let box_provider = Box::new(provider.erased());
+        let box_provider = provider.erased();
 
         let block = box_provider.get_block_number().await?;
+        let network = Network::EVM(1, block, box_provider.clone());
 
         let precision = 10;
 
@@ -39,16 +41,16 @@ pub async fn main() -> Result<()> {
             info!("quoter: {:?}", quoter.to_string());
             let (token_a, token_b) = quoter.tokens();
 
-            let token_a = Token::new(token_a, &box_provider).await?;
-            let token_b = Token::new(token_b, &box_provider).await?;
+            let token_a = Asset::new(token_a, &box_provider).await?;
+            let token_b = Asset::new(token_b, &box_provider).await?;
 
             let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
             let forward_rate = quoter
-                .rate(amount_a, RateDirection::Forward, block, &box_provider)
+                .rate(amount_a, RateDirection::Forward, &network)
                 .await?;
             let reverse_rate = quoter
-                .rate(amount_b, RateDirection::Reverse, block, &box_provider)
+                .rate(amount_b, RateDirection::Reverse, &network)
                 .await?;
             info!(
                 "forward_rate: {:?} {} = {:?} {}",
@@ -66,7 +68,7 @@ pub async fn main() -> Result<()> {
             );
         }
 
-        let router = QuoterGraph::from_iter(quoters);
+        let router = Router::from_iter(quoters);
 
         info!("{}", router.to_graphviz());
 
@@ -78,10 +80,10 @@ pub async fn main() -> Result<()> {
             all_tokens.insert(token_out);
         }
 
-        let token_out = TokenIdentifier::ERC20 {
+        let token_out = AssetIdentifier::ERC20 {
             address: address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
         };
-        let token_b = Token::new(token_out.clone(), &box_provider).await?;
+        let token_b = Asset::new(token_out.clone(), &box_provider).await?;
         let mut routes = Vec::new();
 
         for token in all_tokens {
@@ -96,10 +98,10 @@ pub async fn main() -> Result<()> {
 
         for route in &routes {
             let token_input = &route.input_token;
-            let token_a = Token::new(token_input.clone(), &box_provider).await?;
+            let token_a = Asset::new(token_input.clone(), &box_provider).await?;
             let token_input = token_a.nominal_amount();
 
-            let token_output = route.quote(&box_provider, block, token_input).await?;
+            let token_output = route.quote(&network, token_input).await?;
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,

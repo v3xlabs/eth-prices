@@ -5,18 +5,18 @@ use alloy::{
     providers::DynProvider,
 };
 
-use crate::{Result, token::erc20::ERC20};
+use crate::{Result, asset::erc20::ERC20};
 
 pub mod erc20;
 pub mod identity;
 
-pub use identity::TokenIdentifier;
+pub use identity::AssetIdentifier;
 
 /// A resolved asset with display metadata and decimal precision.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Token {
+pub struct Asset {
     /// Canonical identifier for the asset.
-    pub identifier: TokenIdentifier,
+    pub identifier: AssetIdentifier,
     /// Human-readable asset name.
     pub name: String,
     /// Short symbol used for display.
@@ -27,13 +27,13 @@ pub struct Token {
 
 const FIAT_DECIMALS: u8 = 6;
 
-impl Token {
+impl Asset {
     /// Resolves token metadata for the provided identifier.
     ///
     /// ERC-20 metadata is loaded from chain, while fiat and native assets use local defaults.
-    pub async fn new(identifier: TokenIdentifier, provider: &DynProvider) -> Result<Self> {
+    pub async fn new(identifier: AssetIdentifier, provider: &DynProvider) -> Result<Self> {
         let (name, symbol, decimals) = match &identifier {
-            TokenIdentifier::ERC20 { address } => {
+            AssetIdentifier::ERC20 { address } => {
                 let erc20 = ERC20::new(*address, provider);
 
                 (
@@ -42,8 +42,8 @@ impl Token {
                     erc20.decimals().call().await?,
                 )
             }
-            TokenIdentifier::Fiat { symbol } => (symbol.clone(), symbol.clone(), FIAT_DECIMALS),
-            TokenIdentifier::Native => ("Native".to_string(), "ETH".to_string(), 18),
+            AssetIdentifier::Fiat { symbol } => (symbol.clone(), symbol.clone(), FIAT_DECIMALS),
+            AssetIdentifier::Native => ("Native".to_string(), "ETH".to_string(), 18),
         };
 
         Ok(Self {
@@ -64,7 +64,7 @@ impl Token {
         let amount = amount
             .to_string()
             .parse::<f64>()
-            .map_err(|e| crate::error::EthPricesError::InvalidTokenAmount(e.to_string()))?;
+            .map_err(|e| crate::error::EthPricesError::InvalidAssetAmount(e.to_string()))?;
         let amount = amount / 10_f64.powf(self.decimals as f64);
         Ok(format!("{:.precision$}", amount))
     }
@@ -74,9 +74,9 @@ impl Token {
     /// Returns the underlying contract address, if applicable.
     pub fn address(&self) -> Option<Address> {
         match &self.identifier {
-            TokenIdentifier::ERC20 { address } => Some(*address),
-            TokenIdentifier::Fiat { .. } => None,
-            TokenIdentifier::Native => None,
+            AssetIdentifier::ERC20 { address } => Some(*address),
+            AssetIdentifier::Fiat { .. } => None,
+            AssetIdentifier::Native => None,
         }
     }
 }

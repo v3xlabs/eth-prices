@@ -6,9 +6,10 @@ use std::{
 
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
+    asset::{Asset, AssetIdentifier},
     config::Config,
-    router::{Route, graph::QuoterGraph},
-    token::{Token, TokenIdentifier},
+    network::Network,
+    router::{Router, route::Route},
 };
 use poem::{
     EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
@@ -23,7 +24,7 @@ use tracing::info;
 pub struct ChainState {
     provider: DynProvider,
     #[allow(dead_code)]
-    router: QuoterGraph,
+    router: Router,
     routes: Vec<Route>,
 }
 
@@ -66,7 +67,7 @@ pub async fn setup() -> AppState {
             println!("token: {:?}", token_address);
         }
         let quoters = chain_config.quoters.clone().all(&provider).await.unwrap();
-        let router = QuoterGraph::from_iter(quoters);
+        let router = Router::from_iter(quoters);
 
         let mut all_tokens = HashSet::new();
         for quoter in &router.quoters {
@@ -75,7 +76,7 @@ pub async fn setup() -> AppState {
             all_tokens.insert(token_out);
         }
 
-        let token_out = TokenIdentifier::Fiat {
+        let token_out = AssetIdentifier::Fiat {
             symbol: "usd".to_string(),
         };
         let mut routes = Vec::new();
@@ -143,15 +144,14 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             })
             .set(block);
 
+        let network = Network::EVM(1, block, chain.provider.clone());
+
         for route in &chain.routes {
-            let token_input = Token::new(route.input_token.clone(), &chain.provider)
+            let token_input = Asset::new(route.input_token.clone(), &chain.provider)
                 .await
                 .unwrap();
             let amount_in = token_input.nominal_amount();
-            let token_output = route
-                .quote(&chain.provider, block, amount_in)
-                .await
-                .unwrap();
+            let token_output = route.quote(&network, amount_in).await.unwrap();
 
             let rate: i64 = token_output.to_string().parse().unwrap();
             let rate = rate as f64 / 10_f64.powf(6_f64);

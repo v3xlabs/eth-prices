@@ -1,40 +1,54 @@
-//! ERC-4626 Vault Quoter
-//!
-//! The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
-//!
-//! ```rust,ignore
-//! use eth_prices::quoter::erc4626::ERC4626Quoter;
-//!
-//! let provider = ProviderBuilder::new().connect("https://...").await.unwrap();
-//!
-//! // Create a quoter for the vault
-//! let quoter = ERC4626Quoter::new(vault_address, provider).await;
-//!
-//! // Get the token pair data (vault shares and underlying asset)
-//! let (token_a, token_b) = quoter.get_tokens();
-//!
-//! // Get 1 of the token
-//! let amount_in = token_a.nominal_amount();
-//!
-//! // Decide what block to query (latest in this case)
-//! let block = provider.get_block_number().await.unwrap();
-//!
-//! // Quote the rate
-//! let rate = quoter.get_rate(amount_in, RateDirection::Forward, block).await.unwrap();
-//! println!("rate: {}", rate);
-//! ```
+/*!
+ERC-4626 Vault Quoter
+
+The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
+```rust
+use eth_prices::quoter::erc4626::ERC4626Quoter;
+
+let quoter = ERC4626Quoter {
+    vault_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
+    token_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
+};
+```
+
+```rust
+use eth_prices::{quoter::erc4626::ERC4626Quoter, quoter::Quoter, asset::{Asset, AssetIdentifier}, network::Network, quoter::RateDirection};
+use alloy::{providers::{ProviderBuilder, Provider}, primitives::address};
+
+#[tokio::main]
+pub async fn main() {
+    let provider = ProviderBuilder::new().connect("https://ethereum-rpc.publicnode.com").await.unwrap().erased();
+    let vault_address = address!("0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1");
+    // Create a quoter for the vault
+    let quoter = ERC4626Quoter::new(vault_address, &provider).await.unwrap();
+    // Get the token pair data (vault shares and underlying asset)
+    let (token_a, token_b) = quoter.tokens();
+    let token_a = Asset::new(token_a, &provider).await.unwrap();
+    let token_b = Asset::new(token_b, &provider).await.unwrap();
+    // Get 1 of the token
+    let amount_in = token_a.nominal_amount();
+    // Decide what block to query (latest in this case)
+    let block = provider.get_block_number().await.unwrap();
+    let network = Network::EVM(1, block, provider.clone());
+    // Quote the rate
+    let rate = quoter.rate(amount_in, RateDirection::Forward, &network).await.unwrap();
+    println!("rate: {}", rate);
+}
+```
+*/
 
 use alloy::{
-    primitives::{Address, BlockNumber, U256},
+    primitives::{Address, U256},
     providers::DynProvider,
     sol,
 };
 use serde::Deserialize;
 
 use crate::{
-    Result,
+    EthPricesError, Result,
+    asset::identity::AssetIdentifier,
+    network::Network,
     quoter::{Quoter, RateDirection},
-    token::identity::TokenIdentifier,
 };
 
 sol! {
@@ -57,9 +71,9 @@ pub struct ERC4626Config {
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
     /// Vault share token metadata.
-    pub vault_address: TokenIdentifier,
+    pub vault_address: AssetIdentifier,
     /// Underlying asset metadata returned by `asset()`.
-    pub token_address: TokenIdentifier,
+    pub token_address: AssetIdentifier,
 }
 
 impl ERC4626Quoter {
@@ -83,16 +97,22 @@ impl Quoter for ERC4626Quoter {
         format!("erc4626:{}", self.vault_address)
     }
 
-    fn tokens(&self) -> (TokenIdentifier, TokenIdentifier) {
+    fn tokens(&self) -> (AssetIdentifier, AssetIdentifier) {
         (self.vault_address.clone(), self.token_address.clone())
     }
     async fn rate(
         &self,
         amount_in: U256,
         direction: RateDirection,
-        block: BlockNumber,
-        provider: &DynProvider,
+        network: &Network,
     ) -> Result<U256> {
+        let (_chain_id, block_number, provider) =
+            network
+                .as_evm()
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    network
+                )))?;
         let vault = ERC4626::new(
             Address::try_from(&self.vault_address)
                 .map_err(|_| crate::error::EthPricesError::MissingVaultAddress)?,
@@ -102,14 +122,18 @@ impl Quoter for ERC4626Quoter {
             RateDirection::Forward => {
                 vault
                     .convertToAssets(amount_in)
-                    .block(block.into())
+                    .block(alloy::eips::BlockId::Number(
+                        alloy::eips::BlockNumberOrTag::Number(*block_number),
+                    ))
                     .call()
                     .await?
             }
             RateDirection::Reverse => {
                 vault
                     .convertToShares(amount_in)
-                    .block(block.into())
+                    .block(alloy::eips::BlockId::Number(
+                        alloy::eips::BlockNumberOrTag::Number(*block_number),
+                    ))
                     .call()
                     .await?
             }
@@ -122,7 +146,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::{tests::get_test_provider, token::Token};
+    use crate::{asset::Asset, tests::get_test_provider};
 
     #[tokio::test]
     async fn test_get_rate() {
@@ -132,21 +156,29 @@ mod tests {
         let provider = get_test_provider().await;
         let quoter = ERC4626Quoter::new(vault_address, &provider).await.unwrap();
 
-        let token_a = Token::new(quoter.vault_address.clone(), &provider)
+        let token_a = Asset::new(quoter.vault_address.clone(), &provider)
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
         let forward_rate = quoter
-            .rate(token_a_amount, RateDirection::Forward, block, &provider)
+            .rate(
+                token_a_amount,
+                RateDirection::Forward,
+                &Network::EVM(1, block, provider.clone()),
+            )
             .await
             .unwrap();
 
-        let token_b = Token::new(quoter.token_address.clone(), &provider)
+        let token_b = Asset::new(quoter.token_address.clone(), &provider)
             .await
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(token_b_amount, RateDirection::Reverse, block, &provider)
+            .rate(
+                token_b_amount,
+                RateDirection::Reverse,
+                &Network::EVM(1, block, provider.clone()),
+            )
             .await
             .unwrap();
 

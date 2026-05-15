@@ -3,11 +3,12 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
+    asset::Asset,
+    network::Network,
     quoter::{
         Quoter, RateDirection,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
     },
-    token::Token,
 };
 
 #[tokio::main]
@@ -26,13 +27,14 @@ pub async fn main() {
 
     let (token_a, token_b) = quoter.tokens();
     let (token_a, token_b) = (
-        Token::new(token_a, &provider).await.unwrap(),
-        Token::new(token_b, &provider).await.unwrap(),
+        Asset::new(token_a, &provider).await.unwrap(),
+        Asset::new(token_b, &provider).await.unwrap(),
     );
     let amount_in = token_a.nominal_amount();
     let block = provider.get_block_number().await.unwrap();
+    let network = Network::EVM(1, block, provider.clone());
     let rate = quoter
-        .rate(amount_in, RateDirection::Forward, block, &provider)
+        .rate(amount_in, RateDirection::Forward, &network)
         .await
         .unwrap();
 

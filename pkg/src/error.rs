@@ -9,11 +9,14 @@ pub enum EthPricesError {
     #[error("Invalid configuration: {0}")]
     InvalidConfiguration(String),
 
-    #[error("Token not found: {0}")]
-    TokenNotFound(String),
+    #[error("Invalid network: {0}")]
+    InvalidNetwork(String),
 
-    #[error("Invalid token amount: {0}")]
-    InvalidTokenAmount(String),
+    #[error("Asset not found: {0}")]
+    AssetNotFound(String),
+
+    #[error("Invalid asset amount: {0}")]
+    InvalidAssetAmount(String),
 
     #[error("RPC/Contract error: {0}")]
     ContractError(#[from] alloy::contract::Error),
@@ -38,6 +41,15 @@ pub enum EthPricesError {
 
     #[error("ERC4626 vault token must have an on-chain address")]
     MissingVaultAddress,
+
+    #[error("HTTP error: {0}")]
+    HttpError(#[from] reqwest::Error),
+
+    #[error("ECB CSV error: {0}")]
+    EcbCsvError(String),
+
+    #[error("ECB rate unavailable for fiat:{0}")]
+    EcbRateUnavailable(String),
 }
 
 pub type Result<T, E = EthPricesError> = std::result::Result<T, E>;
