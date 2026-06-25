@@ -3,13 +3,9 @@ use std::{
     io::Error,
     sync::{Arc, atomic::AtomicU64},
 };
-
-use alloy::providers::{DynProvider, Provider, ProviderBuilder};
+use alloy::providers::{Provider, ProviderBuilder};
 use eth_prices::{
-    asset::{Asset, AssetIdentifier},
-    config::Config,
-    network::NetworkInstant,
-    router::{Router, route::Route},
+    asset::{Asset, AssetIdentifier}, config::Config, network::NetworkInstant, provider::RpcProvider, router::{Router, route::Route},
 };
 use poem::{
     EndpointExt, Route as PoemRoute, Server, get, handler, listener::TcpListener, web::Data,
@@ -22,7 +18,7 @@ use prometheus_client::{
 use tracing::info;
 
 pub struct ChainState {
-    provider: DynProvider,
+    provider: RpcProvider,
     #[allow(dead_code)]
     router: Router,
     routes: Vec<Route>,

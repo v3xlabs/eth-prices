@@ -1,6 +1,6 @@
 use alloy::{
     primitives::BlockNumber,
-    providers::{DynProvider, Provider, ProviderBuilder},
+    providers::{ Provider, ProviderBuilder},
 };
 use wasm_bindgen::prelude::*;
 
@@ -24,7 +24,7 @@ use crate::{
 
 #[wasm_bindgen]
 pub struct Engine {
-    provider: DynProvider,
+    provider: RpcProvider,
     router: Router,
 }
 

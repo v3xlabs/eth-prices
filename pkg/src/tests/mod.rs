@@ -1,6 +1,8 @@
-use alloy::providers::{DynProvider, Provider, ProviderBuilder};
+use alloy::providers::{Provider, ProviderBuilder};
 
-pub async fn get_test_provider() -> DynProvider {
+use crate::provider::RpcProvider;
+
+pub async fn get_test_provider() -> RpcProvider {
     let rpc_url =
         std::env::var("RPC_URL").expect("RPC_URL environment variable must be set to run tests");
 

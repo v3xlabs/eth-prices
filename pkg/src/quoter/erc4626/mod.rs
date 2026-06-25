@@ -39,16 +39,13 @@ pub async fn main() {
 
 use alloy::{
     primitives::{Address, U256},
-    providers::{DynProvider, Provider},
+    providers::Provider,
     sol,
 };
 use serde::Deserialize;
 
 use crate::{
-    EthPricesError, Result,
-    asset::identity::AssetIdentifier,
-    network::{NetworkId, NetworkInstant},
-    quoter::{Quoter, RateDirection},
+    EthPricesError, Result, asset::identity::AssetIdentifier, network::{NetworkId, NetworkInstant}, provider::RpcProvider, quoter::{Quoter, RateDirection},
 };
 
 sol! {
@@ -79,7 +76,7 @@ pub struct ERC4626Quoter {
 
 impl ERC4626Quoter {
     /// Creates a quoter by loading the vault's underlying asset.
-    pub async fn new(vault_address: Address, provider: &DynProvider) -> Result<Self> {
+    pub async fn new(vault_address: Address, provider: &RpcProvider) -> Result<Self> {
         let network_id = provider.get_chain_id().await?;
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await?;

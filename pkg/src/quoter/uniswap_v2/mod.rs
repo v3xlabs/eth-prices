@@ -5,17 +5,14 @@ pub mod pair;
 
 use alloy::{
     primitives::{Address, U256, U512, address},
-    providers::{DynProvider, Provider},
+    providers::Provider,
 };
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 use tracing::info;
 
 use crate::{
-    EthPricesError, Result,
-    asset::identity::AssetIdentifier,
-    network::{NetworkId, NetworkInstant},
-    quoter::{Quoter, RateDirection},
+    EthPricesError, Result, asset::identity::AssetIdentifier, network::{NetworkId, NetworkInstant}, provider::RpcProvider, quoter::{Quoter, RateDirection},
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.
@@ -68,7 +65,7 @@ pub struct UniswapV2Quoter {
 
 impl UniswapV2Quoter {
     /// Builds a quoter from an instantiated pair contract.
-    pub async fn from_contract(contract: UniswapV2PairInstance<&DynProvider>) -> Result<Self> {
+    pub async fn from_contract(contract: UniswapV2PairInstance<&RpcProvider>) -> Result<Self> {
         let network_id = contract.provider().get_chain_id().await?;
         let pair_address = *contract.address();
         let token0 = contract.token0().call().await?;
@@ -88,7 +85,7 @@ impl UniswapV2Quoter {
     ///
     /// When a token pair is provided, the configured factory is used to discover the pair address.
     pub async fn from_selector(
-        provider: &DynProvider,
+        provider: &RpcProvider,
         selector: UniswapV2Selector,
     ) -> Result<Self> {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");

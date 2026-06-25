@@ -1,6 +1,5 @@
 use alloy::{
     primitives::{U256, map::HashMap},
-    providers::DynProvider,
 };
 use figment::{
     Figment,
@@ -9,9 +8,7 @@ use figment::{
 use serde::Deserialize;
 
 use crate::{
-    Result,
-    error::EthPricesError,
-    quoter::{
+    Result, error::EthPricesError, provider::RpcProvider, quoter::{
         AnyQuoter,
         erc4626::{ERC4626Config, ERC4626Quoter},
         fixed::FixedQuoter,
@@ -42,7 +39,7 @@ pub struct QuotersConfig {
 }
 
 impl QuotersConfig {
-    pub async fn all(self, provider: &DynProvider) -> Result<Vec<AnyQuoter>> {
+    pub async fn all(self, provider: &RpcProvider) -> Result<Vec<AnyQuoter>> {
         let mut quoters: Vec<AnyQuoter> = Vec::new();
         for tracker in self.fixed {
             if tracker.fixed_rate <= U256::from(0) {

@@ -2,10 +2,9 @@
 
 use alloy::{
     primitives::{Address, U256},
-    providers::DynProvider,
 };
 
-use crate::{Result, asset::erc20::ERC20};
+use crate::{Result, asset::erc20::ERC20, provider::RpcProvider};
 
 pub mod erc20;
 pub mod identity;
@@ -31,7 +30,7 @@ impl Asset {
     /// Resolves token metadata for the provided identifier.
     ///
     /// ERC-20 metadata is loaded from chain, while fiat and native assets use local defaults.
-    pub async fn new(identifier: AssetIdentifier, provider: &DynProvider) -> Result<Self> {
+    pub async fn new(identifier: AssetIdentifier, provider: &RpcProvider) -> Result<Self> {
         let (name, symbol, decimals) = match &identifier {
             AssetIdentifier::ERC20 { address } => {
                 let erc20 = ERC20::new(*address, provider);

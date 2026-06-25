@@ -2,15 +2,12 @@
 
 use alloy::{
     primitives::{Address, U256, U512},
-    providers::{DynProvider, Provider},
+    providers::Provider,
 };
 use pool::UniswapV3Pool;
 
 use crate::{
-    EthPricesError, Result,
-    asset::identity::AssetIdentifier,
-    network::{NetworkId, NetworkInstant},
-    quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
+    EthPricesError, Result, asset::identity::AssetIdentifier, network::{NetworkId, NetworkInstant}, provider::RpcProvider, quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
 };
 
 pub mod factory;
@@ -31,7 +28,7 @@ pub struct UniswapV3Quoter {
 impl UniswapV3Quoter {
     /// Builds a quoter from a configured pool selector.
     pub async fn from_selector(
-        provider: &DynProvider,
+        provider: &RpcProvider,
         selector: UniswapV3Selector,
     ) -> Result<Self> {
         let network_id = provider.get_chain_id().await?;
