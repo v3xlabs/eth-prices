@@ -11,7 +11,7 @@ use super::{
 };
 use crate::{
     Result,
-    network::{NetworkTime, Network},
+    network::{Network, NetworkTime},
     quoter::{
         AnyQuoter,
         erc4626::ERC4626Quoter,
