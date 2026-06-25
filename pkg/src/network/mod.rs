@@ -40,12 +40,12 @@ impl NetworkTime {
     }
 }
 
-/// Network time
-/// Due to the nature of how eth-prices can quote across different networks, a `NetworkTimes` instance is used to keep track of all the networks and ensure consistent backquerying against a custom blockheight or date.
+/// Network Instant
+/// Due to the nature of how eth-prices quotes across different networks, a `NetworkInstant` is used to keep track of the different `NetworkTime`s and ensure consistent backquerying against a custom blockheight or date.
 #[derive(Default, Debug, Clone)]
-pub struct NetworkTimes(pub HashMap<NetworkId, NetworkTime>);
+pub struct NetworkInstant(pub HashMap<NetworkId, NetworkTime>);
 
-impl NetworkTimes {
+impl NetworkInstant {
 
     pub fn get(&self, network_id: &NetworkId) -> Option<&NetworkTime> {
         self.0.get(network_id)

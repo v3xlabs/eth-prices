@@ -47,7 +47,7 @@ use serde::Deserialize;
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::{NetworkId, NetworkTimes},
+    network::{NetworkId, NetworkInstant},
     quoter::{Quoter, RateDirection},
 };
 
@@ -107,7 +107,7 @@ impl Quoter for ERC4626Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        networks: &NetworkTimes,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
         let network = networks
             .get(&self.network_id)
@@ -169,7 +169,7 @@ mod tests {
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
-        let time = NetworkTimes::from_provider(provider.clone(), 1, block);
+        let time = NetworkInstant::from_provider(provider.clone(), 1, block);
         let forward_rate = quoter
             .rate(token_a_amount, RateDirection::Forward, &time)
             .await

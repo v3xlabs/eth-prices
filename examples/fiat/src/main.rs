@@ -1,7 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use alloy::primitives::U256;
-use eth_prices::{asset::AssetIdentifier, network::NetworkTimes, quoter::ecb::EcbRateSource};
+use eth_prices::{asset::AssetIdentifier, network::NetworkInstant, quoter::ecb::EcbRateSource};
 
 #[tokio::main]
 pub async fn main() {
@@ -15,7 +15,7 @@ pub async fn main() {
     let token_out = AssetIdentifier::Fiat {
         symbol: "sek".to_string(),
     };
-    let network = NetworkTimes::default().with_fiat_timestamp(
+    let network = NetworkInstant::default().with_fiat_timestamp(
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()

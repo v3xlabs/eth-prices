@@ -14,7 +14,7 @@ use tracing::info;
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::{NetworkId, NetworkTimes},
+    network::{NetworkId, NetworkInstant},
     quoter::{Quoter, RateDirection},
 };
 
@@ -146,7 +146,7 @@ impl Quoter for UniswapV2Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        networks: &NetworkTimes,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
         let network = networks
             .get(&self.network_id)

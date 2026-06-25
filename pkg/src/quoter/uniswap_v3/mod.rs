@@ -9,7 +9,7 @@ use pool::UniswapV3Pool;
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::{NetworkId, NetworkTimes},
+    network::{NetworkId, NetworkInstant},
     quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
 };
 
@@ -63,7 +63,7 @@ impl Quoter for UniswapV3Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        networks: &NetworkTimes,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
         let network = networks
             .get(&self.network_id)

@@ -34,7 +34,7 @@ use crate::{
     Result,
     asset::identity::AssetIdentifier,
     error::EthPricesError,
-    network::NetworkTimes,
+    network::NetworkInstant,
     quoter::{AnyQuoter, Quoter, RateDirection},
     router::Router,
 };
@@ -78,7 +78,7 @@ impl EcbRateSource {
             .collect()
     }
 
-    async fn rate_for(&self, symbol: &str, networks: &NetworkTimes) -> Result<U256> {
+    async fn rate_for(&self, symbol: &str, networks: &NetworkInstant) -> Result<U256> {
         let network = networks.get_fiat_timestamp().unwrap();
         let key = EcbCacheKey::Date(unix_timestamp_to_date(*network));
 
@@ -135,7 +135,7 @@ impl Quoter for EcbQuoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        networks: &NetworkTimes,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
         let rate = self.rates.rate_for(&self.quote_symbol, networks).await?;
         let amount_in = U2048::from(amount_in);
@@ -269,7 +269,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        let network = NetworkTimes::default().with_fiat_timestamp(now);
+        let network = NetworkInstant::default().with_fiat_timestamp(now);
 
         let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();
 

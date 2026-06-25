@@ -38,7 +38,7 @@ Today, the main building blocks are:
 - [`router::Router`] for routing between assets.
 - [`asset::AssetIdentifier`] for identifying ERC-20, fiat, and native assets.
 - [`asset::Asset`] for asset metadata and amount formatting helpers.
-- [`network::NetworkTimes`] for managing network times and providers.
+- [`network::NetworkInstant`] for managing network times and providers.
 
 # Quoters
 

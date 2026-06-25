@@ -28,7 +28,7 @@ use std::fmt::{self, Debug, Display};
 
 use alloy::primitives::U256;
 
-use crate::{Result, asset::identity::AssetIdentifier, network::NetworkTimes};
+use crate::{Result, asset::identity::AssetIdentifier, network::NetworkInstant};
 
 /// A single-hop quote source.
 ///
@@ -47,7 +47,7 @@ pub trait Quoter: Send + Sync + Debug {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        networks: &NetworkTimes,
+        networks: &NetworkInstant,
     ) -> Result<U256>;
 }
 
