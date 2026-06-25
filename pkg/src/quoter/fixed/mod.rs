@@ -84,7 +84,7 @@ impl Display for FixedQuoter {
 mod tests {
     use alloy::primitives::address;
 
-    use crate::tests::get_test_provider;
+    use crate::{network::NetworkTime, tests::get_test_provider};
 
     use super::*;
 
@@ -110,14 +110,14 @@ mod tests {
             .rate(
                 U256::from(100),
                 RateDirection::Forward,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(100),
                 RateDirection::Reverse,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
             )
             .await;
 
@@ -147,14 +147,14 @@ mod tests {
             .rate(
                 U256::from(1_000_000_000_000_000_000u128),
                 RateDirection::Forward,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(1_000_000),
                 RateDirection::Reverse,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
             )
             .await;
 

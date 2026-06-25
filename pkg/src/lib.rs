@@ -8,7 +8,7 @@ specific block height.
 
 Here is a simple example showing off some of the features of `eth-prices`:
 ```rust
-use eth_prices::{quoter::Quoter, router::Router, asset::AssetIdentifier, network::Network, quoter::uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector}};
+use eth_prices::{quoter::Quoter, router::Router, asset::AssetIdentifier, network::NetworkTime, quoter::uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector}};
 use alloy::primitives::{address, U256};
 use alloy::providers::{ProviderBuilder, Provider};
 
@@ -25,7 +25,7 @@ pub async fn main() {
     let route = router.compute(&token_in, &token_out).unwrap();
 
     let block = provider.get_block_number().await.unwrap();
-    let network = Network::EVM(1, block, provider);
+    let network = NetworkTime::EVM(1, block, provider).instant();
     let amount = U256::from(1_000_000);
     let quote = route.quote(&network, amount).await.unwrap();
 

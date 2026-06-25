@@ -1,6 +1,9 @@
 use alloy::primitives::BlockNumber;
 
-use crate::{network::NetworkId, provider::RpcProvider};
+use crate::{
+    network::{NetworkId, NetworkInstant},
+    provider::RpcProvider,
+};
 
 /// An combination of a given network, block height / time, and provider.
 #[derive(Debug, Clone)]
@@ -25,6 +28,19 @@ impl NetworkTime {
         match self {
             NetworkTime::Fiat(date_time) => Some(date_time),
             _ => None,
+        }
+    }
+
+    /// Function for converting a single network into a NetworkInstant
+    /// This can be usefull if you only want to query a single network
+    pub fn instant(self) -> NetworkInstant {
+        match self {
+            NetworkTime::EVM(network_id, block_number, provider) => {
+                NetworkInstant::default().with_evm_block(network_id, block_number, provider)
+            }
+            NetworkTime::Fiat(date_time) => {
+                NetworkInstant::default().with_fiat_timestamp(date_time)
+            }
         }
     }
 }

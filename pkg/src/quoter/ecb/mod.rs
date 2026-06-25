@@ -3,7 +3,7 @@
 The [`EcbRateSource`] struct is used to fetch rates from the European Central Bank (ECB) API.
 
 ```rust
-use eth_prices::{quoter::ecb::EcbRateSource, asset::AssetIdentifier, network::Network};
+use eth_prices::{quoter::ecb::EcbRateSource, asset::AssetIdentifier, network::NetworkTime};
 use alloy::primitives::U256;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -14,7 +14,7 @@ pub async fn main() {
 
     let token_in: AssetIdentifier = "fiat:eur".try_into().unwrap();
     let token_out: AssetIdentifier = "fiat:czk".try_into().unwrap();
-    let network = Network::Fiat(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
+    let network = NetworkTime::Fiat(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()).instant();
 
     let route = fiat_graph.compute(&token_in, &token_out).unwrap();
     let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();

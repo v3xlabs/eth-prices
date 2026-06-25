@@ -6,13 +6,14 @@ The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's
 use eth_prices::quoter::erc4626::ERC4626Quoter;
 
 let quoter = ERC4626Quoter {
+    network_id: 1,
     vault_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
     token_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
 };
 ```
 
 ```rust
-use eth_prices::{quoter::erc4626::ERC4626Quoter, quoter::Quoter, asset::{Asset, AssetIdentifier}, network::Network, quoter::RateDirection};
+use eth_prices::{quoter::erc4626::ERC4626Quoter, quoter::Quoter, asset::{Asset, AssetIdentifier}, network::NetworkTime, quoter::RateDirection};
 use alloy::{providers::{ProviderBuilder, Provider}, primitives::address};
 
 #[tokio::main]
@@ -29,7 +30,7 @@ pub async fn main() {
     let amount_in = token_a.nominal_amount();
     // Decide what block to query (latest in this case)
     let block = provider.get_block_number().await.unwrap();
-    let network = Network::EVM(1, block, provider.clone());
+    let network = NetworkTime::EVM(1, block, provider.clone()).instant();
     // Quote the rate
     let rate = quoter.rate(amount_in, RateDirection::Forward, &network).await.unwrap();
     println!("rate: {}", rate);
@@ -170,7 +171,7 @@ mod tests {
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
-        let time = NetworkInstant::from_provider(provider.clone(), 1, block);
+        let time = NetworkTime::EVM(1, block, provider.clone()).instant();
         let forward_rate = quoter
             .rate(token_a_amount, RateDirection::Forward, &time)
             .await
