@@ -1,3 +1,7 @@
+/*!
+Network timeee
+*/
+
 use std::collections::HashMap;
 
 use alloy::{
@@ -9,6 +13,7 @@ use crate::EthPricesError;
 
 pub type NetworkId = u64;
 
+/// An combination of a given network, block height / time, and provider.
 #[derive(Debug, Clone)]
 pub enum NetworkTime {
     // chain id, block number, provider
@@ -35,6 +40,8 @@ impl NetworkTime {
     }
 }
 
+/// Network time
+/// Due to the nature of how eth-prices can quote across different networks, a `NetworkTimes` instance is used to keep track of all the networks and ensure consistent backquerying against a custom blockheight or date.
 #[derive(Default, Debug, Clone)]
 pub struct NetworkTimes(pub HashMap<NetworkId, NetworkTime>);
 
