@@ -1,15 +1,15 @@
 //! Uniswap v3 quote sources.
 
 use alloy::{
-    primitives::{Address, U256, U512},
-    providers::DynProvider,
+    primitives::{Address, ChainId, U256, U512},
+    providers::{DynProvider, Provider},
 };
 use pool::UniswapV3Pool;
 
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::Network,
+    network::{NetworkId, NetworkTimes},
     quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
 };
 
@@ -19,6 +19,7 @@ pub mod pool;
 /// Quotes spot rates from a Uniswap v3 pool at a given block height.
 #[derive(Debug, Clone)]
 pub struct UniswapV3Quoter {
+    pub network_id: NetworkId,
     /// Pool contract address.
     pub pool_address: Address,
     /// First token in pool order.
@@ -33,11 +34,13 @@ impl UniswapV3Quoter {
         provider: &DynProvider,
         selector: UniswapV3Selector,
     ) -> Result<Self> {
+        let network_id = provider.get_chain_id().await?;
         let pool_address = selector.resolve(provider).await?;
         let pool = UniswapV3Pool::new(pool_address, provider);
         let token0 = pool.token0().call().await?;
         let token1 = pool.token1().call().await?;
         Ok(Self {
+            network_id,
             pool_address,
             token0,
             token1,
@@ -60,8 +63,14 @@ impl Quoter for UniswapV3Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        network: &Network,
+        networks: &NetworkTimes,
     ) -> Result<U256> {
+        let network = networks
+            .get(&self.network_id)
+            .ok_or(EthPricesError::InvalidNetwork(format!(
+                "Network: {:?}",
+                self.network_id
+            )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()

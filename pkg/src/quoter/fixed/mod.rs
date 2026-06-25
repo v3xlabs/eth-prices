@@ -8,7 +8,7 @@ use serde::Deserialize;
 use crate::{
     Result,
     asset::identity::AssetIdentifier,
-    network::Network,
+    network::NetworkTimes,
     quoter::{Quoter, RateDirection},
 };
 
@@ -52,7 +52,7 @@ impl Quoter for FixedQuoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        _network: &Network,
+        _networks: &NetworkTimes,
     ) -> Result<U256> {
         let ten = U2048::from(10);
         let token_in_scale = ten.pow(U2048::from(self.token_in_decimals));

@@ -39,7 +39,7 @@ pub async fn main() {
 
 use alloy::{
     primitives::{Address, U256},
-    providers::DynProvider,
+    providers::{DynProvider, Provider},
     sol,
 };
 use serde::Deserialize;
@@ -47,7 +47,7 @@ use serde::Deserialize;
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::Network,
+    network::{NetworkId, NetworkTimes},
     quoter::{Quoter, RateDirection},
 };
 
@@ -70,6 +70,7 @@ pub struct ERC4626Config {
 /// Quotes conversions between an ERC-4626 vault share token and its underlying asset.
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
+    pub network_id: NetworkId,
     /// Vault share token metadata.
     pub vault_address: AssetIdentifier,
     /// Underlying asset metadata returned by `asset()`.
@@ -79,11 +80,13 @@ pub struct ERC4626Quoter {
 impl ERC4626Quoter {
     /// Creates a quoter by loading the vault's underlying asset.
     pub async fn new(vault_address: Address, provider: &DynProvider) -> Result<Self> {
+        let network_id = provider.get_chain_id().await?;
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await?;
         let token_address = token_address.into();
         let vault_address = vault_address.into();
         Ok(Self {
+            network_id,
             vault_address,
             token_address,
         })
@@ -104,8 +107,14 @@ impl Quoter for ERC4626Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        network: &Network,
+        networks: &NetworkTimes,
     ) -> Result<U256> {
+        let network = networks
+            .get(self.network_id)
+            .ok_or(EthPricesError::InvalidNetwork(format!(
+                "Network: {:?}",
+                self.network_id
+            )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()
@@ -146,7 +155,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::{asset::Asset, tests::get_test_provider};
+    use crate::{asset::Asset, network::NetworkTime, tests::get_test_provider};
 
     #[tokio::test]
     async fn test_get_rate() {
@@ -160,12 +169,9 @@ mod tests {
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
+        let time = NetworkTimes::from_provider(provider.clone(), 1, block);
         let forward_rate = quoter
-            .rate(
-                token_a_amount,
-                RateDirection::Forward,
-                &Network::EVM(1, block, provider.clone()),
-            )
+            .rate(token_a_amount, RateDirection::Forward, &time)
             .await
             .unwrap();
 
@@ -174,11 +180,7 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(
-                token_b_amount,
-                RateDirection::Reverse,
-                &Network::EVM(1, block, provider.clone()),
-            )
+            .rate(token_b_amount, RateDirection::Reverse, &time)
             .await
             .unwrap();
 
