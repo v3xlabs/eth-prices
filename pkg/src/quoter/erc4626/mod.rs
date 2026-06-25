@@ -110,7 +110,7 @@ impl Quoter for ERC4626Quoter {
         networks: &NetworkTimes,
     ) -> Result<U256> {
         let network = networks
-            .get(self.network_id)
+            .get(&self.network_id)
             .ok_or(EthPricesError::InvalidNetwork(format!(
                 "Network: {:?}",
                 self.network_id

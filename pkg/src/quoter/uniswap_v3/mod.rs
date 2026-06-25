@@ -1,7 +1,7 @@
 //! Uniswap v3 quote sources.
 
 use alloy::{
-    primitives::{Address, ChainId, U256, U512},
+    primitives::{Address, U256, U512},
     providers::{DynProvider, Provider},
 };
 use pool::UniswapV3Pool;
