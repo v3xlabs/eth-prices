@@ -32,7 +32,7 @@ pub async fn main() -> Result<()> {
         let box_provider = provider.erased();
 
         let block = box_provider.get_block_number().await?;
-        let network = Network::EVM(1, block, box_provider.clone());
+        let network = NetworkTime::from_provider(box_provider.clone(), 1, block);
 
         let precision = 10;
 

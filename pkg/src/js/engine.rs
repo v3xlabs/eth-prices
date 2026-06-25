@@ -11,7 +11,7 @@ use super::{
 };
 use crate::{
     Result,
-    network::Network,
+    network::{NetworkTime, Network},
     quoter::{
         AnyQuoter,
         erc4626::ERC4626Quoter,
@@ -93,7 +93,7 @@ impl Engine {
     ) -> Result<String, JsError> {
         let amount_in = parse_u256(&amount_in)?;
         let block = self.resolve_block(block).await?;
-        let network = Network::EVM(1, block, self.provider.clone());
+        let network = NetworkTime::from_provider(self.provider.clone(), 1.into(), block);
         route
             .inner
             .quote(&network, amount_in)
