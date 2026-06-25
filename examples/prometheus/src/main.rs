@@ -8,7 +8,7 @@ use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use eth_prices::{
     asset::{Asset, AssetIdentifier},
     config::Config,
-    network::Network,
+    network::NetworkTimes,
     router::{Router, route::Route},
 };
 use poem::{
@@ -144,7 +144,7 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             })
             .set(block);
 
-        let network = Network::EVM(1, block, chain.provider.clone());
+        let network = NetworkTimes::default().with_evm_block(1, block, chain.provider.clone());
 
         for route in &chain.routes {
             let token_input = Asset::new(route.input_token.clone(), &chain.provider)

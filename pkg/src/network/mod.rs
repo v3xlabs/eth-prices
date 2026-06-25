@@ -69,10 +69,10 @@ impl NetworkTimes {
         self
     }
 
-    pub fn with_evm_latest(mut self, network_id: NetworkId, provider: DynProvider) -> Self {
+    pub async fn with_evm_latest(mut self, network_id: NetworkId, provider: DynProvider) -> Result<Self, EthPricesError> {
         let block_number = provider.get_block_number().await?;
         self.0.insert(network_id, NetworkTime::EVM(network_id, block_number, provider));
-        self
+        Ok(self)
     }
 
     pub async fn with_evm_provider(mut self, provider: DynProvider) -> Result<Self, EthPricesError> {
