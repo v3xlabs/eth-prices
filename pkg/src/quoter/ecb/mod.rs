@@ -54,9 +54,11 @@ enum EcbCacheKey {
     Date(String),
 }
 
+type CacheMap = HashMap<EcbCacheKey, Arc<HashMap<String, U256>>>;
+
 #[derive(Debug, Clone, Default)]
 pub struct EcbRateSource {
-    cache: Arc<Mutex<HashMap<EcbCacheKey, Arc<HashMap<String, U256>>>>>,
+    cache: Arc<Mutex<CacheMap>>,
 }
 
 impl EcbRateSource {
