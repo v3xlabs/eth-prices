@@ -7,7 +7,11 @@ use alloy::{
 use pool::UniswapV3Pool;
 
 use crate::{
-    EthPricesError, Result, asset::identity::AssetIdentifier, network::{NetworkId, NetworkInstant}, provider::RpcProvider, quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
+    EthPricesError, Result,
+    asset::identity::AssetIdentifier,
+    network::{NetworkId, NetworkInstant},
+    provider::RpcProvider,
+    quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
 };
 
 pub mod factory;

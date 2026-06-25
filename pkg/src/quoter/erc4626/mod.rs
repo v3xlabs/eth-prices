@@ -45,7 +45,11 @@ use alloy::{
 use serde::Deserialize;
 
 use crate::{
-    EthPricesError, Result, asset::identity::AssetIdentifier, network::{NetworkId, NetworkInstant}, provider::RpcProvider, quoter::{Quoter, RateDirection},
+    EthPricesError, Result,
+    asset::identity::AssetIdentifier,
+    network::{NetworkId, NetworkInstant},
+    provider::RpcProvider,
+    quoter::{Quoter, RateDirection},
 };
 
 sol! {

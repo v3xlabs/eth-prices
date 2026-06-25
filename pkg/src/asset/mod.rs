@@ -1,8 +1,6 @@
 //! Token metadata and identifier helpers.
 
-use alloy::{
-    primitives::{Address, U256},
-};
+use alloy::primitives::{Address, U256};
 
 use crate::{Result, asset::erc20::ERC20, provider::RpcProvider};
 

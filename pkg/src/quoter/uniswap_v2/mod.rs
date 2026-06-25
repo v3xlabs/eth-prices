@@ -12,7 +12,11 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::{
-    EthPricesError, Result, asset::identity::AssetIdentifier, network::{NetworkId, NetworkInstant}, provider::RpcProvider, quoter::{Quoter, RateDirection},
+    EthPricesError, Result,
+    asset::identity::AssetIdentifier,
+    network::{NetworkId, NetworkInstant},
+    provider::RpcProvider,
+    quoter::{Quoter, RateDirection},
 };
 
 /// Configuration for a set of Uniswap v2 pools on a single chain.

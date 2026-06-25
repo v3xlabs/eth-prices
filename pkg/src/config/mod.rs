@@ -1,6 +1,4 @@
-use alloy::{
-    primitives::{U256, map::HashMap},
-};
+use alloy::primitives::{U256, map::HashMap};
 use figment::{
     Figment,
     providers::{Format, Toml},
@@ -8,7 +6,10 @@ use figment::{
 use serde::Deserialize;
 
 use crate::{
-    Result, error::EthPricesError, provider::RpcProvider, quoter::{
+    Result,
+    error::EthPricesError,
+    provider::RpcProvider,
+    quoter::{
         AnyQuoter,
         erc4626::{ERC4626Config, ERC4626Quoter},
         fixed::FixedQuoter,

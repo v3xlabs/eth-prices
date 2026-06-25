@@ -67,10 +67,10 @@ pub use error::{EthPricesError, Result};
 
 pub mod asset;
 pub mod config;
-pub mod quoter;
-pub mod router;
 pub mod network;
 pub mod provider;
+pub mod quoter;
+pub mod router;
 
 #[cfg(target_arch = "wasm32")]
 pub mod js;

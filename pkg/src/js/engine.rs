@@ -1,6 +1,6 @@
 use alloy::{
     primitives::BlockNumber,
-    providers::{ Provider, ProviderBuilder},
+    providers::{Provider, ProviderBuilder},
 };
 use wasm_bindgen::prelude::*;
 

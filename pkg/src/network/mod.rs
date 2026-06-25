@@ -1,7 +1,7 @@
-pub mod time;
 pub mod instant;
+pub mod time;
 
-pub use time::NetworkTime;
 pub use instant::NetworkInstant;
+pub use time::NetworkTime;
 
 pub type NetworkId = u64;
