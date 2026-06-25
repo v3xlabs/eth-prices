@@ -65,7 +65,7 @@ impl EcbRateSource {
     pub fn graph(&self) -> Router {
         let mut graph = Router::default();
         for quoter in self.quoters() {
-            graph.add_quoter(AnyQuoter(Arc::new(quoter)));
+            graph.add_quoter(AnyQuoter::from(quoter));
         }
         graph
     }
