@@ -3,10 +3,7 @@
 pub mod factory;
 pub mod pair;
 
-use alloy::{
-    primitives::{Address, U256, U512, address},
-    providers::Provider,
-};
+use alloy::primitives::{Address, U256, U512, address};
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 use tracing::info;
@@ -70,7 +67,7 @@ pub struct UniswapV2Quoter {
 impl UniswapV2Quoter {
     /// Builds a quoter from an instantiated pair contract.
     pub async fn from_contract(contract: UniswapV2PairInstance<&RpcProvider>) -> Result<Self> {
-        let network_id = contract.provider().get_chain_id().await?;
+        let network_id = NetworkId::from_provider(contract.provider()).await?;
         let pair_address = *contract.address();
         let token0 = contract.token0().call().await?;
         let token1 = contract.token1().call().await?;
@@ -93,7 +90,7 @@ impl UniswapV2Quoter {
         selector: UniswapV2Selector,
     ) -> Result<Self> {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
-        let network_id = provider.get_chain_id().await?;
+        let network_id = NetworkId::from_provider(provider).await?;
 
         match selector {
             UniswapV2Selector::ByTokens {
@@ -149,12 +146,13 @@ impl Quoter for UniswapV2Quoter {
         direction: RateDirection,
         networks: &NetworkInstant,
     ) -> Result<U256> {
-        let network = networks
-            .get(&self.network_id)
-            .ok_or(EthPricesError::InvalidNetwork(format!(
-                "Network: {:?}",
-                self.network_id
-            )))?;
+        let network =
+            networks
+                .get(&self.network_id.clone().into())
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    self.network_id
+                )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()

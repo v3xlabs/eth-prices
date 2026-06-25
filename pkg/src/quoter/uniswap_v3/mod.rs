@@ -1,9 +1,6 @@
 //! Uniswap v3 quote sources.
 
-use alloy::{
-    primitives::{Address, U256, U512},
-    providers::Provider,
-};
+use alloy::primitives::{Address, U256, U512};
 use pool::UniswapV3Pool;
 
 use crate::{
@@ -35,7 +32,7 @@ impl UniswapV3Quoter {
         provider: &RpcProvider,
         selector: UniswapV3Selector,
     ) -> Result<Self> {
-        let network_id = provider.get_chain_id().await?;
+        let network_id = NetworkId::from_provider(provider).await?;
         let pool_address = selector.resolve(provider).await?;
         let pool = UniswapV3Pool::new(pool_address, provider);
         let token0 = pool.token0().call().await?;
@@ -66,12 +63,13 @@ impl Quoter for UniswapV3Quoter {
         direction: RateDirection,
         networks: &NetworkInstant,
     ) -> Result<U256> {
-        let network = networks
-            .get(&self.network_id)
-            .ok_or(EthPricesError::InvalidNetwork(format!(
-                "Network: {:?}",
-                self.network_id
-            )))?;
+        let network =
+            networks
+                .get(&self.network_id.clone().into())
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    self.network_id
+                )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()

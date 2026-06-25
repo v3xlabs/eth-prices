@@ -40,7 +40,6 @@ pub async fn main() {
 
 use alloy::{
     primitives::{Address, U256},
-    providers::Provider,
     sol,
 };
 use serde::Deserialize;
@@ -82,7 +81,7 @@ pub struct ERC4626Quoter {
 impl ERC4626Quoter {
     /// Creates a quoter by loading the vault's underlying asset.
     pub async fn new(vault_address: Address, provider: &RpcProvider) -> Result<Self> {
-        let network_id = provider.get_chain_id().await?;
+        let network_id = NetworkId::from_provider(provider).await?;
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await?;
         let token_address = token_address.into();
@@ -111,12 +110,13 @@ impl Quoter for ERC4626Quoter {
         direction: RateDirection,
         networks: &NetworkInstant,
     ) -> Result<U256> {
-        let network = networks
-            .get(&self.network_id)
-            .ok_or(EthPricesError::InvalidNetwork(format!(
-                "Network: {:?}",
-                self.network_id
-            )))?;
+        let network =
+            networks
+                .get(&self.network_id.clone().into())
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    self.network_id
+                )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()
