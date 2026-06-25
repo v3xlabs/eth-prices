@@ -8,9 +8,9 @@ use eth_prices::{
     Result,
     asset::{Asset, AssetIdentifier},
     config::Config,
-    network::Network,
+    network::NetworkTime,
     quoter::RateDirection,
-    router::graph::Router,
+    router::Router,
 };
 use tracing::info;
 
@@ -32,7 +32,8 @@ pub async fn main() -> Result<()> {
         let box_provider = provider.erased();
 
         let block = box_provider.get_block_number().await?;
-        let network = NetworkTime::from_provider(box_provider.clone(), 1, block);
+        let network = NetworkTime::from_provider(box_provider.clone(), 1.into(), block);
+        let networks = network.instant();
 
         let precision = 10;
 
@@ -47,10 +48,10 @@ pub async fn main() -> Result<()> {
             let (amount_a, amount_b) = (token_a.nominal_amount(), token_b.nominal_amount());
 
             let forward_rate = quoter
-                .rate(amount_a, RateDirection::Forward, &network)
+                .rate(amount_a, RateDirection::Forward, &networks)
                 .await?;
             let reverse_rate = quoter
-                .rate(amount_b, RateDirection::Reverse, &network)
+                .rate(amount_b, RateDirection::Reverse, &networks)
                 .await?;
             info!(
                 "forward_rate: {:?} {} = {:?} {}",
@@ -101,7 +102,7 @@ pub async fn main() -> Result<()> {
             let token_a = Asset::new(token_input.clone(), &box_provider).await?;
             let token_input = token_a.nominal_amount();
 
-            let token_output = route.quote(&network, token_input).await?;
+            let token_output = route.quote(&networks, token_input).await?;
             info!(
                 "token_output: 1 {} = {:?}",
                 token_a.symbol,
