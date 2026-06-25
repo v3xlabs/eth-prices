@@ -110,14 +110,14 @@ mod tests {
             .rate(
                 U256::from(100),
                 RateDirection::Forward,
-                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(100),
                 RateDirection::Reverse,
-                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
 
@@ -147,14 +147,14 @@ mod tests {
             .rate(
                 U256::from(1_000_000_000_000_000_000u128),
                 RateDirection::Forward,
-                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(1_000_000),
                 RateDirection::Reverse,
-                &NetworkTime::EVM(1, 100, provider.clone()).instant(),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
 

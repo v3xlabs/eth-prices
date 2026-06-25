@@ -25,7 +25,7 @@ pub async fn main() {
     let route = router.compute(&token_in, &token_out).unwrap();
 
     let block = provider.get_block_number().await.unwrap();
-    let network = NetworkTime::EVM(1, block, provider).instant();
+    let network = NetworkTime::EVM(1.into(), block, provider).instant();
     let amount = U256::from(1_000_000);
     let quote = route.quote(&network, amount).await.unwrap();
 

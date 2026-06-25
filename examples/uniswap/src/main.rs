@@ -32,7 +32,7 @@ pub async fn main() {
     );
     let amount_in = token_a.nominal_amount();
     let block = provider.get_block_number().await.unwrap();
-    let network = NetworkInstant::default().with_evm_block(1, block, provider.clone());
+    let network = NetworkInstant::default().with_evm_block(1.into(), block, provider.clone());
     let rate = quoter
         .rate(amount_in, RateDirection::Forward, &network)
         .await

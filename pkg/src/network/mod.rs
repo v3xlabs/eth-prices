@@ -100,3 +100,15 @@ impl NetworkId {
             .map_err(EthPricesError::from)
     }
 }
+
+impl From<&NetworkId> for Network {
+    fn from(network_id: &NetworkId) -> Self {
+        Network::EVM(network_id.clone())
+    }
+}
+
+impl From<u64> for NetworkId {
+    fn from(network_id: u64) -> Self {
+        NetworkId(network_id)
+    }
+}
