@@ -10,14 +10,23 @@ use crate::{
 
 /// A snapshot of network states across multiple chains / data sources.
 ///
-/// Internally a `HashMap<NetworkId, NetworkTime>`, where:
+/// Internally a `HashMap<Network, NetworkTime>`, where:
 ///
-/// - `NetworkId` is a `u64` — for EVM chains this is the chain ID; for fiat data the
-///   sentinel value `0` is used.
 /// - [`NetworkTime`] stores the actual point-in-time (block height or unix timestamp)
 ///   together with the provider needed to query it.
 ///
-/// # Construction — Builder Pattern
+/// ```rust,ignore
+/// use eth_prices::network::NetworkInstant;
+///
+/// let networks = NetworkInstant::default()
+///     .with_evm_provider_latest(eth_provider).await?
+///     .with_evm_provider_latest(sep_provider).await?
+///     .with_now();
+/// ```
+///
+/// Note that the above example makes a `eth_chainId` and `eth_blockNumber` query per provider supplied.
+///  
+/// # Quoting at a given network time
 ///
 /// Start with [`Default::default()`] and chain builder methods. Each builder consumes
 /// and returns `self`, enabling a fluent style:
@@ -26,18 +35,13 @@ use crate::{
 /// use eth_prices::network::NetworkInstant;
 ///
 /// let networks = NetworkInstant::default()
-///     .with_evm_block(1, 20_000_000, eth_provider)
-///     .with_evm_block(42161, 200_000_000, arb_provider)
-///     .with_fiat_timestamp(1_700_000_000);
+///     .with_evm_block(1.into(), 123_456_789, eth_provider)
+///     .with_evm_block(11155111.into(), 123_456_789, sep_provider)
+///     .with_fiat_timestamp(time);
 /// ```
 ///
 /// For single-network convenience, start with [`NetworkTime::instant()`] instead.
 ///
-/// # Reuse
-///
-/// [`NetworkInstant`] implements [`Clone`]. Build one at the start of a request and
-/// share it across all [`Route::quote`](crate::router::Route::quote) calls so every
-/// sub-quote uses consistent block heights and providers.
 #[derive(Default, Debug, Clone)]
 pub struct NetworkInstant(pub HashMap<Network, NetworkTime>);
 
@@ -75,6 +79,13 @@ impl NetworkInstant {
     pub fn with_fiat_timestamp(mut self, timestamp: u64) -> Self {
         self.0.insert(Network::Fiat, NetworkTime::Fiat(timestamp));
         self
+    }
+
+    /// Set a fiat timestamp to the current time.
+    #[cfg(feature = "time")]
+    pub fn with_now(mut self) -> Result<Self, EthPricesError> {
+        self.0.insert(Network::Fiat, NetworkTime::with_fiat_now());
+        Ok(self)
     }
 
     /// Set an EVM network to a specific block number.

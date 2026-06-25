@@ -18,8 +18,7 @@ use crate::{
 /// # Converting to a [`NetworkInstant`]
 ///
 /// Use [`instant()`](NetworkTime::instant) to wrap a single [`NetworkTime`] into a
-/// [`NetworkInstant`] — the type expected by [`Quoter::rate`](crate::quoter::Quoter::rate)
-/// and [`Route::quote`](crate::router::Route::quote):
+/// [`NetworkInstant`]
 ///
 /// ```rust,ignore
 /// use eth_prices::network::NetworkTime;
@@ -92,5 +91,17 @@ impl NetworkTime {
         block_number: BlockNumber,
     ) -> Self {
         NetworkTime::EVM(network_id, block_number, provider)
+    }
+
+    /// Set a fiat timestamp to the current time.
+    #[cfg(feature = "time")]
+    pub fn with_fiat_now() -> Self {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        NetworkTime::Fiat(time)
     }
 }

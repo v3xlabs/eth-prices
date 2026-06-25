@@ -144,7 +144,8 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             })
             .set(block);
 
-        let network = NetworkInstant::default().with_evm_block(1.into(), block, chain.provider.clone());
+        let network =
+            NetworkInstant::default().with_evm_block(1.into(), block, chain.provider.clone());
 
         for route in &chain.routes {
             let token_input = Asset::new(route.input_token.clone(), &chain.provider)

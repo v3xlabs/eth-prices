@@ -14,8 +14,8 @@ use alloy::providers::{ProviderBuilder, Provider};
 
 #[tokio::main]
 pub async fn main() {
-    println!("Hello, world!");
     let provider = ProviderBuilder::new().connect("https://ethereum-rpc.publicnode.com").await.unwrap().erased();
+
     let selector = UniswapV3Selector::Pool { pool_address: address!("0x99ac8ca7087fa4a2a1fb6357269965a2014abc35") };
     let quoter = UniswapV3Quoter::from_selector(&provider, selector).await.unwrap();
     let router = Router::from_iter(vec![quoter.into()]);
@@ -24,8 +24,7 @@ pub async fn main() {
     let token_out = AssetIdentifier::try_from("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
     let route = router.compute(&token_in, &token_out).unwrap();
 
-    let block = provider.get_block_number().await.unwrap();
-    let network = NetworkTime::EVM(1.into(), block, provider).instant();
+    let network = NetworkTime::from_provider_latest(provider, 1.into()).await.unwrap().instant();
     let amount = U256::from(1_000_000);
     let quote = route.quote(&network, amount).await.unwrap();
 
@@ -52,6 +51,7 @@ Currently supported quoters include:
 # Features
 
 - `ecb` - Enable European Central Bank (ECB) quoters.
+- `time` - Enable system time integration.
 
 # Routing
 

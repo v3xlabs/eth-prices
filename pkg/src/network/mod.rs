@@ -44,12 +44,6 @@ let networks = NetworkInstant::default()
     .await?
     .with_fiat_timestamp(now);
 ```
-
-# Reuse
-
-[`NetworkInstant`] is cheaply clonable. Construct one at the start of your request
-and pass a reference to every [`Route::quote`](crate::router::Route::quote) call to
-ensure all sub-quotes use the same block heights and providers.
 */
 
 pub mod instant;
