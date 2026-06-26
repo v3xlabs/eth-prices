@@ -8,7 +8,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      RPC_URL: https://eth.drpc.org
+      RPC_URL: https://ethereum.reth.rs/rpc
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
