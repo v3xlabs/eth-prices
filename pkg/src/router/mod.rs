@@ -13,13 +13,19 @@ use crate::{
 };
 use route::{Route, RouteStep};
 
+pub use auto::AutoRouter;
+
+pub mod auto;
 pub mod route;
+
+const MAX_CONFIDENCE: u64 = 100;
 
 #[derive(Debug, Clone)]
 pub struct Router {
     pub quoters: Vec<AnyQuoter>,
     pub graph: UnGraph<String, String>,
     pub token_map: HashMap<String, NodeIndex<u32>>,
+    confidences: HashMap<String, u64>,
 }
 
 impl Default for Router {
@@ -28,6 +34,7 @@ impl Default for Router {
             quoters: Vec::new(),
             graph: UnGraph::new_undirected(),
             token_map: HashMap::new(),
+            confidences: HashMap::new(),
         }
     }
 }
@@ -70,8 +77,10 @@ impl Router {
 
     pub fn add_quoter(&mut self, quoter: AnyQuoter) {
         let slug = quoter.to_string();
+        let confidence = quoter.confidence;
         let (token_in, token_out) = quoter.tokens();
         self.quoters.push(quoter);
+        self.confidences.insert(slug.clone(), confidence);
 
         let token_in_index = self.add_token(&token_in);
         let token_out_index = self.add_token(&token_out);
@@ -103,11 +112,16 @@ impl Router {
             output_token = %output_token,
         );
 
+        let confidences = &self.confidences;
         let path = petgraph::algo::astar(
             &self.graph,
             token_a_index,
             |x| x == token_b_index,
-            |_| 0,
+            |edge| {
+                let slug = edge.weight();
+                let conf = confidences.get(slug.as_str()).copied().unwrap_or(0);
+                (MAX_CONFIDENCE + 1 - conf.min(MAX_CONFIDENCE)) as u32
+            },
             |_| 0,
         );
 

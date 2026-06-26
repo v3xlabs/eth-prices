@@ -50,6 +50,9 @@ pub enum EthPricesError {
 
     #[error("ECB rate unavailable for fiat:{0}")]
     EcbRateUnavailable(String),
+
+    #[error("AutoRouter: no discoverable data sources for the given tokens")]
+    AutoRouterNoPools,
 }
 
 pub type Result<T, E = EthPricesError> = std::result::Result<T, E>;

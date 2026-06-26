@@ -38,23 +38,16 @@
             rustfmtNightly
             rustToolchain
             rust-analyzer
-            # rustfmt
-            # clippy
-            # cargo
-            # rustc
             bacon
-
             just
+
             nodejs_24
             pnpm_11
             chromium
+            wasm-bindgen-cli
           ];
 
           shellHook = ''
-            # Playwright's downloaded browsers miss NixOS shared libs; use nixpkgs chromium.
-            export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-            export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="${pkgs.chromium}/bin/chromium"
-
             just
           '';
         };

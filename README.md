@@ -13,6 +13,9 @@
     <a href="#"><img src="https://img.shields.io/badge/License-LGPL--3.0-hotpink?style=flat" alt="License: LGPL-3.0"></a>
 </p>
 
+> [!IMPORTANT]
+> eth-prices aims to provide ethereum price estimation only. It is not intended for nor provides guarantees of exchange rates.
+
 ## Quickstart
 
 ```sh
@@ -55,3 +58,5 @@ This crate has a few examples you can toy around with:
 
 - [Uniswap V2 Quoter](./examples/uniswap/)
 - [Prometheus Exporter](./examples/prometheus/)
+- [Fiat Quoter](./examples/fiat/)
+- [Auto Router](./examples/auto_router/)
