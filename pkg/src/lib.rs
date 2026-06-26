@@ -56,6 +56,9 @@ Currently supported quoters include:
 # Routing
 
 Use the [`router::Router`] struct to compute a route and quote the rate.
+A router is essentially a graph of quoters, where can be routed from any point to any other point.
+
+The [`router::AutoRouter`] can be used to automatically discover quoters and build a router.
 
 # Examples
 

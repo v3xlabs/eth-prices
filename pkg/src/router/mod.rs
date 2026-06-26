@@ -13,6 +13,8 @@ use crate::{
 };
 use route::{Route, RouteStep};
 
+pub use auto::AutoRouter;
+
 pub mod auto;
 pub mod route;
 
