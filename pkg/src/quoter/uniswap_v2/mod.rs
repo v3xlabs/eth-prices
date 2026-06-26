@@ -3,10 +3,7 @@
 pub mod factory;
 pub mod pair;
 
-use alloy::{
-    primitives::{Address, U256, U512, address},
-    providers::DynProvider,
-};
+use alloy::primitives::{Address, U256, U512, address};
 use pair::UniswapV2Pair::{self, UniswapV2PairInstance};
 use serde::Deserialize;
 use tracing::info;
@@ -14,7 +11,8 @@ use tracing::info;
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::Network,
+    network::{NetworkId, NetworkInstant},
+    provider::RpcProvider,
     quoter::{Quoter, RateDirection},
 };
 
@@ -57,6 +55,7 @@ pub enum UniswapV2Selector {
 /// Quotes spot rates from a Uniswap v2 pair contract at a given block height.
 #[derive(Debug, Clone)]
 pub struct UniswapV2Quoter {
+    pub network_id: NetworkId,
     /// Pair contract address.
     pub pair_address: Address,
     /// First token in canonical pair order.
@@ -67,12 +66,14 @@ pub struct UniswapV2Quoter {
 
 impl UniswapV2Quoter {
     /// Builds a quoter from an instantiated pair contract.
-    pub async fn from_contract(contract: UniswapV2PairInstance<&DynProvider>) -> Result<Self> {
+    pub async fn from_contract(contract: UniswapV2PairInstance<&RpcProvider>) -> Result<Self> {
+        let network_id = NetworkId::from_provider(contract.provider()).await?;
         let pair_address = *contract.address();
         let token0 = contract.token0().call().await?;
         let token1 = contract.token1().call().await?;
 
         Ok(Self {
+            network_id,
             pair_address,
             token0,
             token1,
@@ -85,10 +86,11 @@ impl UniswapV2Quoter {
     ///
     /// When a token pair is provided, the configured factory is used to discover the pair address.
     pub async fn from_selector(
-        provider: &DynProvider,
+        provider: &RpcProvider,
         selector: UniswapV2Selector,
     ) -> Result<Self> {
         let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
+        let network_id = NetworkId::from_provider(provider).await?;
 
         match selector {
             UniswapV2Selector::ByTokens {
@@ -105,6 +107,7 @@ impl UniswapV2Quoter {
                 };
 
                 Ok(Self {
+                    network_id,
                     pair_address,
                     token0,
                     token1,
@@ -141,8 +144,15 @@ impl Quoter for UniswapV2Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        network: &Network,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
+        let network =
+            networks
+                .get(&self.network_id.clone().into())
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    self.network_id
+                )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()

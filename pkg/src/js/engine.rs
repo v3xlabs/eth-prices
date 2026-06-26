@@ -1,6 +1,6 @@
 use alloy::{
     primitives::BlockNumber,
-    providers::{DynProvider, Provider, ProviderBuilder},
+    providers::{Provider, ProviderBuilder},
 };
 use wasm_bindgen::prelude::*;
 
@@ -11,7 +11,8 @@ use super::{
 };
 use crate::{
     Result,
-    network::Network,
+    network::NetworkTime,
+    provider::RpcProvider,
     quoter::{
         AnyQuoter,
         erc4626::ERC4626Quoter,
@@ -24,7 +25,7 @@ use crate::{
 
 #[wasm_bindgen]
 pub struct Engine {
-    provider: DynProvider,
+    provider: RpcProvider,
     router: Router,
 }
 
@@ -93,10 +94,11 @@ impl Engine {
     ) -> Result<String, JsError> {
         let amount_in = parse_u256(&amount_in)?;
         let block = self.resolve_block(block).await?;
-        let network = Network::EVM(1, block, self.provider.clone());
+        let network = NetworkTime::from_provider(self.provider.clone(), 1.into(), block);
+        let networks = network.instant();
         route
             .inner
-            .quote(&network, amount_in)
+            .quote(&networks, amount_in)
             .await
             .map(|amount_out| amount_out.to_string())
             .map_err(into_js_error)

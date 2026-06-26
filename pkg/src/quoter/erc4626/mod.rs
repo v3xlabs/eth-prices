@@ -6,13 +6,14 @@ The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's
 use eth_prices::quoter::erc4626::ERC4626Quoter;
 
 let quoter = ERC4626Quoter {
+    network_id: 1.into(),
     vault_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
     token_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
 };
 ```
 
 ```rust
-use eth_prices::{quoter::erc4626::ERC4626Quoter, quoter::Quoter, asset::{Asset, AssetIdentifier}, network::Network, quoter::RateDirection};
+use eth_prices::{quoter::erc4626::ERC4626Quoter, quoter::Quoter, asset::{Asset, AssetIdentifier}, network::NetworkTime, quoter::RateDirection};
 use alloy::{providers::{ProviderBuilder, Provider}, primitives::address};
 
 #[tokio::main]
@@ -29,7 +30,7 @@ pub async fn main() {
     let amount_in = token_a.nominal_amount();
     // Decide what block to query (latest in this case)
     let block = provider.get_block_number().await.unwrap();
-    let network = Network::EVM(1, block, provider.clone());
+    let network = NetworkTime::EVM(1.into(), block, provider.clone()).instant();
     // Quote the rate
     let rate = quoter.rate(amount_in, RateDirection::Forward, &network).await.unwrap();
     println!("rate: {}", rate);
@@ -39,7 +40,6 @@ pub async fn main() {
 
 use alloy::{
     primitives::{Address, U256},
-    providers::DynProvider,
     sol,
 };
 use serde::Deserialize;
@@ -47,7 +47,8 @@ use serde::Deserialize;
 use crate::{
     EthPricesError, Result,
     asset::identity::AssetIdentifier,
-    network::Network,
+    network::{NetworkId, NetworkInstant},
+    provider::RpcProvider,
     quoter::{Quoter, RateDirection},
 };
 
@@ -70,6 +71,7 @@ pub struct ERC4626Config {
 /// Quotes conversions between an ERC-4626 vault share token and its underlying asset.
 #[derive(Debug, Clone)]
 pub struct ERC4626Quoter {
+    pub network_id: NetworkId,
     /// Vault share token metadata.
     pub vault_address: AssetIdentifier,
     /// Underlying asset metadata returned by `asset()`.
@@ -78,12 +80,14 @@ pub struct ERC4626Quoter {
 
 impl ERC4626Quoter {
     /// Creates a quoter by loading the vault's underlying asset.
-    pub async fn new(vault_address: Address, provider: &DynProvider) -> Result<Self> {
+    pub async fn new(vault_address: Address, provider: &RpcProvider) -> Result<Self> {
+        let network_id = NetworkId::from_provider(provider).await?;
         let vault = ERC4626::new(vault_address, provider);
         let token_address = vault.asset().call().await?;
         let token_address = token_address.into();
         let vault_address = vault_address.into();
         Ok(Self {
+            network_id,
             vault_address,
             token_address,
         })
@@ -104,8 +108,15 @@ impl Quoter for ERC4626Quoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        network: &Network,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
+        let network =
+            networks
+                .get(&self.network_id.clone().into())
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    self.network_id
+                )))?;
         let (_chain_id, block_number, provider) =
             network
                 .as_evm()
@@ -146,7 +157,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::{asset::Asset, tests::get_test_provider};
+    use crate::{asset::Asset, network::NetworkTime, tests::get_test_provider};
 
     #[tokio::test]
     async fn test_get_rate() {
@@ -160,12 +171,9 @@ mod tests {
             .await
             .unwrap();
         let token_a_amount = token_a.nominal_amount();
+        let time = NetworkTime::EVM(1.into(), block, provider.clone()).instant();
         let forward_rate = quoter
-            .rate(
-                token_a_amount,
-                RateDirection::Forward,
-                &Network::EVM(1, block, provider.clone()),
-            )
+            .rate(token_a_amount, RateDirection::Forward, &time)
             .await
             .unwrap();
 
@@ -174,11 +182,7 @@ mod tests {
             .unwrap();
         let token_b_amount = token_b.nominal_amount();
         let reverse_rate = quoter
-            .rate(
-                token_b_amount,
-                RateDirection::Reverse,
-                &Network::EVM(1, block, provider.clone()),
-            )
+            .rate(token_b_amount, RateDirection::Reverse, &time)
             .await
             .unwrap();
 

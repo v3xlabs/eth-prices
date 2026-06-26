@@ -1,3 +1,5 @@
+allowBuilds:
+  esbuild: false
 autoInstallPeers: false
 packages:
   - "pkg"

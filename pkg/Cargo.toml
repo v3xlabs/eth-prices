@@ -15,9 +15,10 @@ path = "src/main.rs"
 required-features = ["cli"]
 
 [features]
-default = ["ecb"]
+default = ["ecb", "time"]
 cli = []
 ecb = ["dep:reqwest", "dep:csv"]
+time = []
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

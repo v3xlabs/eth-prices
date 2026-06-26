@@ -1,11 +1,10 @@
 use alloy::{
     primitives::{Address, address, aliases::U24},
-    providers::DynProvider,
     sol,
 };
 use serde::Deserialize;
 
-use crate::Result;
+use crate::{Result, provider::RpcProvider};
 
 /// Configuration for a set of Uniswap v3 pools on a single chain.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
@@ -50,7 +49,7 @@ sol! {
 }
 
 impl UniswapV3Selector {
-    pub async fn resolve(&self, provider: &DynProvider) -> Result<Address> {
+    pub async fn resolve(&self, provider: &RpcProvider) -> Result<Address> {
         let factory_address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
         match self {
             UniswapV3Selector::ByTokens {
@@ -68,7 +67,7 @@ impl UniswapV3Selector {
     }
 }
 
-// pub async fn fetch_pools(provider: &DynProvider, factory_address: Address, fees: Vec<U24>) -> Vec<Address> {
+// pub async fn fetch_pools(provider: &RpcProvider, factory_address: Address, fees: Vec<U24>) -> Vec<Address> {
 //     // [500, 3000, 10000]
 // }
 

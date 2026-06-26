@@ -1,10 +1,11 @@
 use alloy::{
     primitives::{Address, U256},
-    providers::DynProvider,
     sol,
 };
 use async_stream::stream;
 use futures::Stream;
+
+use crate::provider::RpcProvider;
 
 sol! {
    #[sol(rpc)]
@@ -16,7 +17,7 @@ sol! {
 }
 
 pub fn fetch_all_pairs<'a>(
-    provider: &'a DynProvider,
+    provider: &'a RpcProvider,
     factory_address: Address,
 ) -> impl Stream<Item = crate::Result<Address>> + 'a {
     stream! {
@@ -37,7 +38,7 @@ pub fn fetch_all_pairs<'a>(
 }
 
 pub async fn fetch_pair(
-    provider: &DynProvider,
+    provider: &RpcProvider,
     factory_address: Address,
     token_from: Address,
     token_to: Address,

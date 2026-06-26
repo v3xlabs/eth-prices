@@ -3,7 +3,7 @@
 The [`EcbRateSource`] struct is used to fetch rates from the European Central Bank (ECB) API.
 
 ```rust
-use eth_prices::{quoter::ecb::EcbRateSource, asset::AssetIdentifier, network::Network};
+use eth_prices::{quoter::ecb::EcbRateSource, asset::AssetIdentifier, network::NetworkTime};
 use alloy::primitives::U256;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -14,7 +14,7 @@ pub async fn main() {
 
     let token_in: AssetIdentifier = "fiat:eur".try_into().unwrap();
     let token_out: AssetIdentifier = "fiat:czk".try_into().unwrap();
-    let network = Network::Fiat(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
+    let network = NetworkTime::Fiat(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()).instant();
 
     let route = fiat_graph.compute(&token_in, &token_out).unwrap();
     let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();
@@ -34,7 +34,7 @@ use crate::{
     Result,
     asset::identity::AssetIdentifier,
     error::EthPricesError,
-    network::Network,
+    network::NetworkInstant,
     quoter::{AnyQuoter, Quoter, RateDirection},
     router::Router,
 };
@@ -54,9 +54,11 @@ enum EcbCacheKey {
     Date(String),
 }
 
+type CacheMap = HashMap<EcbCacheKey, Arc<HashMap<String, U256>>>;
+
 #[derive(Debug, Clone, Default)]
 pub struct EcbRateSource {
-    cache: Arc<Mutex<HashMap<EcbCacheKey, Arc<HashMap<String, U256>>>>>,
+    cache: Arc<Mutex<CacheMap>>,
 }
 
 impl EcbRateSource {
@@ -78,8 +80,9 @@ impl EcbRateSource {
             .collect()
     }
 
-    async fn rate_for(&self, symbol: &str, network: &Network) -> Result<U256> {
-        let key = EcbCacheKey::Date(unix_timestamp_to_date(*network.as_fiat().unwrap()));
+    async fn rate_for(&self, symbol: &str, networks: &NetworkInstant) -> Result<U256> {
+        let network = networks.get_fiat_timestamp().unwrap();
+        let key = EcbCacheKey::Date(unix_timestamp_to_date(*network));
 
         if let Some(rates) = self
             .cache
@@ -134,9 +137,9 @@ impl Quoter for EcbQuoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        network: &Network,
+        networks: &NetworkInstant,
     ) -> Result<U256> {
-        let rate = self.rates.rate_for(&self.quote_symbol, network).await?;
+        let rate = self.rates.rate_for(&self.quote_symbol, networks).await?;
         let amount_in = U2048::from(amount_in);
         let scale = U2048::from(10).pow(U2048::from(RATE_DECIMALS));
         let quoted = match direction {
@@ -268,7 +271,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        let network = Network::Fiat(now);
+        let network = NetworkInstant::default().with_fiat_timestamp(now);
 
         let quote = route.quote(&network, U256::from(1_000_000)).await.unwrap();
 

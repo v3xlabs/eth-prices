@@ -1,14 +1,9 @@
-use std::{
-    collections::{HashMap, HashSet},
-    io::Error,
-    sync::{Arc, atomic::AtomicU64},
-};
-
-use alloy::providers::{DynProvider, Provider, ProviderBuilder};
+use alloy::providers::{Provider, ProviderBuilder};
 use eth_prices::{
     asset::{Asset, AssetIdentifier},
     config::Config,
-    network::Network,
+    network::NetworkInstant,
+    provider::RpcProvider,
     router::{Router, route::Route},
 };
 use poem::{
@@ -19,10 +14,15 @@ use prometheus_client::{
     metrics::{family::Family, gauge::Gauge},
     registry::Registry,
 };
+use std::{
+    collections::{HashMap, HashSet},
+    io::Error,
+    sync::{Arc, atomic::AtomicU64},
+};
 use tracing::info;
 
 pub struct ChainState {
-    provider: DynProvider,
+    provider: RpcProvider,
     #[allow(dead_code)]
     router: Router,
     routes: Vec<Route>,
@@ -144,7 +144,8 @@ async fn metrics(state: Data<&Arc<AppState>>) -> String {
             })
             .set(block);
 
-        let network = Network::EVM(1, block, chain.provider.clone());
+        let network =
+            NetworkInstant::default().with_evm_block(1.into(), block, chain.provider.clone());
 
         for route in &chain.routes {
             let token_input = Asset::new(route.input_token.clone(), &chain.provider)

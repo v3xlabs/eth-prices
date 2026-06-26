@@ -4,7 +4,7 @@ use tracing::info;
 use crate::{
     Result,
     asset::AssetIdentifier,
-    network::Network,
+    network::NetworkInstant,
     quoter::{AnyQuoter, RateDirection},
 };
 
@@ -23,7 +23,7 @@ pub struct Route {
 
 impl Route {
     /// calculate a quote for a given route
-    pub async fn quote(&self, network: &Network, amount_in: U256) -> Result<U256> {
+    pub async fn quote(&self, networks: &NetworkInstant, amount_in: U256) -> Result<U256> {
         let mut amount_out = amount_in;
 
         for step in self.path.iter() {
@@ -38,7 +38,7 @@ impl Route {
 
             let rate = step
                 .quoter
-                .rate(amount_out, step.direction, network)
+                .rate(amount_out, step.direction, networks)
                 .await?;
             amount_out = rate;
 

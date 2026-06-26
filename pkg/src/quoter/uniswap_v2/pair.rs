@@ -1,8 +1,9 @@
 use alloy::{
     primitives::{Address, U256, aliases::U112},
-    providers::DynProvider,
     sol,
 };
+
+use crate::provider::RpcProvider;
 
 sol! {
    #[sol(rpc)]
@@ -28,7 +29,7 @@ pub struct PairInfo {
 }
 
 pub async fn fetch_pair_info(
-    provider: &DynProvider,
+    provider: &RpcProvider,
     pair_address: Address,
 ) -> Result<PairInfo, Box<dyn std::error::Error>> {
     let pair = UniswapV2Pair::new(pair_address, provider);

@@ -4,7 +4,7 @@ use alloy::{
 };
 use eth_prices::{
     asset::Asset,
-    network::Network,
+    network::NetworkInstant,
     quoter::{
         Quoter, RateDirection,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
@@ -32,7 +32,7 @@ pub async fn main() {
     );
     let amount_in = token_a.nominal_amount();
     let block = provider.get_block_number().await.unwrap();
-    let network = Network::EVM(1, block, provider.clone());
+    let network = NetworkInstant::default().with_evm_block(1.into(), block, provider.clone());
     let rate = quoter
         .rate(amount_in, RateDirection::Forward, &network)
         .await

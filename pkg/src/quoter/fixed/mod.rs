@@ -8,7 +8,7 @@ use serde::Deserialize;
 use crate::{
     Result,
     asset::identity::AssetIdentifier,
-    network::Network,
+    network::NetworkInstant,
     quoter::{Quoter, RateDirection},
 };
 
@@ -52,7 +52,7 @@ impl Quoter for FixedQuoter {
         &self,
         amount_in: U256,
         direction: RateDirection,
-        _network: &Network,
+        _networks: &NetworkInstant,
     ) -> Result<U256> {
         let ten = U2048::from(10);
         let token_in_scale = ten.pow(U2048::from(self.token_in_decimals));
@@ -84,7 +84,7 @@ impl Display for FixedQuoter {
 mod tests {
     use alloy::primitives::address;
 
-    use crate::tests::get_test_provider;
+    use crate::{network::NetworkTime, tests::get_test_provider};
 
     use super::*;
 
@@ -110,14 +110,14 @@ mod tests {
             .rate(
                 U256::from(100),
                 RateDirection::Forward,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(100),
                 RateDirection::Reverse,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
 
@@ -147,14 +147,14 @@ mod tests {
             .rate(
                 U256::from(1_000_000_000_000_000_000u128),
                 RateDirection::Forward,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
         let backwards = tracker
             .rate(
                 U256::from(1_000_000),
                 RateDirection::Reverse,
-                &Network::EVM(1, 100, provider.clone()),
+                &NetworkTime::EVM(1.into(), 100, provider.clone()).instant(),
             )
             .await;
 
