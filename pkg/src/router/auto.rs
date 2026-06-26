@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
-use alloy::{
-    primitives::{Address, U256, address, aliases::U24},
-};
+use alloy::primitives::{Address, U256, address, aliases::U24};
 use futures::future::join_all;
 
 use crate::{
@@ -13,16 +11,8 @@ use crate::{
     quoter::{
         AnyQuoter,
         erc4626::{ERC4626, ERC4626Quoter},
-        uniswap_v2::{
-            UniswapV2Quoter,
-            factory::UniswapV2Factory,
-            pair::UniswapV2Pair,
-        },
-        uniswap_v3::{
-            UniswapV3Quoter,
-            factory::UniswapV3Factory,
-            pool::UniswapV3Pool,
-        },
+        uniswap_v2::{UniswapV2Quoter, factory::UniswapV2Factory, pair::UniswapV2Pair},
+        uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Factory, pool::UniswapV3Pool},
     },
     router::Router,
 };
@@ -232,7 +222,10 @@ impl AutoRouter {
         best.into_values().collect()
     }
 
-    fn filter_pools(pools: Vec<DiscoveredPool>, min_liquidity: &Option<U256>) -> Vec<DiscoveredPool> {
+    fn filter_pools(
+        pools: Vec<DiscoveredPool>,
+        min_liquidity: &Option<U256>,
+    ) -> Vec<DiscoveredPool> {
         match min_liquidity {
             Some(min) => pools.into_iter().filter(|p| p.score >= *min).collect(),
             None => pools,
@@ -255,34 +248,35 @@ impl AutoRouter {
 
         let results: Vec<_> = join_all(pairs.into_iter().map(|(a, b)| {
             let provider = provider.clone();
-            async move {
-                discover_single_v2_pool(&provider, factory, a, b).await
-            }
+            async move { discover_single_v2_pool(&provider, factory, a, b).await }
         }))
         .await;
 
         let pools: Vec<DiscoveredPool> = results.into_iter().flatten().collect();
 
-        let liq_futures: Vec<_> = pools.iter().map(|pool| {
-            let provider = provider.clone();
-            async move {
-                let pair = UniswapV2Pair::new(pool.pool_address, &provider);
-                match pair.getReserves().call().await {
-                    Ok(reserves) => {
-                        let reserve0 = U256::from(reserves.reserve0);
-                        let reserve1 = U256::from(reserves.reserve1);
-                        Some(std::cmp::min(reserve0, reserve1))
+        let liq_futures: Vec<_> = pools
+            .iter()
+            .map(|pool| {
+                let provider = provider.clone();
+                async move {
+                    let pair = UniswapV2Pair::new(pool.pool_address, &provider);
+                    match pair.getReserves().call().await {
+                        Ok(reserves) => {
+                            let reserve0 = U256::from(reserves.reserve0);
+                            let reserve1 = U256::from(reserves.reserve1);
+                            Some(std::cmp::min(reserve0, reserve1))
+                        }
+                        Err(_) => None,
                     }
-                    Err(_) => None,
                 }
-            }
-        }).collect();
+            })
+            .collect();
 
         let scores: Vec<Option<U256>> = join_all(liq_futures).await;
 
         pools
             .into_iter()
-            .zip(scores.into_iter())
+            .zip(scores)
             .filter_map(|(mut pool, score)| {
                 pool.score = score?;
                 Some(pool)
@@ -315,9 +309,7 @@ impl AutoRouter {
 
         join_all(queries.into_iter().map(|(a, b, fee)| {
             let provider = provider.clone();
-            async move {
-                discover_single_v3_pool(&provider, factory, a, b, fee).await
-            }
+            async move { discover_single_v3_pool(&provider, factory, a, b, fee).await }
         }))
         .await
         .into_iter()
@@ -325,7 +317,10 @@ impl AutoRouter {
         .collect()
     }
 
-    async fn discover_erc4626_quoters(&self, network_id: &NetworkId) -> (Vec<AnyQuoter>, Vec<Address>) {
+    async fn discover_erc4626_quoters(
+        &self,
+        network_id: &NetworkId,
+    ) -> (Vec<AnyQuoter>, Vec<Address>) {
         let addresses = self.erc20_addresses();
 
         let results: Vec<_> = join_all(addresses.into_iter().map(|addr| {
@@ -349,10 +344,7 @@ impl AutoRouter {
         }))
         .await;
 
-        let (quoters, underlying): (Vec<_>, Vec<_>) = results
-            .into_iter()
-            .flatten()
-            .unzip();
+        let (quoters, underlying): (Vec<_>, Vec<_>) = results.into_iter().flatten().unzip();
 
         (quoters, underlying)
     }
@@ -367,7 +359,7 @@ fn pool_confidence_v2(score: U256) -> u64 {
     if scaled >= U256::from(MAX_CONFIDENCE) {
         MAX_CONFIDENCE
     } else {
-        scaled.as_limbs()[0] as u64
+        scaled.as_limbs()[0]
     }
 }
 
@@ -380,7 +372,7 @@ fn pool_confidence_v3(score: U256) -> u64 {
     if scaled >= U256::from(MAX_CONFIDENCE) {
         MAX_CONFIDENCE
     } else {
-        scaled.as_limbs()[0] as u64
+        scaled.as_limbs()[0]
     }
 }
 

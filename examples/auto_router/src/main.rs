@@ -47,24 +47,17 @@ pub async fn main() {
         .await
         .unwrap();
 
-    println!(
-        "\nDiscovered {} quoter(s):",
-        router.quoters.len()
-    );
+    println!("\nDiscovered {} quoter(s):", router.quoters.len());
     for q in &router.quoters {
         let (ta, tb) = q.tokens();
         println!("  {} <-> {}", ta, tb);
     }
 
     // Route every token towards USDC
-    let usdc = AssetIdentifier::try_from(
-        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    )
-    .unwrap();
+    let usdc = AssetIdentifier::try_from("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
 
     let block = provider.get_block_number().await.unwrap();
-    let networks =
-        NetworkInstant::default().with_evm_block(1.into(), block, provider.clone());
+    let networks = NetworkInstant::default().with_evm_block(1.into(), block, provider.clone());
 
     println!("\n── All routes → USDC ──────────────────────────────────\n");
 
@@ -78,7 +71,7 @@ pub async fn main() {
             Err(_) => {
                 println!("No route found for {} -> USDC", token);
                 continue;
-            },
+            }
         };
 
         let asset_in = Asset::new(route.input_token.clone(), &provider)
