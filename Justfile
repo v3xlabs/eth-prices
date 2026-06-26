@@ -8,5 +8,6 @@ test:
     pnpm --sequential -r test
 
 build:
-    cargo build
-    pnpm -r build
+    cd pkg && cargo build
+    cd pkg && pnpm build
+    cd ts && pnpm build
