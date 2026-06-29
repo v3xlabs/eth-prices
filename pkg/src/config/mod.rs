@@ -77,8 +77,10 @@ impl QuotersConfig {
         for chainlink_config in &self.chainlink {
             let quoter = ChainlinkQuoter::new(
                 chainlink_config.contract,
-                chainlink_config.token_contract,
+                chainlink_config.token.clone(),
+                chainlink_config.token_decimals,
                 chainlink_config.quote.clone(),
+                chainlink_config.quote_decimals,
                 provider,
             )
             .await?;

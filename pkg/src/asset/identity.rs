@@ -12,6 +12,8 @@ pub enum AssetIdentifier {
     Fiat { symbol: String },
     /// The native currency of a chain, e.g. "eth" on Ethereum.
     Native,
+    /// A custom identifier for non-EVM assets (stocks, commodities, etc.).
+    Custom(String),
 }
 
 impl From<Address> for AssetIdentifier {
@@ -24,6 +26,7 @@ impl TryFrom<&str> for AssetIdentifier {
     type Error = crate::error::EthPricesError;
 
     /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or `native`.
+    /// Any unrecognized string is treated as a [`Custom`] identifier.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         if input == "native" {
             Ok(AssetIdentifier::Native)
@@ -42,9 +45,7 @@ impl TryFrom<&str> for AssetIdentifier {
 
             Ok(AssetIdentifier::ERC20 { address })
         } else {
-            Err(crate::error::EthPricesError::AssetNotFound(
-                input.to_string(),
-            ))
+            Ok(AssetIdentifier::Custom(input.to_string()))
         }
     }
 }
@@ -63,6 +64,7 @@ impl Display for AssetIdentifier {
             AssetIdentifier::ERC20 { address } => write!(f, "{}", address),
             AssetIdentifier::Fiat { symbol } => write!(f, "fiat:{}", symbol),
             AssetIdentifier::Native => write!(f, "native"),
+            AssetIdentifier::Custom(id) => write!(f, "{}", id),
         }
     }
 }

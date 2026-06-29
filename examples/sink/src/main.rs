@@ -4,7 +4,7 @@ use alloy::{
 };
 use eth_prices::{
     asset::{Asset, AssetIdentifier}, network::NetworkInstant, provider::RpcProvider, quoter::{
-        Quoter, RateDirection, chainlink::ChainlinkQuoter, ecb::EcbRateSource, fixed::FixedQuoter, uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
+        chainlink::ChainlinkQuoter, fixed::FixedQuoter,
     }, router::{AutoRouter, Router},
 };
 
@@ -72,8 +72,10 @@ pub async fn main() {
     // add chainlink
     let chainlink = ChainlinkQuoter::new(
         address!("0x4ffC43a60e009B551865A93d232E33Fce9f01507"),
-        address!("0x0000000000000000000000000000000000000000"),
-        "fiat:solana".try_into().unwrap(),
+        "solana".try_into().unwrap(),
+        None,
+        "solana".try_into().unwrap(),
+        None,
         &provider
     ).await.unwrap();
 
