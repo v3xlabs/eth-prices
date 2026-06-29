@@ -137,4 +137,15 @@ impl NetworkInstant {
         self.0.insert(network_id.into(), time);
         Ok(self)
     }
+
+    pub async fn latest(providers: &[RpcProvider], fiat: bool) -> Result<Self, EthPricesError> {
+        let mut instant = Self::default();
+        for provider in providers {
+            instant = instant.with_evm_provider(provider.clone()).await?;
+        }
+        if fiat {
+            instant = instant.with_now()?
+        };
+        Ok(instant)
+    }
 }

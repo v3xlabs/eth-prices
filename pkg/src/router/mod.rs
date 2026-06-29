@@ -89,6 +89,23 @@ impl Router {
             .extend_with_edges([(token_in_index, token_out_index, slug)]);
     }
 
+    /// Merge two routers together.
+    ///
+    /// This can be useful when leveraging [`EcbRateSource`] to build a router.
+    /// ```
+    /// use eth_prices::{quoter::ecb::EcbRateSource, router::Router};
+    ///
+    /// let ecb_rate_source = EcbRateSource::default();
+    /// let ecb_graph = ecb_rate_source.graph();
+    ///
+    /// let router = Router::default().merge_with(ecb_graph).unwrap();
+    /// ```
+    pub fn merge_with(&mut self, other: Self) {
+        for quoter in other.quoters {
+            self.add_quoter(quoter);
+        }
+    }
+
     pub fn to_graphviz(&self) -> String {
         Dot::new(&self.graph).to_string()
     }
