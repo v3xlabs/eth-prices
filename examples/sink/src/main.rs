@@ -75,9 +75,9 @@ pub async fn main() {
     let chainlink = ChainlinkQuoter::new(
         address!("0x4ffC43a60e009B551865A93d232E33Fce9f01507"),
         "solana".try_into().unwrap(),
-        Some(9), // SOL has 9 decimals on Solana chain
+        9,
         "fiat:usd".try_into().unwrap(),
-        None,
+        6,
         &provider,
     )
     .await

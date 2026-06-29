@@ -4,16 +4,13 @@ Chainlink Price Feed Quoter
 Quotes conversion rates from [Chainlink Data Feeds](https://docs.chain.link/data-feeds).
 
 Each feed reports a single numeric answer — the price of one unit of the base
-asset in quote terms — scaled by the feed's `decimals()`.  The quoter applies
+asset in quote terms — scaled by the feed's `decimals()`. The quoter applies
 the feed's raw answer directly; it never makes on-chain calls to any token
 contract, so it works with *any* feed: crypto pairs (ETH/USD, LINK/ETH),
-equity indices, commodities, etc.  The quote asset is specified when creating
+equity indices, commodities, etc. The quote asset is specified when creating
 the quoter.
 
 # Configuration
-
-The [`ChainlinkConfig`] struct maps a feed to a `token` and `quote` identifier
-with optional decimal overrides:
 
 ```json
 {
@@ -25,19 +22,8 @@ with optional decimal overrides:
 }
 ```
 
-Non-EVM assets (stocks, commodities) use the `token` field as an arbitrary
-string — no on-chain metadata is required:
-
-```json
-{
-    "contract": "0x139c8512cde1778e9b9a8e721ce1aebd4dd43587",
-    "token": "aapl",
-    "quote": "fiat:usd"
-}
-```
-
-When `token_decimals` / `quote_decimals` are omitted they are inferred from the
-identifier type (ERC-20 → 18, Native → 18, Fiat → 6, Custom → 0).
+All fields — `token`, `token_decimals`, `quote`, `quote_decimals` — are
+required. Nothing is inferred or defaulted.
 */
 
 use std::fmt::{self, Display};
@@ -67,37 +53,19 @@ sol! {
     }
 }
 
-fn infer_decimals(id: &AssetIdentifier) -> u8 {
-    match id {
-        AssetIdentifier::ERC20 { .. } => 18,
-        AssetIdentifier::Native => 18,
-        AssetIdentifier::Fiat { .. } => 6,
-        AssetIdentifier::Custom(_) => 0,
-    }
-}
-
 /// Configuration for a single Chainlink feed quoter.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 pub struct ChainlinkConfig {
     /// Chainlink aggregator contract address.
     pub contract: Address,
-    /// The base asset priced by this feed (e.g. `0x...`, `fiat:usd`, `native`, or a custom string like `"aapl"`).
+    /// The base asset priced by this feed.
     pub token: AssetIdentifier,
-    /// Override for the base asset's decimal precision. Inferred from `token` when absent.
-    #[serde(default)]
-    pub token_decimals: Option<u8>,
-    /// The quote asset (defaults to `fiat:usd`).
-    #[serde(default = "default_quote")]
+    /// Decimal precision of the base asset (18 for ETH, 6 for USDC, 9 for SOL, 0 for stocks).
+    pub token_decimals: u8,
+    /// The quote asset.
     pub quote: AssetIdentifier,
-    /// Override for the quote asset's decimal precision. Inferred from `quote` when absent.
-    #[serde(default)]
-    pub quote_decimals: Option<u8>,
-}
-
-fn default_quote() -> AssetIdentifier {
-    AssetIdentifier::Fiat {
-        symbol: "usd".to_string(),
-    }
+    /// Decimal precision of the quote asset (6 for fiat:usd, 18 for WETH, etc.).
+    pub quote_decimals: u8,
 }
 
 /// Quotes conversions between a token and a Chainlink feed quote asset.
@@ -116,22 +84,17 @@ pub struct ChainlinkQuoter {
 }
 
 impl ChainlinkQuoter {
-    /// Creates a quoter that reads the feed on chain and uses the provided
-    /// decimal values (or sensible inference).
     pub async fn new(
         feed_address: Address,
         token: AssetIdentifier,
-        token_decimals: Option<u8>,
+        token_decimals: u8,
         quote: AssetIdentifier,
-        quote_decimals: Option<u8>,
+        quote_decimals: u8,
         provider: &RpcProvider,
     ) -> Result<Self> {
         let network_id = NetworkId::from_provider(provider).await?;
         let feed = AggregatorV3::new(feed_address, provider);
         let feed_decimals = feed.decimals().call().await?;
-
-        let tk_decimals = token_decimals.unwrap_or_else(|| infer_decimals(&token));
-        let qt_decimals = quote_decimals.unwrap_or_else(|| infer_decimals(&quote));
 
         Ok(Self {
             network_id,
@@ -139,8 +102,8 @@ impl ChainlinkQuoter {
             token,
             quote,
             feed_decimals,
-            token_decimals: tk_decimals,
-            quote_decimals: qt_decimals,
+            token_decimals,
+            quote_decimals,
         })
     }
 }
@@ -238,18 +201,17 @@ mod tests {
         let link_token = AssetIdentifier::ERC20 {
             address: address!("0x514910771AF9Ca656af840dff83E8264EcF986CA"),
         };
-        let quote = AssetIdentifier::Fiat {
-            symbol: "usd".to_string(),
-        };
 
         let provider = get_test_provider().await;
         let block = provider.get_block_number().await.unwrap();
         let quoter = ChainlinkQuoter::new(
             link_feed,
             link_token.clone(),
-            Some(18),
-            quote,
-            Some(6),
+            18,
+            AssetIdentifier::Fiat {
+                symbol: "usd".to_string(),
+            },
+            6,
             &provider,
         )
         .await
@@ -283,30 +245,30 @@ mod tests {
             diff <= U256::from(10).pow(U256::from(15)),
             "reverse should be within 0.001 LINK of 1 LINK; got {reverse_rate}"
         );
-
-        println!("forward_rate: {} (USD with 6 decimals)", forward_rate);
-        println!("reverse_rate: {} (LINK)", reverse_rate);
     }
 
     #[tokio::test]
     async fn test_get_rate_custom_token() {
-        // SOL/USD feed — SOL is a non-EVM token, proving custom identifiers work
         let feed = address!("0x4ffC43a60e009B551865A93d232E33Fce9f01507");
-        let token = AssetIdentifier::Custom("sol".to_string());
-        let quote = AssetIdentifier::Fiat {
-            symbol: "usd".to_string(),
-        };
 
         let provider = get_test_provider().await;
         let block = provider.get_block_number().await.unwrap();
-        let quoter = ChainlinkQuoter::new(feed, token.clone(), Some(9), quote, Some(6), &provider)
-            .await
-            .unwrap();
+        let quoter = ChainlinkQuoter::new(
+            feed,
+            AssetIdentifier::Custom("sol".to_string()),
+            9,
+            AssetIdentifier::Fiat {
+                symbol: "usd".to_string(),
+            },
+            6,
+            &provider,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(quoter.feed_decimals, 8);
         assert_eq!(quoter.token_decimals, 9);
 
-        // 1 SOL (9 decimal places)
         let one_sol = U256::from(10).pow(U256::from(9));
         let time = NetworkTime::EVM(1.into(), block, provider.clone()).instant();
         let forward_rate = quoter
@@ -314,7 +276,6 @@ mod tests {
             .await
             .unwrap();
 
-        // SOL ~$100-300 USD → output is in 6 decimal fiat units
         assert!(
             forward_rate > U256::from(50_000_000) && forward_rate < U256::from(500_000_000),
             "expected SOL ~50-500 USD (6 decimals), got {forward_rate}"
@@ -334,8 +295,5 @@ mod tests {
             diff <= U256::from(1000),
             "reverse should be within 0.000001 SOL of 1 SOL; got {reverse_rate}"
         );
-
-        println!("forward_rate: {} (USD with 6 decimals)", forward_rate);
-        println!("reverse_rate: {} (SOL)", reverse_rate);
     }
 }
