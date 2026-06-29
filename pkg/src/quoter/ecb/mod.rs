@@ -81,7 +81,7 @@ impl EcbRateSource {
     }
 
     async fn rate_for(&self, symbol: &str, networks: &NetworkInstant) -> Result<U256> {
-        let network = networks.get_fiat_timestamp().unwrap();
+        let network = networks.get_fiat_timestamp().expect("fiat timestamp not found in network instant");
         let key = EcbCacheKey::Date(unix_timestamp_to_date(*network));
 
         if let Some(rates) = self
@@ -255,7 +255,6 @@ mod tests {
     async fn creates_ecb_graph() {
         let rates = EcbRateSource::default();
         let graph = rates.graph();
-        // assert_eq!(graph.quoters().len(), ECB_CURRENCIES.len());
 
         let token_in = AssetIdentifier::Fiat {
             symbol: "eur".to_string(),

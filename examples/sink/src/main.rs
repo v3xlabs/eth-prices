@@ -1,48 +1,84 @@
 use alloy::{
-    primitives::address,
+    primitives::{U256, address},
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    asset::Asset,
+    asset::{Asset, AssetIdentifier},
     network::NetworkInstant,
+    provider::RpcProvider,
     quoter::{
         Quoter, RateDirection,
+        ecb::EcbRateSource,
+        fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
     },
+    router::{AutoRouter, Router},
 };
 
 #[tokio::main]
 pub async fn main() {
-    println!("Hello, world!");
-    let pair_address = address!("0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc");
-    let provider = ProviderBuilder::new()
-        .connect("https://reth-ethereum.ithaca.xyz/rpc")
-        .await
-        .unwrap()
-        .erased();
-    let quoter =
-        UniswapV2Quoter::from_selector(&provider, UniswapV2Selector::Pair { pair_address })
-            .await
-            .unwrap();
+    let provider = setup().await;
 
-    let (token_a, token_b) = quoter.tokens();
-    let (token_a, token_b) = (
-        Asset::new(token_a, &provider).await.unwrap(),
-        Asset::new(token_b, &provider).await.unwrap(),
+    let mut router = Router::default().with_ecb();
+
+    // Fixed rate: 1 USDC = 1 USD
+    router.add_quoter(
+        FixedQuoter {
+            token_in: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+                .try_into()
+                .unwrap(),
+            token_in_decimals: 6,
+            token_out: "fiat:usd".try_into().unwrap(),
+            token_out_decimals: 6,
+            fixed_rate: U256::from(100),
+            fixed_rate_decimals: 2,
+        }
+        .into(),
     );
-    let amount_in = token_a.nominal_amount();
-    let block = provider.get_block_number().await.unwrap();
-    let network = NetworkInstant::default().with_evm_block(1.into(), block, provider.clone());
-    let rate = quoter
-        .rate(amount_in, RateDirection::Forward, &network)
+
+    let erc20s: Vec<AssetIdentifier> = vec![
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+            .try_into()
+            .unwrap(),
+        "0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1"
+            .try_into()
+            .unwrap(),
+        "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c"
+            .try_into()
+            .unwrap(),
+        "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+            .try_into()
+            .unwrap(),
+    ];
+
+    let auto = AutoRouter::new(provider.clone(), erc20s.clone())
+        .build()
         .await
         .unwrap();
 
-    println!(
-        "rate: {} {} = {} {}",
-        token_a.format_amount(amount_in, 4).unwrap(),
-        token_a.symbol,
-        token_b.format_amount(rate, 4).unwrap(),
-        token_b.symbol
-    );
+    router.merge_with(auto);
+
+    let token_out = "fiat:eur".try_into().unwrap();
+
+    let network = NetworkInstant::default()
+        .with_evm_latest(1.into(), provider.clone())
+        .await
+        .unwrap()
+        .with_now()
+        .unwrap();
+    for token_in in erc20s {
+        let asset_in = Asset::new(token_in.clone(), &provider).await.unwrap();
+        let amount = asset_in.nominal_amount();
+        let route = router.compute(&token_in, &token_out).unwrap();
+        let quote = route.quote(&network, amount).await.unwrap();
+        println!("quote: {:?}", quote);
+    }
+}
+
+async fn setup() -> RpcProvider {
+    ProviderBuilder::new()
+        .connect("https://ethereum.reth.rs/rpc")
+        .await
+        .unwrap()
+        .erased()
 }

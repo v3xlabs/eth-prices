@@ -89,6 +89,15 @@ impl Router {
             .extend_with_edges([(token_in_index, token_out_index, slug)]);
     }
 
+    #[cfg(feature = "ecb")]
+    pub fn with_ecb(mut self) -> Self {
+        use crate::quoter::ecb::EcbRateSource;
+
+        let fiat = EcbRateSource::default();
+        self.merge_with(fiat.graph());
+        self
+    }
+
     /// Merge two routers together.
     ///
     /// This can be useful when leveraging [`EcbRateSource`] to build a router.
