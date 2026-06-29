@@ -73,8 +73,8 @@ pub async fn main() {
     let chainlink = ChainlinkQuoter::new(
         address!("0x4ffC43a60e009B551865A93d232E33Fce9f01507"),
         "solana".try_into().unwrap(),
-        None,
-        "solana".try_into().unwrap(),
+        Some(9), // SOL has 9 decimals on Solana chain
+        "fiat:usd".try_into().unwrap(),
         None,
         &provider
     ).await.unwrap();
@@ -82,7 +82,7 @@ pub async fn main() {
     router.add_quoter(chainlink.into());
 
     // Quote solana
-    let amount = U256::from(1_000_000_000);
+    let amount = U256::from(10).pow(U256::from(9)); // 1 SOL
     let route = router.compute(&"solana".try_into().unwrap(), &token_out).unwrap();
     let quote = route.quote(&network, amount).await.unwrap();
     println!("quote external: {:?}", quote);
