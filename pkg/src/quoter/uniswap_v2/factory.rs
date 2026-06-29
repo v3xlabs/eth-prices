@@ -56,7 +56,7 @@ mod tests {
     use futures::StreamExt;
 
     use super::*;
-    use crate::tests::get_test_provider;
+    use crate::utils::get_test_provider;
 
     const FACTORY_ADDRESS: Address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
 

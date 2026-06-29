@@ -8,6 +8,7 @@ check:
     cargo clippy --all-targets -- -D warnings
     cargo doc --all-features --no-deps
 
+alias fix := format
 format:
     cargo fmt
     cargo clippy --fix --allow-dirty

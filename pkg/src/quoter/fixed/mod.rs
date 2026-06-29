@@ -84,7 +84,7 @@ impl Display for FixedQuoter {
 mod tests {
     use alloy::primitives::address;
 
-    use crate::{network::NetworkTime, tests::get_test_provider};
+    use crate::{network::NetworkTime, utils::get_test_provider};
 
     use super::*;
 

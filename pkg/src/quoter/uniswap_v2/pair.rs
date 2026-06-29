@@ -61,7 +61,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::tests::get_test_provider;
+    use crate::utils::get_test_provider;
 
     #[tokio::test]
     async fn test_fetch_pair_info() {

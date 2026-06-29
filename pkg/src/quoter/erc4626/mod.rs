@@ -157,7 +157,7 @@ mod tests {
     use alloy::primitives::address;
 
     use super::*;
-    use crate::{asset::Asset, network::NetworkTime, tests::get_test_provider};
+    use crate::{asset::Asset, network::NetworkTime, utils::get_test_provider};
 
     #[tokio::test]
     async fn test_get_rate() {

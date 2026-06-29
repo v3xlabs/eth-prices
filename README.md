@@ -52,11 +52,25 @@ let quote = route.quote(block, amount_in).await.unwrap();
 
 ```
 
+## Data Sources
+
+Currently supported data sources include:
+
+- [Uniswap V2](./pkg/src/quoter/uniswap_v2/mod.rs) - for [Uniswap V2](https://uniswap.org/blog/uniswap-v2) pairs
+- [Uniswap V3](./pkg/src/quoter/uniswap_v3/mod.rs) - for [Uniswap V3](https://uniswap.org/blog/uniswap-v3) pools
+- [ERC-4626](./pkg/src/quoter/erc4626/mod.rs) - for [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626)-compatible vaults (Morpho, Aave, etc.)
+- [Fixed](./pkg/src/quoter/fixed/mod.rs) - for static rates, such as WETH to ETH, or USDC to USD
+- [European Central Bank](./pkg/src/quoter/ecb/mod.rs) - for fiat exchange rates (uses single HTTP call and requires feature flag `ecb`)
+
 ## Examples
 
 This crate has a few examples you can toy around with:
 
-- [Uniswap V2 Quoter](./examples/uniswap/)
-- [Prometheus Exporter](./examples/prometheus/)
-- [Fiat Quoter](./examples/fiat/)
-- [Auto Router](./examples/auto_router/)
+- [Uniswap V2 Quoter](./examples/uniswap/) - to quote rates for Uniswap V2 pairs
+- [Prometheus Exporter](./examples/prometheus/) - to export price data to metrics
+- [Fiat Quoter](./examples/fiat/) - to quote fiat rates
+- [Auto Router](./examples/auto_router/) - to automatically discover quoters and build a router
+
+## Documentation
+
+You can read the documentation at [docs.rs/eth-prices](https://docs.rs/eth-prices).
