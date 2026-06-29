@@ -14,7 +14,7 @@ use alloy::providers::{ProviderBuilder, Provider};
 
 #[tokio::main]
 pub async fn main() {
-    let provider = ProviderBuilder::new().connect("https://ethereum-rpc.publicnode.com").await.unwrap().erased();
+    let provider = ProviderBuilder::new().connect("https://ethereum.reth.rs/rpc").await.unwrap().erased();
 
     let selector = UniswapV3Selector::Pool { pool_address: address!("0x99ac8ca7087fa4a2a1fb6357269965a2014abc35") };
     let quoter = UniswapV3Quoter::from_selector(&provider, selector).await.unwrap();

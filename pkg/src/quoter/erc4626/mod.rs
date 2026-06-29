@@ -9,7 +9,7 @@ use alloy::{providers::{ProviderBuilder, Provider}, primitives::address};
 
 #[tokio::main]
 pub async fn main() {
-    let provider = ProviderBuilder::new().connect("https://ethereum-rpc.publicnode.com").await.unwrap().erased();
+    let provider = ProviderBuilder::new().connect("https://ethereum.reth.rs/rpc").await.unwrap().erased();
     let vault_address = address!("0x0c6aec603d48eBf1cECc7b247a2c3DA08b398DC1");
     // Create a quoter for the vault
     let quoter = ERC4626Quoter::new(vault_address, &provider).await.unwrap();

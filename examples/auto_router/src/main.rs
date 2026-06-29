@@ -10,7 +10,7 @@ pub async fn main() {
     println!("=== AutoRouter Example ===\n");
 
     let rpc_url = std::env::var("RPC_URL")
-        .unwrap_or_else(|_| "https://ethereum-rpc.publicnode.com".to_string());
+        .unwrap_or_else(|_| "https://ethereum.reth.rs/rpc".to_string());
 
     let provider = ProviderBuilder::new()
         .connect(&rpc_url)
