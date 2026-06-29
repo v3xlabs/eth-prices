@@ -165,18 +165,20 @@ impl Quoter for ChainlinkQuoter {
         direction: RateDirection,
         networks: &NetworkInstant,
     ) -> Result<U256> {
-        let network = networks
-            .get(&self.network_id.clone().into())
-            .ok_or(EthPricesError::InvalidNetwork(format!(
-                "Network: {:?}",
-                self.network_id
-            )))?;
-        let (_chain_id, block_number, provider) = network
-            .as_evm()
-            .ok_or(EthPricesError::InvalidNetwork(format!(
-                "Network: {:?}",
-                network
-            )))?;
+        let network =
+            networks
+                .get(&self.network_id.clone().into())
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    self.network_id
+                )))?;
+        let (_chain_id, block_number, provider) =
+            network
+                .as_evm()
+                .ok_or(EthPricesError::InvalidNetwork(format!(
+                    "Network: {:?}",
+                    network
+                )))?;
 
         let feed = AggregatorV3::new(self.feed_address, provider);
         let round = feed

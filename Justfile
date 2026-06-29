@@ -9,6 +9,7 @@ check:
     cargo doc --all-features --no-deps
 
 alias fix := format
+alias fmt := format
 format:
     cargo fmt
     cargo clippy --fix --allow-dirty

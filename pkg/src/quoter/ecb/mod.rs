@@ -81,7 +81,9 @@ impl EcbRateSource {
     }
 
     async fn rate_for(&self, symbol: &str, networks: &NetworkInstant) -> Result<U256> {
-        let network = networks.get_fiat_timestamp().expect("fiat timestamp not found in network instant");
+        let network = networks
+            .get_fiat_timestamp()
+            .expect("fiat timestamp not found in network instant");
         let key = EcbCacheKey::Date(unix_timestamp_to_date(*network));
 
         if let Some(rates) = self

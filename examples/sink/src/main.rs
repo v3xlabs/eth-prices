@@ -3,9 +3,11 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    asset::{Asset, AssetIdentifier}, network::NetworkInstant, provider::RpcProvider, quoter::{
-        chainlink::ChainlinkQuoter, fixed::FixedQuoter,
-    }, router::{AutoRouter, Router},
+    asset::{Asset, AssetIdentifier},
+    network::NetworkInstant,
+    provider::RpcProvider,
+    quoter::{chainlink::ChainlinkQuoter, fixed::FixedQuoter},
+    router::{AutoRouter, Router},
 };
 
 #[tokio::main]
@@ -76,14 +78,18 @@ pub async fn main() {
         Some(9), // SOL has 9 decimals on Solana chain
         "fiat:usd".try_into().unwrap(),
         None,
-        &provider
-    ).await.unwrap();
+        &provider,
+    )
+    .await
+    .unwrap();
 
     router.add_quoter(chainlink.into());
 
     // Quote solana
     let amount = U256::from(10).pow(U256::from(9)); // 1 SOL
-    let route = router.compute(&"solana".try_into().unwrap(), &token_out).unwrap();
+    let route = router
+        .compute(&"solana".try_into().unwrap(), &token_out)
+        .unwrap();
     let quote = route.quote(&network, amount).await.unwrap();
     println!("quote external: {:?}", quote);
 }
