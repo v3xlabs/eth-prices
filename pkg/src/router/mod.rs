@@ -98,12 +98,13 @@ impl Router {
     /// let ecb_rate_source = EcbRateSource::default();
     /// let ecb_graph = ecb_rate_source.graph();
     ///
-    /// let router = Router::default().merge_with(ecb_graph).unwrap();
+    /// let router = Router::default().merge_with(ecb_graph);
     /// ```
-    pub fn merge_with(&mut self, other: Self) {
+    pub fn merge_with(&mut self, other: Self) -> &mut Self {
         for quoter in other.quoters {
             self.add_quoter(quoter);
         }
+        self
     }
 
     pub fn to_graphviz(&self) -> String {
