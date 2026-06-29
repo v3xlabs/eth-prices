@@ -3,16 +3,9 @@ use alloy::{
     providers::{Provider, ProviderBuilder},
 };
 use eth_prices::{
-    asset::{Asset, AssetIdentifier},
-    network::NetworkInstant,
-    provider::RpcProvider,
-    quoter::{
-        Quoter, RateDirection,
-        ecb::EcbRateSource,
-        fixed::FixedQuoter,
-        uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-    },
-    router::{AutoRouter, Router},
+    asset::{Asset, AssetIdentifier}, network::NetworkInstant, provider::RpcProvider, quoter::{
+        Quoter, RateDirection, chainlink::ChainlinkQuoter, ecb::EcbRateSource, fixed::FixedQuoter, uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
+    }, router::{AutoRouter, Router},
 };
 
 #[tokio::main]
@@ -58,7 +51,7 @@ pub async fn main() {
 
     router.merge_with(auto);
 
-    let token_out = "fiat:eur".try_into().unwrap();
+    let token_out = "fiat:usd".try_into().unwrap();
 
     let network = NetworkInstant::default()
         .with_evm_latest(1.into(), provider.clone())
@@ -66,6 +59,8 @@ pub async fn main() {
         .unwrap()
         .with_now()
         .unwrap();
+
+    // Quote all erc20s
     for token_in in erc20s {
         let asset_in = Asset::new(token_in.clone(), &provider).await.unwrap();
         let amount = asset_in.nominal_amount();
@@ -73,6 +68,22 @@ pub async fn main() {
         let quote = route.quote(&network, amount).await.unwrap();
         println!("quote: {:?}", quote);
     }
+
+    // add chainlink
+    let chainlink = ChainlinkQuoter::new(
+        address!("0x4ffC43a60e009B551865A93d232E33Fce9f01507"),
+        address!("0x0000000000000000000000000000000000000000"),
+        "fiat:solana".try_into().unwrap(),
+        &provider
+    ).await.unwrap();
+
+    router.add_quoter(chainlink.into());
+
+    // Quote solana
+    let amount = U256::from(1_000_000_000);
+    let route = router.compute(&"solana".try_into().unwrap(), &token_out).unwrap();
+    let quote = route.quote(&network, amount).await.unwrap();
+    println!("quote external: {:?}", quote);
 }
 
 async fn setup() -> RpcProvider {
