@@ -42,7 +42,6 @@ pub async fn main() {
 
     // Discover and build router
     let router = AutoRouter::new(provider.clone(), tokens.clone())
-        .with_uniswap_v3_fees(vec![500, 3000, 10000])
         .build()
         .await
         .unwrap();

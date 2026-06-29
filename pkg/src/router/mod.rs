@@ -79,14 +79,28 @@ impl Router {
         let slug = quoter.to_string();
         let confidence = quoter.confidence;
         let (token_in, token_out) = quoter.tokens();
-        self.quoters.push(quoter);
-        self.confidences.insert(slug.clone(), confidence);
 
         let token_in_index = self.add_token(&token_in);
         let token_out_index = self.add_token(&token_out);
 
-        self.graph
-            .extend_with_edges([(token_in_index, token_out_index, slug)]);
+        // If an edge already exists between these two tokens, keep only the
+        // higher-confidence quoter.  This ensures route reconstruction picks
+        // the correct edge when multiple DEXes (e.g. Uniswap + Sushi) serve
+        // the same pair.
+        if let Some(existing) = self.graph.find_edge(token_in_index, token_out_index) {
+            let existing_slug = self.graph[existing].clone();
+            let existing_conf = self.confidences.get(&existing_slug).copied().unwrap_or(0);
+            if confidence > existing_conf {
+                self.graph[existing] = slug.clone();
+                self.confidences.insert(slug.clone(), confidence);
+                self.quoters.retain(|q| q.to_string() != existing_slug);
+                self.quoters.push(quoter);
+            }
+        } else {
+            self.confidences.insert(slug.clone(), confidence);
+            self.quoters.push(quoter);
+            self.graph.add_edge(token_in_index, token_out_index, slug);
+        }
     }
 
     #[cfg(feature = "ecb")]

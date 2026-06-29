@@ -11,6 +11,7 @@ use crate::{
     quoter::{Quoter, RateDirection, uniswap_v3::discovery::UniswapV3Selector},
 };
 
+pub mod deployments;
 pub mod discovery;
 pub mod pool;
 

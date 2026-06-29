@@ -32,6 +32,10 @@ pub enum UniswapV3Selector {
         #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_out: Address,
         fee: Option<u32>,
+        #[serde(default)]
+        #[cfg_attr(target_arch = "wasm32", serde(rename = "factory"))]
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string | undefined"))]
+        factory: Option<Address>,
     },
     /// Use an already-known pool contract address.
     Pool {
@@ -50,13 +54,15 @@ sol! {
 
 impl UniswapV3Selector {
     pub async fn resolve(&self, provider: &RpcProvider) -> Result<Address> {
-        let factory_address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
         match self {
             UniswapV3Selector::ByTokens {
                 token_in,
                 token_out,
                 fee,
+                factory,
             } => {
+                let factory_address =
+                    factory.unwrap_or(address!("0x1F98431c8aD98523631AE4a59f267346ea31F984"));
                 let factory = UniswapV3Factory::new(factory_address, provider);
                 let fee = U24::from(fee.unwrap_or(3000));
                 let pool = factory.getPool(*token_in, *token_out, fee).call().await?;

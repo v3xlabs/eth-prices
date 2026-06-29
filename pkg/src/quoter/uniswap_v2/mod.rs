@@ -1,5 +1,6 @@
 //! Uniswap v2 quote sources.
 
+pub mod deployments;
 pub mod discovery;
 pub mod pair;
 
@@ -43,6 +44,10 @@ pub enum UniswapV2Selector {
         #[cfg_attr(target_arch = "wasm32", serde(rename = "tokenOut"))]
         #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_out: Address,
+        #[serde(default)]
+        #[cfg_attr(target_arch = "wasm32", serde(rename = "factory"))]
+        #[cfg_attr(target_arch = "wasm32", tsify(type = "string | undefined"))]
+        factory: Option<Address>,
     },
     /// Use an already-known pair contract address.
     Pair {
@@ -89,14 +94,16 @@ impl UniswapV2Quoter {
         provider: &RpcProvider,
         selector: UniswapV2Selector,
     ) -> Result<Self> {
-        let factory_address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
         let network_id = NetworkId::from_provider(provider).await?;
 
         match selector {
             UniswapV2Selector::ByTokens {
                 token_in,
                 token_out,
+                factory,
             } => {
+                let factory_address =
+                    factory.unwrap_or(address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"));
                 let pair_address =
                     discovery::fetch_pair(provider, factory_address, token_in, token_out).await?;
 

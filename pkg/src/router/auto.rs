@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use alloy::primitives::{Address, U256, address, aliases::U24};
+use alloy::primitives::{Address, U256, aliases::U24};
 use futures::future::join_all;
 
 use crate::{
@@ -11,14 +11,18 @@ use crate::{
     quoter::{
         AnyQuoter,
         erc4626::{ERC4626, ERC4626Quoter},
-        uniswap_v2::{UniswapV2Quoter, discovery::UniswapV2Factory, pair::UniswapV2Pair},
-        uniswap_v3::{UniswapV3Quoter, discovery::UniswapV3Factory, pool::UniswapV3Pool},
+        uniswap_v2::{
+            UniswapV2Quoter, deployments::factories_for_chain as v2_factories,
+            discovery::UniswapV2Factory, pair::UniswapV2Pair,
+        },
+        uniswap_v3::{
+            UniswapV3Quoter, deployments::factories_for_chain as v3_factories,
+            discovery::UniswapV3Factory, pool::UniswapV3Pool,
+        },
     },
     router::Router,
 };
 
-const UNISWAP_V2_FACTORY: Address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f");
-const UNISWAP_V3_FACTORY: Address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
 const DEFAULT_V3_FEES: &[u32] = &[100, 500, 3000, 10000];
 const MAX_CONFIDENCE: u64 = 100;
 
@@ -44,8 +48,8 @@ pub struct AutoRouter {
     provider: RpcProvider,
     tokens: Vec<AssetIdentifier>,
     network_id: Option<NetworkId>,
-    uniswap_v2_factory: Option<Address>,
-    uniswap_v3_factory: Option<Address>,
+    uniswap_v2_factories: Vec<Address>,
+    uniswap_v3_factories: Vec<Address>,
     uniswap_v3_fees: Vec<u32>,
     min_liquidity: Option<U256>,
     discover_v2: bool,
@@ -59,8 +63,8 @@ impl AutoRouter {
             provider,
             tokens,
             network_id: None,
-            uniswap_v2_factory: None,
-            uniswap_v3_factory: None,
+            uniswap_v2_factories: Vec::new(),
+            uniswap_v3_factories: Vec::new(),
             uniswap_v3_fees: DEFAULT_V3_FEES.to_vec(),
             min_liquidity: Some(U256::from(1)),
             discover_v2: true,
@@ -74,13 +78,27 @@ impl AutoRouter {
         self
     }
 
+    /// Use a single V2 factory (replaces any previously configured factories).
     pub fn with_uniswap_v2_factory(mut self, address: Address) -> Self {
-        self.uniswap_v2_factory = Some(address);
+        self.uniswap_v2_factories = vec![address];
         self
     }
 
+    /// Set the full list of V2 factories to scan.
+    pub fn with_uniswap_v2_factories(mut self, factories: Vec<Address>) -> Self {
+        self.uniswap_v2_factories = factories;
+        self
+    }
+
+    /// Use a single V3 factory (replaces any previously configured factories).
     pub fn with_uniswap_v3_factory(mut self, address: Address) -> Self {
-        self.uniswap_v3_factory = Some(address);
+        self.uniswap_v3_factories = vec![address];
+        self
+    }
+
+    /// Set the full list of V3 factories to scan.
+    pub fn with_uniswap_v3_factories(mut self, factories: Vec<Address>) -> Self {
+        self.uniswap_v3_factories = factories;
         self
     }
 
@@ -137,22 +155,28 @@ impl AutoRouter {
         // 3. V2 discovery with expanded set
         let mut v2_pools: Vec<DiscoveredPool> = Vec::new();
         if self.discover_v2 {
-            v2_pools = Self::discover_v2_pools_inner(
-                &self.provider,
-                &all_addresses,
-                self.uniswap_v2_factory,
-            )
-            .await;
+            let factories = if self.uniswap_v2_factories.is_empty() {
+                v2_factories(network_id.0).collect::<Vec<_>>()
+            } else {
+                self.uniswap_v2_factories.clone()
+            };
+            v2_pools =
+                Self::discover_v2_pools_inner(&self.provider, &all_addresses, &factories).await;
             v2_pools = Self::filter_pools(Self::deduplicate_pools(v2_pools), &self.min_liquidity);
         }
 
         // 4. V3 discovery with expanded set
         let mut v3_pools: Vec<DiscoveredPool> = Vec::new();
         if self.discover_v3 {
+            let factories = if self.uniswap_v3_factories.is_empty() {
+                v3_factories(network_id.0).collect::<Vec<_>>()
+            } else {
+                self.uniswap_v3_factories.clone()
+            };
             v3_pools = Self::discover_v3_pools_inner(
                 &self.provider,
                 &all_addresses,
-                self.uniswap_v3_factory,
+                &factories,
                 &self.uniswap_v3_fees,
             )
             .await;
@@ -235,9 +259,11 @@ impl AutoRouter {
     async fn discover_v2_pools_inner(
         provider: &RpcProvider,
         addresses: &[Address],
-        factory_opt: Option<Address>,
+        factories: &[Address],
     ) -> Vec<DiscoveredPool> {
-        let factory = factory_opt.unwrap_or(UNISWAP_V2_FACTORY);
+        if addresses.len() < 2 || factories.is_empty() {
+            return Vec::new();
+        }
 
         let mut pairs = Vec::new();
         for i in 0..addresses.len() {
@@ -246,9 +272,11 @@ impl AutoRouter {
             }
         }
 
-        let results: Vec<_> = join_all(pairs.into_iter().map(|(a, b)| {
-            let provider = provider.clone();
-            async move { discover_single_v2_pool(&provider, factory, a, b).await }
+        let results: Vec<_> = join_all(pairs.into_iter().flat_map(|(a, b)| {
+            factories.iter().map(move |&factory| {
+                let provider = provider.clone();
+                async move { discover_single_v2_pool(&provider, factory, a, b).await }
+            })
         }))
         .await;
 
@@ -287,12 +315,10 @@ impl AutoRouter {
     async fn discover_v3_pools_inner(
         provider: &RpcProvider,
         addresses: &[Address],
-        factory_opt: Option<Address>,
+        factories: &[Address],
         fees: &[u32],
     ) -> Vec<DiscoveredPool> {
-        let factory = factory_opt.unwrap_or(UNISWAP_V3_FACTORY);
-
-        if addresses.len() < 2 {
+        if addresses.len() < 2 || factories.is_empty() {
             return Vec::new();
         }
 
@@ -302,12 +328,14 @@ impl AutoRouter {
                 let a = addresses[i];
                 let b = addresses[j];
                 for &fee in fees {
-                    queries.push((a, b, fee));
+                    for &factory in factories {
+                        queries.push((a, b, fee, factory));
+                    }
                 }
             }
         }
 
-        join_all(queries.into_iter().map(|(a, b, fee)| {
+        join_all(queries.into_iter().map(|(a, b, fee, factory)| {
             let provider = provider.clone();
             async move { discover_single_v3_pool(&provider, factory, a, b, fee).await }
         }))
