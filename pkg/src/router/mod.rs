@@ -100,7 +100,7 @@ impl Router {
 
     /// Merge two routers together.
     ///
-    /// This can be useful when leveraging [`EcbRateSource`] to build a router.
+    /// This can be useful when leveraging [`crate::quoter::ecb::EcbRateSource`] to build a router.
     /// ```
     /// use eth_prices::{quoter::ecb::EcbRateSource, router::Router};
     ///

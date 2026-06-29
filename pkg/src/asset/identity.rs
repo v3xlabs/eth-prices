@@ -26,7 +26,7 @@ impl TryFrom<&str> for AssetIdentifier {
     type Error = crate::error::EthPricesError;
 
     /// Parses an identifier from strings such as `0x...`, `fiat:usd`, or `native`.
-    /// Any unrecognized string is treated as a [`Custom`] identifier.
+    /// Any unrecognized string is treated as a [`crate::asset::identity::AssetIdentifier::Custom`] identifier.
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         if input == "native" {
             Ok(AssetIdentifier::Native)

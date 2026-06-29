@@ -1,14 +1,7 @@
 /*!
 Chainlink Price Feed Quoter
 
-Quotes conversion rates from [Chainlink Data Feeds](https://docs.chain.link/data-feeds).
-
-Each feed reports a single numeric answer — the price of one unit of the base
-asset in quote terms — scaled by the feed's `decimals()`. The quoter applies
-the feed's raw answer directly; it never makes on-chain calls to any token
-contract, so it works with *any* feed: crypto pairs (ETH/USD, LINK/ETH),
-equity indices, commodities, etc. The quote asset is specified when creating
-the quoter.
+Quotes conversion rates from [Chainlink Price Feeds](https://docs.chain.link/data-feeds/price-feeds/addresses).
 
 # Configuration
 
@@ -21,9 +14,6 @@ the quoter.
     "quote_decimals": 6
 }
 ```
-
-All fields — `token`, `token_decimals`, `quote`, `quote_decimals` — are
-required. Nothing is inferred or defaulted.
 */
 
 use std::fmt::{self, Display};
