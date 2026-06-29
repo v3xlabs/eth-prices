@@ -42,6 +42,9 @@ pub async fn main() {
 
     // Discover and build router
     let router = AutoRouter::new(provider.clone(), tokens.clone())
+        .with_uniswap()
+        .with_sushiswap()
+        .with_pancakeswap()
         .build()
         .await
         .unwrap();

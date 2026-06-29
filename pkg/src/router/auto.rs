@@ -12,11 +12,11 @@ use crate::{
         AnyQuoter,
         erc4626::{ERC4626, ERC4626Quoter},
         uniswap_v2::{
-            UniswapV2Quoter, deployments::factories_for_chain as v2_factories,
+            UniswapV2Quoter, deployments as v2_deployments,
             discovery::UniswapV2Factory, pair::UniswapV2Pair,
         },
         uniswap_v3::{
-            UniswapV3Quoter, deployments::factories_for_chain as v3_factories,
+            UniswapV3Quoter, deployments as v3_deployments,
             discovery::UniswapV3Factory, pool::UniswapV3Pool,
         },
     },
@@ -55,6 +55,8 @@ pub struct AutoRouter {
     discover_v2: bool,
     discover_v3: bool,
     discover_erc4626: bool,
+    /// When set, only deployments matching these exchange names are scanned.
+    exchange_filter: Option<HashSet<String>>,
 }
 
 impl AutoRouter {
@@ -70,11 +72,36 @@ impl AutoRouter {
             discover_v2: true,
             discover_v3: true,
             discover_erc4626: true,
+            exchange_filter: None,
         }
     }
 
     pub fn with_network_id(mut self, network_id: NetworkId) -> Self {
         self.network_id = Some(network_id);
+        self
+    }
+
+    /// Include Uniswap factories during discovery.
+    pub fn with_uniswap(mut self) -> Self {
+        self.exchange_filter
+            .get_or_insert_with(HashSet::new)
+            .insert("Uniswap".into());
+        self
+    }
+
+    /// Include SushiSwap factories during discovery.
+    pub fn with_sushiswap(mut self) -> Self {
+        self.exchange_filter
+            .get_or_insert_with(HashSet::new)
+            .insert("SushiSwap".into());
+        self
+    }
+
+    /// Include PancakeSwap factories during discovery.
+    pub fn with_pancakeswap(mut self) -> Self {
+        self.exchange_filter
+            .get_or_insert_with(HashSet::new)
+            .insert("PancakeSwap".into());
         self
     }
 
@@ -127,6 +154,34 @@ impl AutoRouter {
         self
     }
 
+    /// Resolve the factory list for V2 from deployments, optionally filtered by exchange name.
+    fn resolve_v2_factories(&self, chain_id: u64) -> Vec<Address> {
+        if !self.uniswap_v2_factories.is_empty() {
+            return self.uniswap_v2_factories.clone();
+        }
+        match &self.exchange_filter {
+            Some(names) => v2_deployments::deployments_for_chain(chain_id)
+                .filter(|d| names.contains(d.name))
+                .map(|d| d.factory)
+                .collect(),
+            None => v2_deployments::factories_for_chain(chain_id).collect(),
+        }
+    }
+
+    /// Resolve the factory list for V3 from deployments, optionally filtered by exchange name.
+    fn resolve_v3_factories(&self, chain_id: u64) -> Vec<Address> {
+        if !self.uniswap_v3_factories.is_empty() {
+            return self.uniswap_v3_factories.clone();
+        }
+        match &self.exchange_filter {
+            Some(names) => v3_deployments::deployments_for_chain(chain_id)
+                .filter(|d| names.contains(d.name))
+                .map(|d| d.factory)
+                .collect(),
+            None => v3_deployments::factories_for_chain(chain_id).collect(),
+        }
+    }
+
     pub async fn build(self) -> Result<Router> {
         let network_id = match self.network_id {
             Some(ref id) => id.clone(),
@@ -155,11 +210,7 @@ impl AutoRouter {
         // 3. V2 discovery with expanded set
         let mut v2_pools: Vec<DiscoveredPool> = Vec::new();
         if self.discover_v2 {
-            let factories = if self.uniswap_v2_factories.is_empty() {
-                v2_factories(network_id.0).collect::<Vec<_>>()
-            } else {
-                self.uniswap_v2_factories.clone()
-            };
+            let factories = self.resolve_v2_factories(network_id.0);
             v2_pools =
                 Self::discover_v2_pools_inner(&self.provider, &all_addresses, &factories).await;
             v2_pools = Self::filter_pools(Self::deduplicate_pools(v2_pools), &self.min_liquidity);
@@ -168,11 +219,7 @@ impl AutoRouter {
         // 4. V3 discovery with expanded set
         let mut v3_pools: Vec<DiscoveredPool> = Vec::new();
         if self.discover_v3 {
-            let factories = if self.uniswap_v3_factories.is_empty() {
-                v3_factories(network_id.0).collect::<Vec<_>>()
-            } else {
-                self.uniswap_v3_factories.clone()
-            };
+            let factories = self.resolve_v3_factories(network_id.0);
             v3_pools = Self::discover_v3_pools_inner(
                 &self.provider,
                 &all_addresses,
@@ -183,7 +230,7 @@ impl AutoRouter {
             v3_pools = Self::filter_pools(Self::deduplicate_pools(v3_pools), &self.min_liquidity);
         }
 
-        // 5. Build quoters — V2 first so the Router's .find() prefers them
+        // 5. Build quoters — V2 first so the Router prefers them
         //    for direct routes (V2 spot prices are generally more reliable for
         //    thin pools). V3 quoters remain as fallback for multi-hop paths.
         for pool in v2_pools {
