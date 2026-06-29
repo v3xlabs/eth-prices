@@ -1,0 +1,14 @@
+[package]
+name = "examples-sink"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+eth-prices = { path = "../../pkg", features = ["ecb", "time"] }
+tokio = { version = "1", features = ["full"] }
+alloy = { version = "1", features = [
+    "contract",
+    "provider-http",
+    "reqwest-rustls-tls",
+], default-features = false }

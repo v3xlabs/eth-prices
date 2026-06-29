@@ -11,6 +11,7 @@ use crate::{
     provider::RpcProvider,
     quoter::{
         AnyQuoter,
+        chainlink::{ChainlinkConfig, ChainlinkQuoter},
         erc4626::{ERC4626Config, ERC4626Quoter},
         fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Config, UniswapV2Quoter},
@@ -37,6 +38,8 @@ pub struct QuotersConfig {
     pub uniswap_v2: Option<UniswapV2Config>,
     pub uniswap_v3: Option<UniswapV3Config>,
     pub erc4626: Vec<ERC4626Config>,
+    #[serde(default)]
+    pub chainlink: Vec<ChainlinkConfig>,
 }
 
 impl QuotersConfig {
@@ -68,6 +71,17 @@ impl QuotersConfig {
 
         for erc4626_config in &self.erc4626 {
             let quoter = ERC4626Quoter::new(erc4626_config.vault_address, provider).await?;
+            quoters.push(quoter.into());
+        }
+
+        for chainlink_config in &self.chainlink {
+            let quoter = ChainlinkQuoter::new(
+                chainlink_config.contract,
+                chainlink_config.token_contract,
+                chainlink_config.quote.clone(),
+                provider,
+            )
+            .await?;
             quoters.push(quoter.into());
         }
 

@@ -61,6 +61,7 @@ Currently supported data sources include:
 - [ERC-4626](./pkg/src/quoter/erc4626/mod.rs) - for [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626)-compatible vaults (Morpho, Aave, etc.)
 - [Fixed](./pkg/src/quoter/fixed/mod.rs) - for static rates, such as WETH to ETH, or USDC to USD
 - [European Central Bank](./pkg/src/quoter/ecb/mod.rs) - for fiat exchange rates (uses single HTTP call and requires feature flag `ecb`)
+- [Chainlink](./pkg/src/quoter/chainlink/mod.rs) - for [Chainlink Price Feeds](https://docs.chain.link/data-feeds)
 
 ## Examples
 
