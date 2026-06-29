@@ -15,6 +15,7 @@ pub use direction::RateDirection;
 
 // Quoters
 
+pub mod chainlink;
 #[cfg(feature = "ecb")]
 pub mod ecb;
 pub mod erc4626;

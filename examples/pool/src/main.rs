@@ -16,7 +16,7 @@ pub async fn main() {
     println!("Hello, world!");
     let pair_address = address!("0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc");
     let provider = ProviderBuilder::new()
-        .connect("https://reth-ethereum.ithaca.xyz/rpc")
+        .connect("https://ethereum.reth.rs/rpc")
         .await
         .unwrap()
         .erased();

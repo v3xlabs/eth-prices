@@ -41,6 +41,7 @@ impl Asset {
             }
             AssetIdentifier::Fiat { symbol } => (symbol.clone(), symbol.clone(), FIAT_DECIMALS),
             AssetIdentifier::Native => ("Native".to_string(), "ETH".to_string(), 18),
+            AssetIdentifier::Custom(id) => (id.clone(), id.clone(), 0),
         };
 
         Ok(Self {
@@ -74,6 +75,7 @@ impl Asset {
             AssetIdentifier::ERC20 { address } => Some(*address),
             AssetIdentifier::Fiat { .. } => None,
             AssetIdentifier::Native => None,
+            AssetIdentifier::Custom(_) => None,
         }
     }
 }

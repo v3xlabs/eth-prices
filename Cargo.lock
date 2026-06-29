@@ -1603,6 +1603,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "examples-pool"
+version = "0.0.1"
+dependencies = [
+ "alloy",
+ "eth-prices",
+ "tokio",
+]
+
+[[package]]
 name = "examples-prometheus"
 version = "0.0.1"
 dependencies = [
@@ -1616,7 +1625,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "examples-uniswap"
+name = "examples-sink"
 version = "0.0.1"
 dependencies = [
  "alloy",
