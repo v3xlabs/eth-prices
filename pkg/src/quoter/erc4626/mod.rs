@@ -2,15 +2,6 @@
 ERC-4626 Vault Quoter
 
 The [`ERC4626Quoter`] struct is used to quote conversion rates between a vault's shares and underlying asset.
-```rust
-use eth_prices::quoter::erc4626::ERC4626Quoter;
-
-let quoter = ERC4626Quoter {
-    network_id: 1.into(),
-    vault_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
-    token_address: "0x1234567890123456789012345678901234567890".try_into().unwrap(),
-};
-```
 
 ```rust
 use eth_prices::{quoter::erc4626::ERC4626Quoter, quoter::Quoter, asset::{Asset, AssetIdentifier}, network::NetworkTime, quoter::RateDirection};
@@ -36,6 +27,11 @@ pub async fn main() {
     println!("rate: {}", rate);
 }
 ```
+
+## Discovery
+
+The [`ERC4626Quoter`] supports discovery and is supported by the [`crate::router::AutoRouter`] when enabled.
+Given the vault address, it queries `asset()` to get the underlying asset address and constructs a quoter.
 */
 
 use alloy::{
