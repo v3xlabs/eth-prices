@@ -11,8 +11,8 @@ use crate::{
     quoter::{
         AnyQuoter,
         erc4626::{ERC4626, ERC4626Quoter},
-        uniswap_v2::{UniswapV2Quoter, factory::UniswapV2Factory, pair::UniswapV2Pair},
-        uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Factory, pool::UniswapV3Pool},
+        uniswap_v2::{UniswapV2Quoter, discovery::UniswapV2Factory, pair::UniswapV2Pair},
+        uniswap_v3::{UniswapV3Quoter, discovery::UniswapV3Factory, pool::UniswapV3Pool},
     },
     router::Router,
 };

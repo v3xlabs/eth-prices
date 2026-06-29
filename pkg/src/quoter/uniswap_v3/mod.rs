@@ -8,10 +8,10 @@ use crate::{
     asset::identity::AssetIdentifier,
     network::{NetworkId, NetworkInstant},
     provider::RpcProvider,
-    quoter::{Quoter, RateDirection, uniswap_v3::factory::UniswapV3Selector},
+    quoter::{Quoter, RateDirection, uniswap_v3::discovery::UniswapV3Selector},
 };
 
-pub mod factory;
+pub mod discovery;
 pub mod pool;
 
 /// Quotes spot rates from a Uniswap v3 pool at a given block height.

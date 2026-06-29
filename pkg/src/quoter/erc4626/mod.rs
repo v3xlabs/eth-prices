@@ -52,6 +52,7 @@ sol! {
     #[sol(rpc)]
     contract ERC4626 {
         function asset() public view returns (address);
+        function totalAssets() external view returns (uint256);
         function convertToAssets(uint256 shares) public view returns (uint256);
         function convertToShares(uint256 assets) public view returns (uint256);
     }
