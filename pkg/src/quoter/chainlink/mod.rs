@@ -3,10 +3,6 @@ Chainlink Price Feed Quoter
 
 Quotes conversion rates from [Chainlink Price Feeds](https://docs.chain.link/data-feeds/price-feeds/addresses).
 
-```
-
-```
-
 # Configuration
 
 ```json

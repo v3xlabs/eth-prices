@@ -43,7 +43,6 @@
 
             nodejs_24
             pnpm_11
-            chromium
             wasm-bindgen-cli
           ];
 

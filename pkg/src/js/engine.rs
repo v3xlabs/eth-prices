@@ -18,7 +18,7 @@ use crate::{
         erc4626::ERC4626Quoter,
         fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
-        uniswap_v3::{UniswapV3Quoter, factory::UniswapV3Selector},
+        uniswap_v3::{UniswapV3Quoter, discovery::UniswapV3Selector},
     },
     router::Router,
 };

@@ -1,6 +1,6 @@
 //! Uniswap v2 quote sources.
 
-pub mod factory;
+pub mod discovery;
 pub mod pair;
 
 use alloy::primitives::{Address, U256, U512, address};
@@ -98,7 +98,7 @@ impl UniswapV2Quoter {
                 token_out,
             } => {
                 let pair_address =
-                    factory::fetch_pair(provider, factory_address, token_in, token_out).await?;
+                    discovery::fetch_pair(provider, factory_address, token_in, token_out).await?;
 
                 let (token0, token1) = if token_in < token_out {
                     (token_in, token_out)

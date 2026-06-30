@@ -53,7 +53,7 @@ pub async fn main() {
 
     router.merge_with(auto);
 
-    let token_out = "fiat:usd".try_into().unwrap();
+    let token_out = "fiat:eur".try_into().unwrap();
 
     let network = NetworkInstant::default()
         .with_evm_latest(1.into(), provider.clone())
