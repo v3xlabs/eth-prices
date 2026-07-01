@@ -7,9 +7,9 @@
     "declaration": true,
     "emitDeclarationOnly": false,
     "outDir": "dist",
-    "rootDir": "./",
+    "rootDir": "src",
     "strict": true,
     "types": ["node"]
   },
-  "include": ["src", "test"]
+  "include": ["src"]
 }

@@ -28,11 +28,18 @@ const USDC = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 const engine = await createEngine({
   rpcUrl: "https://eth-mainnet.g.alchemy.com/v2/your-api-key",
   quoters: {
-    uniswap_v3: [
-      { token_in: WETH, token_out: USDC, fee: 500 }
+    uniswapV3: [
+      { tokenIn: WETH, tokenOut: USDC, fee: 500 }
     ],
     fixed: [
-      { token_in: USDC, token_out: "fiat:usd", fixed_rate: 1 }
+      {
+        tokenIn: USDC,
+        tokenInDecimals: 6,
+        tokenOut: "fiat:usd",
+        tokenOutDecimals: 6,
+        fixedRate: "1",
+        fixedRateDecimals: 0,
+      }
     ]
   },
 });
@@ -48,3 +55,12 @@ console.log(`Amount out: ${amountOut}`);
 ## Overview
 
 `eth-prices` provides high-performance JS bindings for the `eth-prices` Rust engine. It allows you to build complex price routing graphs combining multiple DEX protocols and custom quoters, all executing with the efficiency of WebAssembly.
+
+Supported JS quoter config keys are `fixed`, `uniswapV2`, `uniswapV3`, `erc4626`, `chainlink`, `ecb`, and `auto`.
+
+Routes that use ECB fiat rates need a fiat timestamp when quoting:
+
+```ts
+const fiatTimestamp = BigInt(Math.floor(Date.now() / 1000));
+const amountOut = await engine.quoteRoute(route, "1000000", undefined, fiatTimestamp);
+```
