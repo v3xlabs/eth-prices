@@ -1,9 +1,10 @@
-use alloy::primitives::Address;
+use alloy::primitives::{Address, U256};
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
+    asset::AssetIdentifier,
     quoter::{
         RateDirection, fixed::FixedQuoter, uniswap_v2::UniswapV2Selector,
         uniswap_v3::discovery::UniswapV3Selector,
@@ -39,6 +40,53 @@ pub struct QuotersConfig {
     #[serde(default)]
     #[tsify(type = "string[]")]
     pub erc4626: Vec<Address>,
+    #[serde(default)]
+    pub chainlink: Vec<ChainlinkQuoterConfig>,
+    #[serde(default)]
+    pub ecb: bool,
+    #[serde(default)]
+    pub auto: Option<AutoRouterConfig>,
+}
+
+#[derive(Debug, Deserialize, Tsify)]
+#[tsify(from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct ChainlinkQuoterConfig {
+    #[tsify(type = "string")]
+    pub contract: Address,
+    #[tsify(type = "string")]
+    pub token: AssetIdentifier,
+    pub token_decimals: u8,
+    #[tsify(type = "string")]
+    pub quote: AssetIdentifier,
+    pub quote_decimals: u8,
+}
+
+#[derive(Debug, Deserialize, Tsify)]
+#[tsify(from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoRouterConfig {
+    #[tsify(type = "string[]")]
+    pub tokens: Vec<AssetIdentifier>,
+    #[serde(default)]
+    pub network_id: Option<u64>,
+    #[serde(default)]
+    #[tsify(type = "string | undefined")]
+    pub uniswap_v2_factory: Option<Address>,
+    #[serde(default)]
+    #[tsify(type = "string | undefined")]
+    pub uniswap_v3_factory: Option<Address>,
+    #[serde(default)]
+    pub uniswap_v3_fees: Option<Vec<u32>>,
+    #[serde(default)]
+    #[tsify(type = "string | undefined")]
+    pub min_liquidity: Option<U256>,
+    #[serde(default)]
+    pub discover_uniswap_v2: Option<bool>,
+    #[serde(default)]
+    pub discover_uniswap_v3: Option<bool>,
+    #[serde(default)]
+    pub discover_erc4626: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Tsify)]
@@ -48,7 +96,12 @@ pub struct QuoteRequest {
     pub input_token: String,
     pub output_token: String,
     pub amount_in: String,
+    #[serde(default)]
+    #[tsify(optional)]
     pub block: Option<u64>,
+    #[serde(default)]
+    #[tsify(optional)]
+    pub fiat_timestamp: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Tsify)]

@@ -7,25 +7,33 @@ use wasm_bindgen::prelude::*;
 use super::{
     convert::{into_js_error, parse_address, parse_token_identifier, parse_u256},
     route::Route,
-    types::{CreateEngineConfig, JsCreateEngineConfig, QuoteRequest},
+    types::{
+        AutoRouterConfig, ChainlinkQuoterConfig, CreateEngineConfig, JsCreateEngineConfig,
+        QuoteRequest,
+    },
 };
 use crate::{
     Result,
-    network::NetworkTime,
+    network::{NetworkId, NetworkInstant},
     provider::RpcProvider,
     quoter::{
         AnyQuoter,
+        chainlink::ChainlinkQuoter,
         erc4626::ERC4626Quoter,
         fixed::FixedQuoter,
         uniswap_v2::{UniswapV2Quoter, UniswapV2Selector},
         uniswap_v3::{UniswapV3Quoter, discovery::UniswapV3Selector},
     },
-    router::Router,
+    router::{AutoRouter, Router},
 };
+
+#[cfg(feature = "ecb")]
+use crate::quoter::ecb::EcbRateSource;
 
 #[wasm_bindgen]
 pub struct Engine {
     provider: RpcProvider,
+    network_id: NetworkId,
     router: Router,
 }
 
@@ -71,6 +79,30 @@ impl Engine {
         Ok(())
     }
 
+    #[wasm_bindgen(js_name = addChainlinkQuoter)]
+    pub async fn add_chainlink_quoter(
+        &mut self,
+        config: ChainlinkQuoterConfig,
+    ) -> Result<(), JsError> {
+        let quoter = self.create_chainlink_quoter(config).await?;
+        self.push_quoter(quoter.into());
+        Ok(())
+    }
+
+    #[cfg(feature = "ecb")]
+    #[wasm_bindgen(js_name = addEcbQuoters)]
+    pub fn add_ecb_quoters(&mut self) -> Result<(), JsError> {
+        self.load_ecb();
+        Ok(())
+    }
+
+    #[wasm_bindgen(js_name = addAutoRouter)]
+    pub async fn add_auto_router(&mut self, config: AutoRouterConfig) -> Result<(), JsError> {
+        let router = self.create_auto_router(config).await?;
+        self.router.merge_with(router);
+        Ok(())
+    }
+
     #[wasm_bindgen(js_name = computeRoute)]
     pub fn compute_route(
         &self,
@@ -91,11 +123,10 @@ impl Engine {
         route: &Route,
         amount_in: String,
         block: Option<u64>,
+        fiat_timestamp: Option<u64>,
     ) -> Result<String, JsError> {
         let amount_in = parse_u256(&amount_in)?;
-        let block = self.resolve_block(block).await?;
-        let network = NetworkTime::from_provider(self.provider.clone(), 1.into(), block);
-        let networks = network.instant();
+        let networks = self.resolve_networks(block, fiat_timestamp).await?;
         route
             .inner
             .quote(&networks, amount_in)
@@ -111,9 +142,11 @@ impl Engine {
         output_token: String,
         amount_in: String,
         block: Option<u64>,
+        fiat_timestamp: Option<u64>,
     ) -> Result<String, JsError> {
         let route = self.compute_route(input_token, output_token)?;
-        self.quote_route(&route, amount_in, block).await
+        self.quote_route(&route, amount_in, block, fiat_timestamp)
+            .await
     }
 
     #[wasm_bindgen(js_name = quote)]
@@ -123,6 +156,7 @@ impl Engine {
             request.output_token,
             request.amount_in,
             request.block,
+            request.fiat_timestamp,
         )
         .await
     }
@@ -161,6 +195,25 @@ impl Engine {
         }
     }
 
+    async fn resolve_networks(
+        &self,
+        block: Option<u64>,
+        fiat_timestamp: Option<u64>,
+    ) -> Result<NetworkInstant, JsError> {
+        let block = self.resolve_block(block).await?;
+        let mut networks = NetworkInstant::default().with_evm_block(
+            self.network_id.clone(),
+            block,
+            self.provider.clone(),
+        );
+
+        if let Some(fiat_timestamp) = fiat_timestamp {
+            networks = networks.with_fiat_timestamp(fiat_timestamp);
+        }
+
+        Ok(networks)
+    }
+
     async fn from_config(config: CreateEngineConfig) -> Result<Self, JsError> {
         let rpc_url = config.rpc_url.unwrap_or_default();
         if rpc_url.trim().is_empty() {
@@ -171,9 +224,13 @@ impl Engine {
             .await
             .map_err(into_js_error)?
             .erased();
+        let network_id = NetworkId::from_provider(&provider)
+            .await
+            .map_err(into_js_error)?;
 
         let mut quoter = Self {
             provider,
+            network_id,
             router: Router::default(),
         };
 
@@ -181,6 +238,15 @@ impl Engine {
         quoter.load_uniswap_v2(config.quoters.uniswap_v2).await?;
         quoter.load_uniswap_v3(config.quoters.uniswap_v3).await?;
         quoter.load_erc4626(config.quoters.erc4626).await?;
+        quoter.load_chainlink(config.quoters.chainlink).await?;
+        #[cfg(feature = "ecb")]
+        if config.quoters.ecb {
+            quoter.load_ecb();
+        }
+        if let Some(config) = config.quoters.auto {
+            let router = quoter.create_auto_router(config).await?;
+            quoter.router.merge_with(router);
+        }
 
         Ok(quoter)
     }
@@ -222,6 +288,64 @@ impl Engine {
             self.push_quoter(quoter.into());
         }
         Ok(())
+    }
+
+    async fn load_chainlink(&mut self, configs: Vec<ChainlinkQuoterConfig>) -> Result<(), JsError> {
+        for config in configs {
+            let quoter = self.create_chainlink_quoter(config).await?;
+            self.push_quoter(quoter.into());
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "ecb")]
+    fn load_ecb(&mut self) {
+        self.router.merge_with(EcbRateSource::default().graph());
+    }
+
+    async fn create_chainlink_quoter(
+        &self,
+        config: ChainlinkQuoterConfig,
+    ) -> Result<ChainlinkQuoter, JsError> {
+        ChainlinkQuoter::new(
+            config.contract,
+            config.token,
+            config.token_decimals,
+            config.quote,
+            config.quote_decimals,
+            &self.provider,
+        )
+        .await
+        .map_err(into_js_error)
+    }
+
+    async fn create_auto_router(&self, config: AutoRouterConfig) -> Result<Router, JsError> {
+        let mut auto = AutoRouter::new(self.provider.clone(), config.tokens);
+        if let Some(network_id) = config.network_id {
+            auto = auto.with_network_id(network_id.into());
+        }
+        if let Some(factory) = config.uniswap_v2_factory {
+            auto = auto.with_uniswap_v2_factory(factory);
+        }
+        if let Some(factory) = config.uniswap_v3_factory {
+            auto = auto.with_uniswap_v3_factory(factory);
+        }
+        if let Some(fees) = config.uniswap_v3_fees {
+            auto = auto.with_uniswap_v3_fees(fees);
+        }
+        if let Some(min_liquidity) = config.min_liquidity {
+            auto = auto.with_min_liquidity(min_liquidity);
+        }
+        if let Some(enable) = config.discover_uniswap_v2 {
+            auto = auto.discover_uniswap_v2(enable);
+        }
+        if let Some(enable) = config.discover_uniswap_v3 {
+            auto = auto.discover_uniswap_v3(enable);
+        }
+        if let Some(enable) = config.discover_erc4626 {
+            auto = auto.discover_erc4626(enable);
+        }
+        auto.build().await.map_err(into_js_error)
     }
 }
 
