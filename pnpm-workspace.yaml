@@ -2,5 +2,8 @@ allowBuilds:
   esbuild: false
 autoInstallPeers: false
 packages:
+  - "bench"
   - "pkg"
   - "ts"
+overrides:
+  eslint-plugin-tailwindcss: 4.0.0-beta.0

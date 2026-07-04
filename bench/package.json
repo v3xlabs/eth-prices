@@ -1,0 +1,15 @@
+{
+  "name": "eth-prices-bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "eval": "node run.mjs",
+    "eval:ts": "node typescript.mjs"
+  },
+  "dependencies": {
+    "eth-prices": "workspace:*",
+    "ox": "^0.14.30"
+  }
+}

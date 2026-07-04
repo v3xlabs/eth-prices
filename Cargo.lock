@@ -1686,6 +1686,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "eth-prices-bench"
+version = "0.0.0"
+dependencies = [
+ "alloy",
+ "eth-prices",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "examples-auto-router"
 version = "0.0.1"
 dependencies = [

@@ -22,3 +22,13 @@ build:
     cd pkg && cargo build
     cd pkg && pnpm build
     cd ts && pnpm build
+
+eval:
+    pnpm --dir bench eval
+
+eval-rust:
+    cargo run --release -p eth-prices-bench
+
+eval-ts:
+    pnpm --dir ts build
+    pnpm --dir bench eval:ts

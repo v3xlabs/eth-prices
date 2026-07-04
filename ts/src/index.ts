@@ -1,1 +1,34 @@
-export * from "../pkg/eth_prices.js";
+export type { AssetIdentifier, EvmAddress } from "./asset.js";
+export { canonicalizeAddress, canonicalizeAsset, isEvmAddress } from "./asset.js";
+export type { EthPricesErrorCode } from "./error.js";
+export { EthPricesError } from "./error.js";
+export type { NetworkContext, NetworkContextOptions } from "./network.js";
+export { createNetworkContext } from "./network.js";
+export type { Direction, Quote, QuoteParams, Quoter, RouteStep } from "./quoter.js";
+export type { ChainlinkQuoterParams } from "./quoters/chainlink/index.js";
+export { chainlinkQuoter } from "./quoters/chainlink/index.js";
+export type { EcbQuoterParams, EcbRateSource, EcbRateSourceOptions } from "./quoters/ecb/index.js";
+export { createEcbRateSource, ECB_CURRENCIES, ecbQuoter } from "./quoters/ecb/index.js";
+export type { ERC4626DiscovererOptions } from "./quoters/erc4626/discovery.js";
+export { erc4626Discoverer } from "./quoters/erc4626/discovery.js";
+export type { ERC4626QuoterParams } from "./quoters/erc4626/index.js";
+export { erc4626Quoter } from "./quoters/erc4626/index.js";
+export type { FixedQuoterParams } from "./quoters/fixed/index.js";
+export { fixedQuoter } from "./quoters/fixed/index.js";
+export type { UniswapV2DiscovererOptions } from "./quoters/uniswap_v2/discovery.js";
+export { uniswapV2Discoverer } from "./quoters/uniswap_v2/discovery.js";
+export type { UniswapV2QuoterParams } from "./quoters/uniswap_v2/index.js";
+export { uniswapV2Quoter } from "./quoters/uniswap_v2/index.js";
+export type { UniswapV3DiscovererOptions } from "./quoters/uniswap_v3/discovery.js";
+export { uniswapV3Discoverer } from "./quoters/uniswap_v3/discovery.js";
+export type { UniswapV3QuoterParams } from "./quoters/uniswap_v3/index.js";
+export { uniswapV3Quoter } from "./quoters/uniswap_v3/index.js";
+export type { AutoRouterConfig, AutoRouterResult } from "./router/auto.js";
+export { createAutoRouter } from "./router/auto.js";
+export type {
+  Discoverer, DiscovererReport, DiscovererResult, DiscoveryFailure, DiscoveryInput, DiscoveryReport,
+} from "./router/discovery.js";
+export type { Router } from "./router/index.js";
+export { createRouter } from "./router/index.js";
+export type { Route } from "./router/route.js";
+export { quoteRoute } from "./router/route.js";

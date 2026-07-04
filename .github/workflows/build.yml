@@ -48,8 +48,17 @@ jobs:
       - name: Build examples
         run: cargo build --examples
 
-      - name: Build wasm package
+      - name: Build packages
         run: pnpm --sequential -r build
+
+      - name: Lint TypeScript package
+        run: pnpm --dir ts lint
+
+      - name: Typecheck TypeScript package
+        run: pnpm --dir ts typecheck
 
       - name: Test package
         run: pnpm --sequential -r test
+
+      - name: Verify npm package
+        run: pnpm --dir ts test:package

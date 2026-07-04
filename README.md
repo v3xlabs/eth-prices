@@ -72,6 +72,12 @@ This crate has a few examples you can toy around with:
 - [Fiat Quoter](./examples/fiat/) - to quote fiat rates
 - [Auto Router](./examples/auto_router/) - to automatically discover quoters and build a router
 
+## Autorouter Evaluation
+
+The live evaluation suite in [`bench`](./bench/) compares the Rust and TypeScript
+autorouters at the same Ethereum block against six keyless USD price sources.
+Run it with `just eval`. Results are written to `target/evals/`.
+
 ## Documentation
 
 You can read the documentation at [docs.rs/eth-prices](https://docs.rs/eth-prices).
