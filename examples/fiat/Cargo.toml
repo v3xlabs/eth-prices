@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 eth-prices = { path = "../../pkg", features = ["ecb"] }
 tokio = { version = "1", features = ["full"] }
-alloy = { version = "1", features = [
+alloy = { version = "2", features = [
     "contract",
     "provider-http",
     "reqwest-rustls-tls",
