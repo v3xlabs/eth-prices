@@ -5,7 +5,80 @@ on:
   pull_request:
     branches: [master]
 jobs:
-  test:
+  rust:
+    runs-on: ubuntu-latest
+    env:
+      RPC_URL: https://ethereum.reth.rs/rpc
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Check clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Check documentation
+        run: cargo doc --all-features --no-deps
+
+      - name: Run tests
+        run: cargo test --all-features
+
+      - name: Build examples
+        run: cargo build --examples
+
+      - name: Build release benchmark binary
+        run: cargo build --release -p eth-prices-bench
+
+      - name: Upload benchmark binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-bench
+          path: target/release/eth-prices-bench
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.5.3
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build TypeScript package
+        run: pnpm --dir ts build
+
+      - name: Upload TypeScript package
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-dist
+          path: ts/dist
+
+      - name: Lint TypeScript package
+        run: pnpm --dir ts lint
+
+      - name: Typecheck TypeScript package
+        run: pnpm --dir ts typecheck
+
+      - name: Test package
+        run: pnpm --sequential -r test
+
+      - name: Verify npm package
+        run: pnpm --dir ts test:package
+
+  bench:
+    needs: [rust, typescript]
     runs-on: ubuntu-latest
     env:
       RPC_URL: https://ethereum.reth.rs/rpc
@@ -27,29 +100,23 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup wasm target
-        run: rustup target add wasm32-unknown-unknown
+      - name: Download benchmark binary
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-bench
+          path: .ci/rust-bench
 
-      - name: Install wasm-bindgen
-        run: cargo install wasm-bindgen-cli --version 0.2.121 --locked
+      - name: Restore binary permissions
+        run: chmod +x .ci/rust-bench/eth-prices-bench
 
-      - name: Check formatting
-        run: cargo fmt --check
+      - name: Download TypeScript package
+        uses: actions/download-artifact@v4
+        with:
+          name: typescript-dist
+          path: ts/dist
 
-      - name: Check clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Check documentation
-        run: cargo doc --all-features --no-deps
-
-      - name: Run tests
-        run: cargo test --all-features
-
-      - name: Build examples
-        run: cargo build --examples
-
-      - name: Build wasm package
-        run: pnpm --sequential -r build
-
-      - name: Test package
-        run: pnpm --sequential -r test
+      - name: Run cross-language evaluation
+        run: pnpm --dir bench eval
+        env:
+          EVAL_SKIP_TS_BUILD: "true"
+          EVAL_RUST_BINARY: .ci/rust-bench/eth-prices-bench

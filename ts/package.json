@@ -1,19 +1,19 @@
 {
   "name": "eth-prices",
-  "version": "0.0.10",
+  "version": "1.0.0",
   "type": "module",
-  "description": "js bindings for eth-prices rust crate",
+  "description": "Pure TypeScript price routing and quoting for EVM assets",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "node": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/node.js"
-      },
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js"
     }
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
   },
   "repository": {
     "type": "git",
@@ -25,12 +25,15 @@
     "url": "https://github.com/v3xlabs"
   },
   "files": [
-    "dist",
-    "pkg/**"
+    "dist"
   ],
   "scripts": {
     "test": "vitest run",
-    "build": "tsc"
+    "test:package": "pnpm build && node scripts/package-smoke.mjs",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "prepack": "pnpm build"
   },
   "publishConfig": {
     "access": "public",
@@ -38,11 +41,29 @@
   },
   "license": "LGPL-3.0",
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^25.5.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "eslint-plugin-sonarjs": "^4.1.0",
+    "eslint-plugin-tailwindcss": "4.0.0-beta.0",
+    "eslint-plugin-unicorn": "^70.0.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "eslint-plugin-v3xlabs": "^1.7.14",
     "typescript": "^5.9.2",
-    "vite": "^8.0.2",
-    "vite-plugin-wasm": "^3.5.0",
+    "typescript-eslint": "^8.62.1",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.15.0"
+  "packageManager": "pnpm@10.15.0",
+  "pnpm": {
+    "overrides": {
+      "eslint-plugin-tailwindcss": "4.0.0-beta.0"
+    }
+  },
+  "dependencies": {
+    "ox": "^0.14.30"
+  }
 }

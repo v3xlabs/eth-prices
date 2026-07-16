@@ -28,28 +28,14 @@ pub struct UniswapV2Config {
 /// Selects a Uniswap v2 pool either by tokens or by pair address.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(untagged)]
-#[cfg_attr(
-    target_arch = "wasm32",
-    derive(tsify::Tsify),
-    serde(rename_all = "camelCase"),
-    tsify(from_wasm_abi)
-)]
 pub enum UniswapV2Selector {
     /// Resolve the pair address from token addresses.
     ByTokens {
-        #[cfg_attr(target_arch = "wasm32", serde(rename = "tokenIn"))]
-        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_in: Address,
-        #[cfg_attr(target_arch = "wasm32", serde(rename = "tokenOut"))]
-        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
         token_out: Address,
     },
     /// Use an already-known pair contract address.
-    Pair {
-        #[cfg_attr(target_arch = "wasm32", serde(rename = "pairAddress"))]
-        #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
-        pair_address: Address,
-    },
+    Pair { pair_address: Address },
 }
 
 /// Quotes spot rates from a Uniswap v2 pair contract at a given block height.

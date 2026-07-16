@@ -1,6 +1,5 @@
 target/
 node_modules/
-ts/pkg/*
 ts/dist/*
 .direnv
 .envrc

@@ -14,7 +14,7 @@
 </p>
 
 > [!IMPORTANT]
-> eth-prices aims to provide ethereum price estimation only. It is not intended for nor provides guarantees of exchange rates.
+> eth-prices aims to provide Ethereum price estimation only. It is not intended for, nor does it provide guarantees of, exchange rates.
 
 ## Quickstart
 
@@ -71,6 +71,12 @@ This crate has a few examples you can toy around with:
 - [Prometheus Exporter](./examples/prometheus/) - to export price data to metrics
 - [Fiat Quoter](./examples/fiat/) - to quote fiat rates
 - [Auto Router](./examples/auto_router/) - to automatically discover quoters and build a router
+
+## Autorouter Evaluation
+
+The live evaluation suite in [`bench`](./bench/) compares the Rust and TypeScript
+autorouters at the same Ethereum block against six keyless USD price sources.
+Run it with `just eval`. Results are written to `target/evals/`.
 
 ## Documentation
 

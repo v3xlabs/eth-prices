@@ -16,23 +16,14 @@ use crate::{
 ///
 /// This is mainly useful for synthetic edges such as fiat pegs or test fixtures.
 #[derive(Debug, Deserialize, PartialEq, Clone)]
-#[cfg_attr(
-    target_arch = "wasm32",
-    derive(tsify::Tsify),
-    serde(rename_all = "camelCase"),
-    tsify(from_wasm_abi)
-)]
 pub struct FixedQuoter {
     /// Input asset for forward quotes.
-    #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
     pub token_in: AssetIdentifier,
     pub token_in_decimals: u8,
     /// Output asset for forward quotes.
-    #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
     pub token_out: AssetIdentifier,
     pub token_out_decimals: u8,
     /// Multiplier applied during forward quotes, scaled by `10^fixed_rate_decimals`.
-    #[cfg_attr(target_arch = "wasm32", tsify(type = "string"))]
     pub fixed_rate: U256,
     pub fixed_rate_decimals: u8,
 }

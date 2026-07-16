@@ -27,7 +27,6 @@
           "rust-src"
           "llvm-tools"
         ];
-        targets = ["wasm32-unknown-unknown"];
       };
 
       rustfmtNightly = pkgs.rust-bin.nightly.latest.rustfmt;
@@ -43,7 +42,6 @@
 
             nodejs_24
             pnpm_11
-            wasm-bindgen-cli
           ];
 
           shellHook = ''
