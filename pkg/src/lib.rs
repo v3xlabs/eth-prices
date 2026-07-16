@@ -77,6 +77,3 @@ pub mod provider;
 pub mod quoter;
 pub mod router;
 pub mod utils;
-
-#[cfg(target_arch = "wasm32")]
-pub mod js;
