@@ -14,7 +14,7 @@
 </p>
 
 > [!IMPORTANT]
-> eth-prices aims to provide ethereum price estimation only. It is not intended for nor provides guarantees of exchange rates.
+> eth-prices aims to provide Ethereum price estimation only. It is not intended for, nor does it provide guarantees of, exchange rates.
 
 ## Quickstart
 
