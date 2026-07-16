@@ -20,7 +20,6 @@ test:
 
 build:
     cd pkg && cargo build
-    cd pkg && pnpm build
     cd ts && pnpm build
 
 eval:
