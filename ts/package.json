@@ -1,6 +1,6 @@
 {
   "name": "eth-prices",
-  "version": "0.0.10",
+  "version": "1.0.0",
   "type": "module",
   "description": "Pure TypeScript price routing and quoting for EVM assets",
   "main": "./dist/index.js",
