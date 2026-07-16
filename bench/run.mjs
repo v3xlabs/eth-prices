@@ -10,6 +10,8 @@ const root = new URL("../", import.meta.url);
 const manifest = JSON.parse(await readFile(new URL("./cases.json", import.meta.url), "utf8"));
 const rpcUrl = process.env.RPC_URL ?? "https://ethereum.reth.rs/rpc";
 const iterations = process.env.EVAL_ITERATIONS ?? "1000";
+const shouldSkipTypeScriptBuild = process.env.EVAL_SKIP_TS_BUILD === "true";
+const rustBinary = process.env.EVAL_RUST_BINARY;
 
 async function latestBlock() {
   if (process.env.EVAL_BLOCK !== undefined) return Number(process.env.EVAL_BLOCK);
@@ -58,9 +60,11 @@ await Promise.all(Object.entries(manifest.assets).map(async ([name, asset]) => {
   });
 }));
 
-await command("pnpm", ["--dir", "ts", "build"], {}, false);
+if (!shouldSkipTypeScriptBuild) await command("pnpm", ["--dir", "ts", "build"], {}, false);
 const environment = { EVAL_BLOCK: String(blockNumber), EVAL_ITERATIONS: iterations, RPC_URL: rpcUrl };
-const rust = await command("cargo", ["run", "--quiet", "--release", "-p", "eth-prices-bench"], environment);
+const rust = rustBinary === undefined
+  ? await command("cargo", ["run", "--quiet", "--release", "-p", "eth-prices-bench"], environment)
+  : await command(rustBinary, [], environment);
 const typescript = await command("node", ["bench/typescript.mjs"], environment);
 const rustQuotes = quoteIndex(rust);
 const typescriptQuotes = quoteIndex(typescript);
