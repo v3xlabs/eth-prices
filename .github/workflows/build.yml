@@ -5,7 +5,65 @@ on:
   pull_request:
     branches: [master]
 jobs:
-  test:
+  rust:
+    runs-on: ubuntu-latest
+    env:
+      RPC_URL: https://ethereum.reth.rs/rpc
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Check clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Check documentation
+        run: cargo doc --all-features --no-deps
+
+      - name: Run tests
+        run: cargo test --all-features
+
+      - name: Build examples
+        run: cargo build --examples
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.5.3
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build TypeScript package
+        run: pnpm --dir ts build
+
+      - name: Lint TypeScript package
+        run: pnpm --dir ts lint
+
+      - name: Typecheck TypeScript package
+        run: pnpm --dir ts typecheck
+
+      - name: Test package
+        run: pnpm --sequential -r test
+
+      - name: Verify npm package
+        run: pnpm --dir ts test:package
+
+  bench:
+    needs: [rust, typescript]
     runs-on: ubuntu-latest
     env:
       RPC_URL: https://ethereum.reth.rs/rpc
@@ -27,32 +85,5 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: cargo fmt --check
-
-      - name: Check clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Check documentation
-        run: cargo doc --all-features --no-deps
-
-      - name: Run tests
-        run: cargo test --all-features
-
-      - name: Build examples
-        run: cargo build --examples
-
-      - name: Build packages
-        run: pnpm --sequential -r build
-
-      - name: Lint TypeScript package
-        run: pnpm --dir ts lint
-
-      - name: Typecheck TypeScript package
-        run: pnpm --dir ts typecheck
-
-      - name: Test package
-        run: pnpm --sequential -r test
-
-      - name: Verify npm package
-        run: pnpm --dir ts test:package
+      - name: Run cross-language evaluation
+        run: pnpm --dir bench eval
