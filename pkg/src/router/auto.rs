@@ -39,6 +39,29 @@ struct DiscoveredPool {
     kind: PoolKind,
 }
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveryFailure {
+    pub target: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscovererReport {
+    pub identity: String,
+    pub attempted: usize,
+    pub discovered: usize,
+    pub skipped: usize,
+    pub failures: Vec<DiscoveryFailure>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveryReport {
+    pub discoverers: Vec<DiscovererReport>,
+}
+
 #[derive(Debug, Clone)]
 pub struct AutoRouter {
     provider: RpcProvider,
@@ -110,19 +133,26 @@ impl AutoRouter {
     }
 
     pub async fn build(self) -> Result<Router> {
+        Ok(self.build_with_report().await?.0)
+    }
+
+    pub async fn build_with_report(self) -> Result<(Router, DiscoveryReport)> {
         let network_id = match self.network_id {
             Some(ref id) => id.clone(),
             None => NetworkId::from_provider(&self.provider).await?,
         };
 
         let mut all_quoters: Vec<AnyQuoter> = Vec::new();
+        let mut report = DiscoveryReport::default();
 
         // 1. ERC4626 discovery first — collect underlying tokens
         let mut extra_addresses: Vec<Address> = Vec::new();
         if self.discover_erc4626 {
-            let (erc4626_quoters, underlying) = self.discover_erc4626_quoters(&network_id).await;
+            let (erc4626_quoters, underlying, discoverer) =
+                self.discover_erc4626_quoters(&network_id).await;
             all_quoters.extend(erc4626_quoters);
             extra_addresses = underlying;
+            report.discoverers.push(discoverer);
         }
 
         // 2. Build expanded address set (input tokens + ERC4626 underlyings)
@@ -137,26 +167,38 @@ impl AutoRouter {
         // 3. V2 discovery with expanded set
         let mut v2_pools: Vec<DiscoveredPool> = Vec::new();
         if self.discover_v2 {
-            v2_pools = Self::discover_v2_pools_inner(
-                &self.provider,
-                &all_addresses,
-                self.uniswap_v2_factory,
-            )
-            .await;
-            v2_pools = Self::filter_pools(Self::deduplicate_pools(v2_pools), &self.min_liquidity);
+            let factory = self.uniswap_v2_factory.unwrap_or(UNISWAP_V2_FACTORY);
+            let (pools, attempted, failures) =
+                Self::discover_v2_pools_inner(&self.provider, &all_addresses, factory).await;
+            v2_pools = Self::filter_pools(Self::deduplicate_pools(pools), &self.min_liquidity);
+            report.discoverers.push(DiscovererReport {
+                identity: format!("uniswap_v2:{factory}"),
+                attempted,
+                discovered: v2_pools.len(),
+                skipped: attempted.saturating_sub(v2_pools.len() + failures.len()),
+                failures,
+            });
         }
 
         // 4. V3 discovery with expanded set
         let mut v3_pools: Vec<DiscoveredPool> = Vec::new();
         if self.discover_v3 {
-            v3_pools = Self::discover_v3_pools_inner(
+            let factory = self.uniswap_v3_factory.unwrap_or(UNISWAP_V3_FACTORY);
+            let (pools, attempted, failures) = Self::discover_v3_pools_inner(
                 &self.provider,
                 &all_addresses,
-                self.uniswap_v3_factory,
+                factory,
                 &self.uniswap_v3_fees,
             )
             .await;
-            v3_pools = Self::filter_pools(Self::deduplicate_pools(v3_pools), &self.min_liquidity);
+            v3_pools = Self::filter_pools(Self::deduplicate_pools(pools), &self.min_liquidity);
+            report.discoverers.push(DiscovererReport {
+                identity: format!("uniswap_v3:{factory}"),
+                attempted,
+                discovered: v3_pools.len(),
+                skipped: attempted.saturating_sub(v3_pools.len() + failures.len()),
+                failures,
+            });
         }
 
         // 5. Build quoters — V2 first so the Router's .find() prefers them
@@ -188,7 +230,7 @@ impl AutoRouter {
             return Err(crate::error::EthPricesError::AutoRouterNoPools);
         }
 
-        Ok(Router::from_iter(all_quoters))
+        Ok((Router::from_iter(all_quoters), report))
     }
 
     fn erc20_addresses(&self) -> Vec<Address> {
@@ -235,16 +277,15 @@ impl AutoRouter {
     async fn discover_v2_pools_inner(
         provider: &RpcProvider,
         addresses: &[Address],
-        factory_opt: Option<Address>,
-    ) -> Vec<DiscoveredPool> {
-        let factory = factory_opt.unwrap_or(UNISWAP_V2_FACTORY);
-
+        factory: Address,
+    ) -> (Vec<DiscoveredPool>, usize, Vec<DiscoveryFailure>) {
         let mut pairs = Vec::new();
         for i in 0..addresses.len() {
             for j in (i + 1)..addresses.len() {
                 pairs.push((addresses[i], addresses[j]));
             }
         }
+        let attempted = pairs.len();
 
         let results: Vec<_> = join_all(pairs.into_iter().map(|(a, b)| {
             let provider = provider.clone();
@@ -252,7 +293,15 @@ impl AutoRouter {
         }))
         .await;
 
-        let pools: Vec<DiscoveredPool> = results.into_iter().flatten().collect();
+        let mut pools: Vec<DiscoveredPool> = Vec::new();
+        let mut failures: Vec<DiscoveryFailure> = Vec::new();
+        for result in results {
+            match result {
+                Ok(Some(pool)) => pools.push(pool),
+                Ok(None) => {}
+                Err(failure) => failures.push(failure),
+            }
+        }
 
         let liq_futures: Vec<_> = pools
             .iter()
@@ -260,40 +309,49 @@ impl AutoRouter {
                 let provider = provider.clone();
                 async move {
                     let pair = UniswapV2Pair::new(pool.pool_address, &provider);
-                    match pair.getReserves().call().await {
-                        Ok(reserves) => {
+                    pair.getReserves()
+                        .call()
+                        .await
+                        .map(|reserves| {
                             let reserve0 = U256::from(reserves.reserve0);
                             let reserve1 = U256::from(reserves.reserve1);
-                            Some(std::cmp::min(reserve0, reserve1))
-                        }
-                        Err(_) => None,
-                    }
+                            std::cmp::min(reserve0, reserve1)
+                        })
+                        .map_err(|error| error.to_string())
                 }
             })
             .collect();
 
-        let scores: Vec<Option<U256>> = join_all(liq_futures).await;
-
-        pools
+        let scores = join_all(liq_futures).await;
+        let scored = pools
             .into_iter()
             .zip(scores)
-            .filter_map(|(mut pool, score)| {
-                pool.score = score?;
-                Some(pool)
+            .filter_map(|(mut pool, score)| match score {
+                Ok(score) => {
+                    pool.score = score;
+                    Some(pool)
+                }
+                Err(message) => {
+                    failures.push(DiscoveryFailure {
+                        target: pool.pool_address.to_string(),
+                        message: format!("getReserves failed: {message}"),
+                    });
+                    None
+                }
             })
-            .collect()
+            .collect();
+
+        (scored, attempted, failures)
     }
 
     async fn discover_v3_pools_inner(
         provider: &RpcProvider,
         addresses: &[Address],
-        factory_opt: Option<Address>,
+        factory: Address,
         fees: &[u32],
-    ) -> Vec<DiscoveredPool> {
-        let factory = factory_opt.unwrap_or(UNISWAP_V3_FACTORY);
-
+    ) -> (Vec<DiscoveredPool>, usize, Vec<DiscoveryFailure>) {
         if addresses.len() < 2 {
-            return Vec::new();
+            return (Vec::new(), 0, Vec::new());
         }
 
         let mut queries = Vec::new();
@@ -306,22 +364,33 @@ impl AutoRouter {
                 }
             }
         }
+        let attempted = queries.len();
 
-        join_all(queries.into_iter().map(|(a, b, fee)| {
+        let results = join_all(queries.into_iter().map(|(a, b, fee)| {
             let provider = provider.clone();
             async move { discover_single_v3_pool(&provider, factory, a, b, fee).await }
         }))
-        .await
-        .into_iter()
-        .flatten()
-        .collect()
+        .await;
+
+        let mut pools: Vec<DiscoveredPool> = Vec::new();
+        let mut failures: Vec<DiscoveryFailure> = Vec::new();
+        for result in results {
+            match result {
+                Ok(Some(pool)) => pools.push(pool),
+                Ok(None) => {}
+                Err(failure) => failures.push(failure),
+            }
+        }
+
+        (pools, attempted, failures)
     }
 
     async fn discover_erc4626_quoters(
         &self,
         network_id: &NetworkId,
-    ) -> (Vec<AnyQuoter>, Vec<Address>) {
+    ) -> (Vec<AnyQuoter>, Vec<Address>, DiscovererReport) {
         let addresses = self.erc20_addresses();
+        let attempted = addresses.len();
 
         let results: Vec<_> = join_all(addresses.into_iter().map(|addr| {
             let provider = self.provider.clone();
@@ -336,17 +405,42 @@ impl AutoRouter {
                                 address: underlying,
                             },
                         };
-                        Some((AnyQuoter::from(quoter).with_confidence(50), underlying))
+                        Ok((AnyQuoter::from(quoter).with_confidence(50), underlying))
                     }
-                    Err(_) => None,
+                    Err(error) => Err(DiscoveryFailure {
+                        target: addr.to_string(),
+                        message: error.to_string(),
+                    }),
                 }
             }
         }))
         .await;
 
-        let (quoters, underlying): (Vec<_>, Vec<_>) = results.into_iter().flatten().unzip();
+        let mut quoters = Vec::new();
+        let mut underlying = Vec::new();
+        let mut failures = Vec::new();
+        for result in results {
+            match result {
+                Ok((quoter, asset)) => {
+                    quoters.push(quoter);
+                    underlying.push(asset);
+                }
+                Err(failure) => failures.push(failure),
+            }
+        }
 
-        (quoters, underlying)
+        let discovered = quoters.len();
+        (
+            quoters,
+            underlying,
+            DiscovererReport {
+                identity: format!("erc4626:{}", network_id.0),
+                attempted,
+                discovered,
+                skipped: failures.len(),
+                failures,
+            },
+        )
     }
 }
 
@@ -381,24 +475,42 @@ async fn discover_single_v2_pool(
     factory: Address,
     token_a: Address,
     token_b: Address,
-) -> Option<DiscoveredPool> {
+) -> std::result::Result<Option<DiscoveredPool>, DiscoveryFailure> {
+    let failure = |target: String, message: String| DiscoveryFailure { target, message };
     let v2_factory = UniswapV2Factory::new(factory, provider);
-    let pair = v2_factory.getPair(token_a, token_b).call().await.ok()?;
+    let pair = v2_factory
+        .getPair(token_a, token_b)
+        .call()
+        .await
+        .map_err(|error| {
+            failure(
+                format!("{token_a}/{token_b}"),
+                format!("getPair failed: {error}"),
+            )
+        })?;
     if pair.is_zero() {
-        return None;
+        return Ok(None);
     }
 
     let pair_contract = UniswapV2Pair::new(pair, provider);
-    let token0 = pair_contract.token0().call().await.ok()?;
-    let token1 = pair_contract.token1().call().await.ok()?;
+    let token0 = pair_contract
+        .token0()
+        .call()
+        .await
+        .map_err(|error| failure(pair.to_string(), format!("token0 failed: {error}")))?;
+    let token1 = pair_contract
+        .token1()
+        .call()
+        .await
+        .map_err(|error| failure(pair.to_string(), format!("token1 failed: {error}")))?;
 
-    Some(DiscoveredPool {
+    Ok(Some(DiscoveredPool {
         pool_address: pair,
         token0,
         token1,
         score: U256::ZERO,
         kind: PoolKind::V2,
-    })
+    }))
 }
 
 async fn discover_single_v3_pool(
@@ -407,27 +519,45 @@ async fn discover_single_v3_pool(
     token_a: Address,
     token_b: Address,
     fee: u32,
-) -> Option<DiscoveredPool> {
+) -> std::result::Result<Option<DiscoveredPool>, DiscoveryFailure> {
+    let failure = |target: String, message: String| DiscoveryFailure { target, message };
     let v3_factory = UniswapV3Factory::new(factory, provider);
     let pool = v3_factory
         .getPool(token_a, token_b, U24::from(fee))
         .call()
         .await
-        .ok()?;
+        .map_err(|error| {
+            failure(
+                format!("{token_a}/{token_b}@{fee}"),
+                format!("getPool failed: {error}"),
+            )
+        })?;
     if pool.is_zero() {
-        return None;
+        return Ok(None);
     }
 
     let pool_contract = UniswapV3Pool::new(pool, provider);
-    let token0 = pool_contract.token0().call().await.ok()?;
-    let token1 = pool_contract.token1().call().await.ok()?;
-    let liq: u128 = pool_contract.liquidity().call().await.ok()?;
+    let token0 = pool_contract
+        .token0()
+        .call()
+        .await
+        .map_err(|error| failure(pool.to_string(), format!("token0 failed: {error}")))?;
+    let token1 = pool_contract
+        .token1()
+        .call()
+        .await
+        .map_err(|error| failure(pool.to_string(), format!("token1 failed: {error}")))?;
+    let liq: u128 = pool_contract
+        .liquidity()
+        .call()
+        .await
+        .map_err(|error| failure(pool.to_string(), format!("liquidity failed: {error}")))?;
 
-    Some(DiscoveredPool {
+    Ok(Some(DiscoveredPool {
         pool_address: pool,
         token0,
         token1,
         score: U256::from(liq),
         kind: PoolKind::V3(fee),
-    })
+    }))
 }

@@ -22,8 +22,8 @@ build:
     cd pkg && cargo build
     cd ts && pnpm build
 
-eval:
-    pnpm --dir bench eval
+eval *ARGS:
+    pnpm --dir bench eval -- {{ARGS}}
 
 eval-rust:
     cargo run --release -p eth-prices-bench

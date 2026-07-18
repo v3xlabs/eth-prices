@@ -28,6 +28,7 @@ dependencies = [
  "alloy-core",
  "alloy-eips",
  "alloy-ens",
+ "alloy-json-rpc",
  "alloy-network",
  "alloy-provider",
  "alloy-rpc-client",
@@ -1690,6 +1691,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tower",
 ]
 
 [[package]]
