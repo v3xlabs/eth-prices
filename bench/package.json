@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test",
     "eval": "node run.mjs",
-    "eval:ts": "node typescript.mjs"
+    "eval:ts": "node typescript.mjs",
+    "diagnose": "node diagnose.mjs"
   },
   "dependencies": {
     "eth-prices": "workspace:*",

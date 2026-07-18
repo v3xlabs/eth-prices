@@ -1,11 +1,15 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use alloy::primitives::{Address, U256, address, aliases::U24};
+use alloy::{
+    eips::BlockNumberOrTag,
+    primitives::{Address, U256, address, aliases::U24},
+    providers::Provider,
+};
 use futures::future::join_all;
 
 use crate::{
     Result,
-    asset::identity::AssetIdentifier,
+    asset::{erc20::ERC20, identity::AssetIdentifier},
     network::NetworkId,
     provider::RpcProvider,
     quoter::{
@@ -21,6 +25,8 @@ const UNISWAP_V2_FACTORY: Address = address!("0x5C69bEe701ef814a2B6a3EDD4B1652CB
 const UNISWAP_V3_FACTORY: Address = address!("0x1F98431c8aD98523631AE4a59f267346ea31F984");
 const DEFAULT_V3_FEES: &[u32] = &[100, 500, 3000, 10000];
 const MAX_CONFIDENCE: u64 = 100;
+const FALLBACK_DECIMALS: u8 = 18;
+const FRESHNESS_HALF_LIFE_SECONDS: f64 = 86_400.0;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -37,6 +43,9 @@ struct DiscoveredPool {
     token1: Address,
     score: U256,
     kind: PoolKind,
+    reserve0: U256,
+    reserve1: U256,
+    last_trade_timestamp: Option<u64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -201,28 +210,41 @@ impl AutoRouter {
             });
         }
 
-        // 5. Build quoters — V2 first so the Router's .find() prefers them
-        //    for direct routes (V2 spot prices are generally more reliable for
-        //    thin pools). V3 quoters remain as fallback for multi-hop paths.
+        // 5. Score every kept pool: decimals-normalized liquidity decayed by
+        //    the age of the pool's last trade, matching the TypeScript router.
+        let (decimals, block_timestamp, v3_last_trades) = futures::join!(
+            fetch_decimals(&self.provider, &all_addresses),
+            fetch_block_timestamp(&self.provider),
+            fetch_v3_last_trades(&self.provider, &v3_pools),
+        );
+
         for pool in v2_pools {
+            let confidence = pool_confidence(
+                v2_geometric_mean(&pool, &decimals),
+                block_timestamp,
+                pool.last_trade_timestamp,
+            );
             let quoter = UniswapV2Quoter {
                 network_id: network_id.clone(),
                 pair_address: pool.pool_address,
                 token0: pool.token0,
                 token1: pool.token1,
             };
-            let confidence = pool_confidence_v2(pool.score);
             all_quoters.push(AnyQuoter::from(quoter).with_confidence(confidence));
         }
 
         for pool in v3_pools {
+            let confidence = pool_confidence(
+                v3_geometric_mean(&pool, &decimals),
+                block_timestamp,
+                v3_last_trades.get(&pool.pool_address).copied(),
+            );
             let quoter = UniswapV3Quoter {
                 network_id: network_id.clone(),
                 pool_address: pool.pool_address,
                 token0: pool.token0,
                 token1: pool.token1,
             };
-            let confidence = pool_confidence_v3(pool.score);
             all_quoters.push(AnyQuoter::from(quoter).with_confidence(confidence));
         }
 
@@ -261,7 +283,9 @@ impl AutoRouter {
             }
         }
 
-        best.into_values().collect()
+        let mut pools: Vec<DiscoveredPool> = best.into_values().collect();
+        pools.sort_by_key(|pool| pool.pool_address);
+        pools
     }
 
     fn filter_pools(
@@ -313,9 +337,11 @@ impl AutoRouter {
                         .call()
                         .await
                         .map(|reserves| {
-                            let reserve0 = U256::from(reserves.reserve0);
-                            let reserve1 = U256::from(reserves.reserve1);
-                            std::cmp::min(reserve0, reserve1)
+                            (
+                                U256::from(reserves.reserve0),
+                                U256::from(reserves.reserve1),
+                                u64::from(reserves.blockTimestampLast),
+                            )
                         })
                         .map_err(|error| error.to_string())
                 }
@@ -326,9 +352,12 @@ impl AutoRouter {
         let scored = pools
             .into_iter()
             .zip(scores)
-            .filter_map(|(mut pool, score)| match score {
-                Ok(score) => {
-                    pool.score = score;
+            .filter_map(|(mut pool, reserves)| match reserves {
+                Ok((reserve0, reserve1, last_trade)) => {
+                    pool.score = std::cmp::min(reserve0, reserve1);
+                    pool.reserve0 = reserve0;
+                    pool.reserve1 = reserve1;
+                    pool.last_trade_timestamp = Some(last_trade);
                     Some(pool)
                 }
                 Err(message) => {
@@ -444,30 +473,111 @@ impl AutoRouter {
     }
 }
 
-fn pool_confidence_v2(score: U256) -> u64 {
-    if score.is_zero() {
-        return 0;
-    }
-    let divisor = U256::from(1_000_000_000u64);
-    let scaled = score / divisor;
-    if scaled >= U256::from(MAX_CONFIDENCE) {
-        MAX_CONFIDENCE
-    } else {
-        scaled.as_limbs()[0]
-    }
+fn approx_whole_units(value: U256, decimals: u8) -> f64 {
+    value.to_string().parse::<f64>().unwrap_or(f64::INFINITY) / 10f64.powi(i32::from(decimals))
 }
 
-fn pool_confidence_v3(score: U256) -> u64 {
-    if score.is_zero() {
-        return 0;
+fn decimals_of(decimals: &HashMap<Address, u8>, token: Address) -> u8 {
+    decimals.get(&token).copied().unwrap_or(FALLBACK_DECIMALS)
+}
+
+fn v2_geometric_mean(pool: &DiscoveredPool, decimals: &HashMap<Address, u8>) -> f64 {
+    let units0 = approx_whole_units(pool.reserve0, decimals_of(decimals, pool.token0));
+    let units1 = approx_whole_units(pool.reserve1, decimals_of(decimals, pool.token1));
+    (units0 * units1).sqrt()
+}
+
+// V3 liquidity L is sqrt(x·y) over the virtual reserves, so normalizing by the
+// average token decimals yields the same whole-unit quantity scored for V2.
+fn v3_geometric_mean(pool: &DiscoveredPool, decimals: &HashMap<Address, u8>) -> f64 {
+    let scale = 10f64.powf(
+        f64::from(
+            u32::from(decimals_of(decimals, pool.token0))
+                + u32::from(decimals_of(decimals, pool.token1)),
+        ) / 2.0,
+    );
+    approx_whole_units(pool.score, 0) / scale
+}
+
+// Maps geometric-mean liquidity in whole token units onto 0..100, log-scaled
+// so pools rank by order of magnitude; saturates at one million whole units.
+fn liquidity_confidence(geometric_mean: f64) -> f64 {
+    if !geometric_mean.is_finite() || geometric_mean <= 0.0 {
+        return 0.0;
     }
-    let divisor = U256::from(10_000_000_000_000_000u64);
-    let scaled = score / divisor;
-    if scaled >= U256::from(MAX_CONFIDENCE) {
-        MAX_CONFIDENCE
-    } else {
-        scaled.as_limbs()[0]
+    ((100.0 / 6.0) * (1.0 + geometric_mean).log10()).clamp(0.0, MAX_CONFIDENCE as f64)
+}
+
+// A pool that has not traded recently carries a spot price nobody has been
+// willing to arbitrage, so its validity decays with the age of the last trade.
+fn freshness_multiplier(age_seconds: f64) -> f64 {
+    if !age_seconds.is_finite() || age_seconds <= 0.0 {
+        return 1.0;
     }
+    2f64.powf(-age_seconds / FRESHNESS_HALF_LIFE_SECONDS)
+}
+
+fn pool_confidence(
+    geometric_mean: f64,
+    block_timestamp: Option<u64>,
+    last_trade_timestamp: Option<u64>,
+) -> u64 {
+    let freshness = match (block_timestamp, last_trade_timestamp) {
+        (Some(now), Some(last_trade)) => {
+            freshness_multiplier(now.saturating_sub(last_trade) as f64)
+        }
+        _ => 1.0,
+    };
+    (liquidity_confidence(geometric_mean) * freshness).round() as u64
+}
+
+async fn fetch_decimals(provider: &RpcProvider, addresses: &[Address]) -> HashMap<Address, u8> {
+    join_all(addresses.iter().map(|address| {
+        let provider = provider.clone();
+        let address = *address;
+        async move {
+            let decimals = ERC20::new(address, &provider).decimals().call().await;
+            (address, decimals.unwrap_or(FALLBACK_DECIMALS))
+        }
+    }))
+    .await
+    .into_iter()
+    .collect()
+}
+
+async fn fetch_block_timestamp(provider: &RpcProvider) -> Option<u64> {
+    provider
+        .get_block_by_number(BlockNumberOrTag::Latest)
+        .await
+        .ok()
+        .flatten()
+        .map(|block| block.header.timestamp)
+}
+
+// The most recent oracle observation is written on the first swap of a block,
+// so its timestamp tells when the pool's spot price was last market-tested.
+async fn fetch_v3_last_trades(
+    provider: &RpcProvider,
+    pools: &[DiscoveredPool],
+) -> HashMap<Address, u64> {
+    join_all(pools.iter().map(|pool| {
+        let provider = provider.clone();
+        let pool_address = pool.pool_address;
+        async move {
+            let contract = UniswapV3Pool::new(pool_address, &provider);
+            let slot = contract.slot0().call().await.ok()?;
+            let observation = contract
+                .observations(U256::from(slot.observationIndex))
+                .call()
+                .await
+                .ok()?;
+            Some((pool_address, u64::from(observation.blockTimestamp)))
+        }
+    }))
+    .await
+    .into_iter()
+    .flatten()
+    .collect()
 }
 
 async fn discover_single_v2_pool(
@@ -510,6 +620,9 @@ async fn discover_single_v2_pool(
         token1,
         score: U256::ZERO,
         kind: PoolKind::V2,
+        reserve0: U256::ZERO,
+        reserve1: U256::ZERO,
+        last_trade_timestamp: None,
     }))
 }
 
@@ -559,5 +672,8 @@ async fn discover_single_v3_pool(
         token1,
         score: U256::from(liq),
         kind: PoolKind::V3(fee),
+        reserve0: U256::ZERO,
+        reserve1: U256::ZERO,
+        last_trade_timestamp: None,
     }))
 }

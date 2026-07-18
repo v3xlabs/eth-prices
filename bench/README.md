@@ -63,6 +63,12 @@ The intended loop for a human or agent improving either implementation:
    implementations' prices, assessments, route (`sources`), timings, and full
    error strings.
 
+When a case prices badly, `pnpm --dir bench diagnose <asset...>` (TypeScript
+implementation) shows why: every discovered pool adjacent to the asset, ranked
+by confidence, with the USD price each one implies, its error against the
+consensus in `target/evals/latest.json`, and the route the router actually
+chose. Run it with no arguments to sweep every quoted asset.
+
 Runner internals: `run.mjs` orchestrates, `bench/src/main.rs` and
 `bench/typescript.mjs` emit one JSON document each with identical shapes,
 including per-discoverer reports (attempted/discovered/skipped/failures) and

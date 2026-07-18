@@ -1,3 +1,5 @@
+import { median } from "./score.mjs";
+
 const ANSI_PATTERN = /\u001B\[[0-9;]*m/g;
 
 export function stripAnsi(text) {
@@ -167,13 +169,12 @@ function renderReferenceHealth(report, palette) {
 function performanceSummary(output) {
   if (output === undefined) return {};
   const quotes = output.runs.flatMap(run => run.quotes);
-  const collect = key => quotes.map(quote => quote[key]).filter(value => value !== undefined).sort((a, b) => a - b);
-  const middle = values => values.length === 0 ? undefined : values[Math.floor(values.length / 2)];
+  const collect = key => quotes.map(quote => quote[key]).filter(value => value !== undefined);
   return {
     discoveryMs: output.runs.reduce((total, run) => total + run.discoveryMs, 0),
     discoveredQuoters: output.runs.reduce((total, run) => total + run.discoveredQuoters, 0),
-    medianQuoteMs: middle(collect("quoteMs")),
-    medianRouteComputeNs: middle(collect("routeComputeNs")),
+    medianQuoteMs: median(collect("quoteMs")),
+    medianRouteComputeNs: median(collect("routeComputeNs")),
     rpcRequests: output.runs.reduce((total, run) => total + (run.totalRpcRequests ?? 0), 0) || undefined,
   };
 }

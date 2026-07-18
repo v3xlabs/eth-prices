@@ -7,5 +7,6 @@ sol! {
          function token0() external view returns (address);
          function token1() external view returns (address);
          function liquidity() external view returns (uint128 liquidity);
+         function observations(uint256 index) external view returns (uint32 blockTimestamp, int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128, bool initialized);
     }
 }

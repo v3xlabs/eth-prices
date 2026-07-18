@@ -3,12 +3,13 @@ import { EthPricesError } from "../../error.js";
 import type { Discoverer, DiscoveryFailure } from "../../router/discovery.js";
 import { failureMessage } from "../../router/discovery.js";
 import { settleMap } from "../../utils/concurrency.js";
-import { contractCall } from "../../utils/contract.js";
+import { contractCall, decodedUint, fetchBlockTimestamp, type RpcProvider } from "../../utils/contract.js";
+import { decimalsOf, fetchDecimals } from "../../utils/erc20.js";
+import { freshnessMultiplier, liquidityConfidence } from "../../utils/math.js";
 import * as poolAbi from "./abi.js";
 import { uniswapV3Quoter } from "./index.js";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const CONFIDENCE_DIVISOR = 10_000_000_000_000_000n;
 const DEFAULT_FEES: readonly number[] = [100, 500, 3000, 10_000];
 
 export type UniswapV3DiscovererOptions = {
@@ -92,12 +93,22 @@ export const uniswapV3Discoverer = (options: UniswapV3DiscovererOptions): Discov
       const bestPools = deduplicatePools(pools);
 
       skipped += pools.length - bestPools.length;
+      const [decimals, blockTimestamp, lastTrades] = await Promise.all([
+        fetchDecimals(
+          provider,
+          bestPools.flatMap(pool => [pool.token0, pool.token1]),
+          context.blockNumber,
+          options.concurrency ?? 16,
+        ),
+        fetchBlockTimestamp(provider, context.blockNumber),
+        fetchLastTrades(provider, bestPools, context.blockNumber, options.concurrency ?? 16),
+      ]);
       const quoters = bestPools.map(pool => uniswapV3Quoter({
         networkId: options.networkId,
         poolAddress: pool.poolAddress,
         token0: pool.token0,
         token1: pool.token1,
-        confidence: confidence(pool.liquidity),
+        confidence: confidence(pool, decimals, blockTimestamp, lastTrades.get(pool.poolAddress)),
         identityPrefix: identity,
       }));
 
@@ -131,5 +142,68 @@ const deduplicatePools = (pools: readonly Pool[]): Pool[] => {
   return [...best.values()];
 };
 
-const confidence = (liquidity: bigint): number => Number(liquidity / CONFIDENCE_DIVISOR > 100n ? 100n : liquidity / CONFIDENCE_DIVISOR);
+// The most recent oracle observation is written on the first swap of a block,
+// so its timestamp tells when the pool's spot price was last market-tested.
+const fetchLastTrades = async (
+  provider: RpcProvider,
+  pools: readonly Pool[],
+  blockNumber: bigint | undefined,
+  concurrency: number,
+): Promise<ReadonlyMap<string, number>> => {
+  const settled = await settleMap(pools, concurrency, async (pool) => {
+    const slot = await contractCall(provider, pool.poolAddress, poolAbi.slot0, [], blockNumber);
+    const observationIndex = readObservationIndex(slot);
+
+    if (observationIndex === undefined) return undefined;
+
+    const observation = await contractCall(provider, pool.poolAddress, poolAbi.observations, [BigInt(observationIndex)], blockNumber);
+
+    return readObservationTimestamp(observation);
+  });
+  const lastTrades = new Map<string, number>();
+
+  for (const { input, result } of settled) {
+    if (result.status === "fulfilled" && result.value !== undefined) {
+      lastTrades.set(input.poolAddress, result.value);
+    }
+  }
+
+  return lastTrades;
+};
+
+const readObservationIndex = (value: unknown): number | undefined => {
+  if (Array.isArray(value)) return decodedUint(value[2]);
+
+  if (typeof value === "object" && value !== null && "observationIndex" in value) {
+    return decodedUint(value.observationIndex);
+  }
+
+  return undefined;
+};
+
+const readObservationTimestamp = (value: unknown): number | undefined => {
+  if (Array.isArray(value)) return decodedUint(value[0]);
+
+  if (typeof value === "object" && value !== null && "blockTimestamp" in value) {
+    return decodedUint(value.blockTimestamp);
+  }
+
+  return undefined;
+};
+
+// V3 liquidity L is sqrt(x·y) over the virtual reserves, so normalizing by the
+// average token decimals yields the same whole-unit quantity scored for V2.
+const confidence = (
+  pool: Pool,
+  decimals: ReadonlyMap<string, number>,
+  blockTimestamp: number,
+  lastTradeTimestamp: number | undefined,
+): number => {
+  const scale = 10 ** ((decimalsOf(decimals, pool.token0) + decimalsOf(decimals, pool.token1)) / 2);
+  const freshness = lastTradeTimestamp === undefined
+    ? 1
+    : freshnessMultiplier(blockTimestamp - lastTradeTimestamp);
+
+  return Math.round(liquidityConfidence(Number(pool.liquidity) / scale) * freshness);
+};
 const isAddress = (value: unknown): value is EvmAddress => typeof value === "string" && value.startsWith("0x");
