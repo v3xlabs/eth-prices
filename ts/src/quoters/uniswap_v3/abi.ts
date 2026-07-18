@@ -39,3 +39,15 @@ export const liquidity: AbiFunction = from({
   outputs: [{ name: "", type: "uint128" }],
   stateMutability: "view",
 });
+
+export const factoryGetPool: AbiFunction = from({
+  name: "getPool",
+  type: "function",
+  inputs: [
+    { name: "", type: "address" },
+    { name: "", type: "address" },
+    { name: "", type: "uint24" },
+  ],
+  outputs: [{ name: "", type: "address" }],
+  stateMutability: "view",
+});

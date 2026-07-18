@@ -72,7 +72,7 @@ export const createRouter = (initialQuoters: Iterable<Quoter> = []): Router => {
 
     if (!adjacency.has(goal)) throw new EthPricesError("ASSET_NOT_FOUND", `Asset not found: ${goal}`);
 
-    if (start === goal) return { path: [], inputToken: start, outputToken: goal };
+    if (start === goal) return { path: [], inputAsset: start, outputAsset: goal };
 
     const distances = new Map<string, number>([[start, 0]]);
     const previous = new Map<string, Edge>();
@@ -128,7 +128,7 @@ export const createRouter = (initialQuoters: Iterable<Quoter> = []): Router => {
       cursor = edge.from;
     }
 
-    return { path: reversedPath.reverse(), inputToken: start, outputToken: goal };
+    return { path: reversedPath.reverse(), inputAsset: start, outputAsset: goal };
   };
 
   const quote = async (

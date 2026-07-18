@@ -8,10 +8,10 @@ const context = createNetworkContext({});
 describe("fixedQuoter", () => {
   it("matches Rust scaling in both directions", async () => {
     const quoter = fixedQuoter({
-      assetIn: "token:18",
-      assetInDecimals: 18,
-      assetOut: "token:6",
-      assetOutDecimals: 6,
+      inputAsset: "token:18",
+      inputAssetDecimals: 18,
+      outputAsset: "token:6",
+      outputAssetDecimals: 6,
       fixedRate: 1_000_000n,
       fixedRateDecimals: 6,
     });
@@ -24,10 +24,10 @@ describe("fixedQuoter", () => {
 
   it("rejects invalid inputs with stable errors", async () => {
     const quoter = fixedQuoter({
-      assetIn: "A",
-      assetInDecimals: 0,
-      assetOut: "B",
-      assetOutDecimals: 0,
+      inputAsset: "A",
+      inputAssetDecimals: 0,
+      outputAsset: "B",
+      outputAssetDecimals: 0,
       fixedRate: 0n,
       fixedRateDecimals: 0,
     });
@@ -38,10 +38,10 @@ describe("fixedQuoter", () => {
 
   it("bounds decimal exponents to Rust's u8 range", async () => {
     const quoter = fixedQuoter({
-      assetIn: "A",
-      assetInDecimals: 256,
-      assetOut: "B",
-      assetOutDecimals: 0,
+      inputAsset: "A",
+      inputAssetDecimals: 256,
+      outputAsset: "B",
+      outputAssetDecimals: 0,
       fixedRate: 1n,
       fixedRateDecimals: 0,
     });

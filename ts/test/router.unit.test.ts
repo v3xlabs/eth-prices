@@ -6,11 +6,11 @@ import { createRouter } from "../src/router/index.js";
 
 const context = createNetworkContext({});
 
-const fixed = (assetIn: string, assetOut: string, fixedRate = 1n, confidence = 0) => fixedQuoter({
-  assetIn,
-  assetInDecimals: 0,
-  assetOut,
-  assetOutDecimals: 0,
+const fixed = (inputAsset: string, outputAsset: string, fixedRate = 1n, confidence = 0) => fixedQuoter({
+  inputAsset,
+  inputAssetDecimals: 0,
+  outputAsset,
+  outputAssetDecimals: 0,
   fixedRate,
   fixedRateDecimals: 0,
   confidence,
