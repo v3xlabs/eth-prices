@@ -5,6 +5,7 @@ import { fromHttp } from "ox/RpcTransport";
 import {
   createAutoRouter,
   createNetworkContext,
+  curveDiscoverer,
   erc4626Discoverer,
   uniswapV2Discoverer,
   uniswapV3Discoverer,
@@ -46,6 +47,12 @@ for (const run of manifest.runs) {
       networkId: manifest.networkId,
       factoryAddress: manifest.v3Factory,
       fees: manifest.v3Fees,
+    }));
+  }
+  if (run.protocols.curve) {
+    discoverers.push(curveDiscoverer({
+      networkId: manifest.networkId,
+      metaRegistryAddress: manifest.curveMetaRegistry,
     }));
   }
 

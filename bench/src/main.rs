@@ -31,6 +31,7 @@ struct Manifest {
     v2_factory: String,
     v3_factory: String,
     v3_fees: Vec<u32>,
+    curve_meta_registry: String,
     assets: HashMap<String, AssetConfig>,
     runs: Vec<RunConfig>,
 }
@@ -54,6 +55,7 @@ struct ProtocolConfig {
     v2: bool,
     v3: bool,
     erc4626: bool,
+    curve: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -194,6 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let v2_factory = Address::from_str(&manifest.v2_factory)?;
     let v3_factory = Address::from_str(&manifest.v3_factory)?;
+    let curve_meta_registry = Address::from_str(&manifest.curve_meta_registry)?;
     let mut run_outputs = Vec::with_capacity(manifest.runs.len());
 
     for run in manifest.runs {
@@ -215,9 +218,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_uniswap_v2_factory(v2_factory)
             .with_uniswap_v3_factory(v3_factory)
             .with_uniswap_v3_fees(manifest.v3_fees.clone())
+            .with_curve_meta_registry(curve_meta_registry)
             .discover_uniswap_v2(run.protocols.v2)
             .discover_uniswap_v3(run.protocols.v3)
             .discover_erc4626(run.protocols.erc4626)
+            .discover_curve(run.protocols.curve)
             .build_with_report()
             .await;
         let discovery_ms = elapsed_ms(started_at);

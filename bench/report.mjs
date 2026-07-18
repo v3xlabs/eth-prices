@@ -25,6 +25,7 @@ const QUOTER_LABELS = {
   uniswap_v3: "v3",
   erc4626: "4626",
   chainlink: "cl",
+  curve: "crv",
   ecb: "ecb",
   fixed: "fixed",
 };

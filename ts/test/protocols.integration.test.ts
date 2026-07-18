@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { createNetworkContext } from "../src/network.js";
 import { chainlinkQuoter } from "../src/quoters/chainlink/index.js";
+import { curveDiscoverer } from "../src/quoters/curve/discovery.js";
+import { curveQuoter } from "../src/quoters/curve/index.js";
 import { erc4626Discoverer } from "../src/quoters/erc4626/discovery.js";
 import { uniswapV2Discoverer } from "../src/quoters/uniswap_v2/discovery.js";
 import { uniswapV2Quoter } from "../src/quoters/uniswap_v2/index.js";
@@ -20,6 +22,7 @@ const V3_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 const ETH_USD_FEED = "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419";
 const SDAI = "0x83F20F44975D03b1b09e64809B757c47f942BEeA";
 const DAI = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+const CURVE_3POOL = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7";
 
 const provider = providerFrom(fromHttp(RPC_URL));
 const context = createNetworkContext({ 1: provider }, { blockNumber: BLOCK });
@@ -54,6 +57,41 @@ describe("live protocol integrations", () => {
     expect(result.router.quoters().some(quoter => quoter.identity.startsWith("uniswap_v3:"))).toBe(true);
     expect(result.router.compute(USDC, WETH).path).toHaveLength(1);
   }, 30_000);
+
+  it("quotes a Curve StableSwap pool at a pinned block", async () => {
+    const quoter = curveQuoter({
+      networkId: 1,
+      poolAddress: CURVE_3POOL,
+      token0: DAI,
+      token1: USDC,
+      coinIndex0: 0,
+      coinIndex1: 1,
+      kind: "stableswap",
+    });
+
+    await expect(quoter.quote({ amountIn: 1_000_000_000_000_000_000n, direction: "forward", context }))
+      .resolves.toBe(999_840n);
+    await expect(quoter.quote({ amountIn: 1_000_000n, direction: "reverse", context }))
+      .resolves.toBe(999_860_004_039_025_938n);
+  }, 30_000);
+
+  it("discovers the deepest Curve pool via the MetaRegistry", async () => {
+    const result = await createAutoRouter({
+      tokens: [DAI, USDC],
+      context,
+      discoverers: [curveDiscoverer({ networkId: 1 })],
+    });
+
+    expect(result.router.quoters().some(quoter => quoter.identity.startsWith("curve:"))).toBe(true);
+
+    const amount = await result.router.quote(DAI, USDC, {
+      amountIn: 1_000_000_000_000_000_000n,
+      context,
+    });
+
+    expect(amount).toBeGreaterThan(900_000n);
+    expect(amount).toBeLessThan(1_100_000n);
+  }, 60_000);
 
   it("quotes a Chainlink feed at a pinned block", async () => {
     const quoter = chainlinkQuoter({

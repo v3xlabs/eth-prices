@@ -14,6 +14,10 @@ use crate::{
     provider::RpcProvider,
     quoter::{
         AnyQuoter,
+        curve::{
+            CurveCryptoPool, CurvePoolKind, CurveQuoter, CurveStableSwapPool,
+            discovery::{CURVE_META_REGISTRY_MAINNET, CurveMetaRegistry},
+        },
         erc4626::{ERC4626, ERC4626Quoter},
         uniswap_v2::{UniswapV2Quoter, discovery::UniswapV2Factory, pair::UniswapV2Pair},
         uniswap_v3::{UniswapV3Quoter, discovery::UniswapV3Factory, pool::UniswapV3Pool},
@@ -33,6 +37,19 @@ const FRESHNESS_HALF_LIFE_SECONDS: f64 = 86_400.0;
 enum PoolKind {
     V2,
     V3(u32),
+}
+
+#[derive(Debug, Clone)]
+struct DiscoveredCurvePool {
+    pool_address: Address,
+    token0: Address,
+    token1: Address,
+    coin_index0: u8,
+    coin_index1: u8,
+    balance0: U256,
+    balance1: U256,
+    score: U256,
+    kind: CurvePoolKind,
 }
 
 #[derive(Debug, Clone)]
@@ -79,10 +96,12 @@ pub struct AutoRouter {
     uniswap_v2_factory: Option<Address>,
     uniswap_v3_factory: Option<Address>,
     uniswap_v3_fees: Vec<u32>,
+    curve_meta_registry: Option<Address>,
     min_liquidity: Option<U256>,
     discover_v2: bool,
     discover_v3: bool,
     discover_erc4626: bool,
+    discover_curve: bool,
 }
 
 impl AutoRouter {
@@ -94,10 +113,12 @@ impl AutoRouter {
             uniswap_v2_factory: None,
             uniswap_v3_factory: None,
             uniswap_v3_fees: DEFAULT_V3_FEES.to_vec(),
+            curve_meta_registry: None,
             min_liquidity: Some(U256::from(1)),
             discover_v2: true,
             discover_v3: true,
             discover_erc4626: true,
+            discover_curve: true,
         }
     }
 
@@ -121,6 +142,11 @@ impl AutoRouter {
         self
     }
 
+    pub fn with_curve_meta_registry(mut self, address: Address) -> Self {
+        self.curve_meta_registry = Some(address);
+        self
+    }
+
     pub fn with_min_liquidity(mut self, min: U256) -> Self {
         self.min_liquidity = Some(min);
         self
@@ -138,6 +164,11 @@ impl AutoRouter {
 
     pub fn discover_erc4626(mut self, enable: bool) -> Self {
         self.discover_erc4626 = enable;
+        self
+    }
+
+    pub fn discover_curve(mut self, enable: bool) -> Self {
+        self.discover_curve = enable;
         self
     }
 
@@ -210,10 +241,35 @@ impl AutoRouter {
             });
         }
 
-        // 5. Score every kept pool: decimals-normalized liquidity decayed by
+        let decimals = fetch_decimals(&self.provider, &all_addresses).await;
+
+        // 5. Curve discovery with expanded set
+        let mut curve_pools: Vec<DiscoveredCurvePool> = Vec::new();
+        if self.discover_curve {
+            let registry = self
+                .curve_meta_registry
+                .unwrap_or(CURVE_META_REGISTRY_MAINNET);
+            let (pools, attempted, failures) = Self::discover_curve_pools_inner(
+                &self.provider,
+                &all_addresses,
+                registry,
+                self.min_liquidity,
+                &decimals,
+            )
+            .await;
+            curve_pools = pools;
+            report.discoverers.push(DiscovererReport {
+                identity: format!("curve:{registry}"),
+                attempted,
+                discovered: curve_pools.len(),
+                skipped: attempted.saturating_sub(curve_pools.len() + failures.len()),
+                failures,
+            });
+        }
+
+        // 6. Score every kept pool: decimals-normalized liquidity decayed by
         //    the age of the pool's last trade, matching the TypeScript router.
-        let (decimals, block_timestamp, v3_last_trades) = futures::join!(
-            fetch_decimals(&self.provider, &all_addresses),
+        let (block_timestamp, v3_last_trades) = futures::join!(
             fetch_block_timestamp(&self.provider),
             fetch_v3_last_trades(&self.provider, &v3_pools),
         );
@@ -244,6 +300,20 @@ impl AutoRouter {
                 pool_address: pool.pool_address,
                 token0: pool.token0,
                 token1: pool.token1,
+            };
+            all_quoters.push(AnyQuoter::from(quoter).with_confidence(confidence));
+        }
+
+        for pool in curve_pools {
+            let confidence = pool_confidence(curve_geometric_mean(&pool, &decimals), None, None);
+            let quoter = CurveQuoter {
+                network_id: network_id.clone(),
+                pool_address: pool.pool_address,
+                token0: pool.token0,
+                token1: pool.token1,
+                coin_index0: pool.coin_index0,
+                coin_index1: pool.coin_index1,
+                kind: pool.kind,
             };
             all_quoters.push(AnyQuoter::from(quoter).with_confidence(confidence));
         }
@@ -414,6 +484,42 @@ impl AutoRouter {
         (pools, attempted, failures)
     }
 
+    async fn discover_curve_pools_inner(
+        provider: &RpcProvider,
+        addresses: &[Address],
+        registry: Address,
+        min_liquidity: Option<U256>,
+        decimals: &HashMap<Address, u8>,
+    ) -> (Vec<DiscoveredCurvePool>, usize, Vec<DiscoveryFailure>) {
+        let mut pairs = Vec::new();
+        for i in 0..addresses.len() {
+            for j in (i + 1)..addresses.len() {
+                pairs.push((addresses[i], addresses[j]));
+            }
+        }
+        let attempted = pairs.len();
+
+        let results = join_all(pairs.into_iter().map(|(a, b)| {
+            let provider = provider.clone();
+            let probe_amount = U256::from(10).pow(U256::from(decimals_of(decimals, a)));
+            async move {
+                discover_curve_pair(&provider, registry, a, b, min_liquidity, probe_amount).await
+            }
+        }))
+        .await;
+
+        let mut pools: Vec<DiscoveredCurvePool> = Vec::new();
+        let mut failures: Vec<DiscoveryFailure> = Vec::new();
+        for (pool, pair_failures) in results {
+            failures.extend(pair_failures);
+            if let Some(pool) = pool {
+                pools.push(pool);
+            }
+        }
+
+        (pools, attempted, failures)
+    }
+
     async fn discover_erc4626_quoters(
         &self,
         network_id: &NetworkId,
@@ -497,6 +603,12 @@ fn v3_geometric_mean(pool: &DiscoveredPool, decimals: &HashMap<Address, u8>) -> 
         ) / 2.0,
     );
     approx_whole_units(pool.score, 0) / scale
+}
+
+fn curve_geometric_mean(pool: &DiscoveredCurvePool, decimals: &HashMap<Address, u8>) -> f64 {
+    let units0 = approx_whole_units(pool.balance0, decimals_of(decimals, pool.token0));
+    let units1 = approx_whole_units(pool.balance1, decimals_of(decimals, pool.token1));
+    (units0 * units1).sqrt()
 }
 
 // Maps geometric-mean liquidity in whole token units onto 0..100, log-scaled
@@ -624,6 +736,156 @@ async fn discover_single_v2_pool(
         reserve1: U256::ZERO,
         last_trade_timestamp: None,
     }))
+}
+
+// A pair can be served by many Curve pools; only the deepest one that answers
+// a get_dy probe becomes a quoter, mirroring the per-pair dedup of V2/V3.
+async fn discover_curve_pair(
+    provider: &RpcProvider,
+    registry: Address,
+    token_a: Address,
+    token_b: Address,
+    min_liquidity: Option<U256>,
+    probe_amount: U256,
+) -> (Option<DiscoveredCurvePool>, Vec<DiscoveryFailure>) {
+    let contract = CurveMetaRegistry::new(registry, provider);
+    let pool_addresses = match contract.find_pools_for_coins(token_a, token_b).call().await {
+        Ok(addresses) => addresses,
+        Err(error) => {
+            return (
+                None,
+                vec![DiscoveryFailure {
+                    target: format!("{token_a}/{token_b}"),
+                    message: format!("find_pools_for_coins failed: {error}"),
+                }],
+            );
+        }
+    };
+
+    let candidates = join_all(pool_addresses.into_iter().map(|pool_address| {
+        let provider = provider.clone();
+        async move {
+            let contract = CurveMetaRegistry::new(registry, &provider);
+            let indices = contract
+                .get_coin_indices(pool_address, token_a, token_b)
+                .call()
+                .await;
+            let balances = contract.get_balances(pool_address).call().await;
+            (pool_address, indices, balances)
+        }
+    }))
+    .await;
+
+    let mut failures: Vec<DiscoveryFailure> = Vec::new();
+    let mut scored: Vec<DiscoveredCurvePool> = Vec::new();
+    for (pool_address, indices, balances) in candidates {
+        let (indices, balances) = match (indices, balances) {
+            (Ok(indices), Ok(balances)) => (indices, balances),
+            (Err(error), _) => {
+                failures.push(DiscoveryFailure {
+                    target: pool_address.to_string(),
+                    message: format!("get_coin_indices failed: {error}"),
+                });
+                continue;
+            }
+            (_, Err(error)) => {
+                failures.push(DiscoveryFailure {
+                    target: pool_address.to_string(),
+                    message: format!("get_balances failed: {error}"),
+                });
+                continue;
+            }
+        };
+        // Underlying-only matches (metapool base coins) need get_dy_underlying
+        // and are skipped in favor of pools holding both coins directly.
+        if indices.is_underlying {
+            continue;
+        }
+        let (Ok(coin_index0), Ok(coin_index1)) = (u8::try_from(indices.i), u8::try_from(indices.j))
+        else {
+            continue;
+        };
+        let balance0 = balances
+            .get(usize::from(coin_index0))
+            .copied()
+            .unwrap_or(U256::ZERO);
+        let balance1 = balances
+            .get(usize::from(coin_index1))
+            .copied()
+            .unwrap_or(U256::ZERO);
+        let score = std::cmp::min(balance0, balance1);
+        if let Some(min) = min_liquidity
+            && score < min
+        {
+            continue;
+        }
+        scored.push(DiscoveredCurvePool {
+            pool_address,
+            token0: token_a,
+            token1: token_b,
+            coin_index0,
+            coin_index1,
+            balance0,
+            balance1,
+            score,
+            kind: CurvePoolKind::StableSwap,
+        });
+    }
+
+    scored.sort_by(|left, right| {
+        right
+            .score
+            .cmp(&left.score)
+            .then(left.pool_address.cmp(&right.pool_address))
+    });
+
+    for mut pool in scored {
+        match probe_curve_pool_kind(provider, &pool, probe_amount).await {
+            Some(kind) => {
+                pool.kind = kind;
+                return (Some(pool), failures);
+            }
+            None => failures.push(DiscoveryFailure {
+                target: pool.pool_address.to_string(),
+                message: "get_dy probe failed for both index encodings".to_owned(),
+            }),
+        }
+    }
+
+    (None, failures)
+}
+
+// StableSwap and crypto pools share no get_dy selector, so one probe per
+// encoding identifies which variant the pool speaks. The probe trades a whole
+// unit of token0 because crypto-pool math reverts on dust-sized inputs.
+async fn probe_curve_pool_kind(
+    provider: &RpcProvider,
+    pool: &DiscoveredCurvePool,
+    probe_amount: U256,
+) -> Option<CurvePoolKind> {
+    let stable = CurveStableSwapPool::new(pool.pool_address, provider)
+        .get_dy(
+            i128::from(pool.coin_index0),
+            i128::from(pool.coin_index1),
+            probe_amount,
+        )
+        .call()
+        .await;
+    if stable.is_ok() {
+        return Some(CurvePoolKind::StableSwap);
+    }
+    let crypto = CurveCryptoPool::new(pool.pool_address, provider)
+        .get_dy(
+            U256::from(pool.coin_index0),
+            U256::from(pool.coin_index1),
+            probe_amount,
+        )
+        .call()
+        .await;
+    if crypto.is_ok() {
+        return Some(CurvePoolKind::Crypto);
+    }
+    None
 }
 
 async fn discover_single_v3_pool(

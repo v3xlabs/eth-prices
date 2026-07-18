@@ -45,6 +45,7 @@ Currently supported quoters include:
 - [`quoter::fixed`] for static conversion rates.
 - [`quoter::uniswap_v2`] for Uniswap v2 pairs.
 - [`quoter::uniswap_v3`] for Uniswap v3 pools.
+- [`quoter::curve`] for Curve pools.
 - [`quoter::erc4626`] for ERC-4626 vaults.
 - [`quoter::chainlink`] for Chainlink price feeds.
 - [`quoter::ecb`] for European Central Bank (ECB) rates.

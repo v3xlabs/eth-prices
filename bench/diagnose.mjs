@@ -5,6 +5,7 @@ import { fromHttp } from "ox/RpcTransport";
 import {
   createAutoRouter,
   createNetworkContext,
+  curveDiscoverer,
   erc4626Discoverer,
   uniswapV2Discoverer,
   uniswapV3Discoverer,
@@ -47,6 +48,7 @@ const { router } = await createAutoRouter({
     erc4626Discoverer({ networkId: manifest.networkId }),
     uniswapV2Discoverer({ networkId: manifest.networkId, factoryAddress: manifest.v2Factory }),
     uniswapV3Discoverer({ networkId: manifest.networkId, factoryAddress: manifest.v3Factory, fees: manifest.v3Fees }),
+    curveDiscoverer({ networkId: manifest.networkId, metaRegistryAddress: manifest.curveMetaRegistry }),
   ],
   context,
 });

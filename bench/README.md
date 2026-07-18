@@ -108,7 +108,7 @@ TypeScript discovery is pinned through its network context. The current Rust
 quotes use the shared pinned block. Reports expose this as `discoveryBlockPinned`
 instead of implying stronger reproducibility than the API provides.
 
-`cases.json` defines one production-style autorouter graph with V2, V3, and
-ERC-4626 discovery enabled together. Raw quote amounts remain decimal integer
+`cases.json` defines one production-style autorouter graph with V2, V3,
+ERC-4626, and Curve discovery enabled together. Raw quote amounts remain decimal integer
 strings in reports; the orchestrator normalizes them using the configured token
 decimals.
