@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "eth-prices": "workspace:*",
-    "ox": "^0.14.30"
+    "ox": "^1.0.2"
   }
 }
