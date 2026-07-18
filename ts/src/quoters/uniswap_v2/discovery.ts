@@ -2,12 +2,13 @@ import { canonicalizeAddress, type EvmAddress } from "../../asset.js";
 import type { Discoverer, DiscoveryFailure } from "../../router/discovery.js";
 import { failureMessage } from "../../router/discovery.js";
 import { settleMap } from "../../utils/concurrency.js";
-import { contractCall } from "../../utils/contract.js";
+import { contractCall, decodedUint, fetchBlockTimestamp } from "../../utils/contract.js";
+import { decimalsOf, fetchDecimals } from "../../utils/erc20.js";
+import { freshnessMultiplier, liquidityConfidence } from "../../utils/math.js";
 import * as pairAbi from "./abi.js";
 import { uniswapV2Quoter } from "./index.js";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const CONFIDENCE_DIVISOR = 1_000_000_000n;
 
 export type UniswapV2DiscovererOptions = {
   readonly networkId: number;
@@ -21,7 +22,10 @@ type Pool = {
   readonly pairAddress: EvmAddress;
   readonly token0: EvmAddress;
   readonly token1: EvmAddress;
+  readonly reserve0: bigint;
+  readonly reserve1: bigint;
   readonly liquidity: bigint;
+  readonly lastTradeTimestamp: number | undefined;
 };
 
 export const uniswapV2Discoverer = (options: UniswapV2DiscovererOptions): Discoverer => {
@@ -58,7 +62,10 @@ export const uniswapV2Discoverer = (options: UniswapV2DiscovererOptions): Discov
           pairAddress,
           token0: canonicalizeAddress(token0Result),
           token1: canonicalizeAddress(token1Result),
+          reserve0: reserves.reserve0,
+          reserve1: reserves.reserve1,
           liquidity: minBigInt(reserves.reserve0, reserves.reserve1),
+          lastTradeTimestamp: reserves.blockTimestampLast,
         };
       });
       const failures: DiscoveryFailure[] = [];
@@ -80,12 +87,21 @@ export const uniswapV2Discoverer = (options: UniswapV2DiscovererOptions): Discov
       const bestPools = deduplicatePools(pools);
 
       skipped += pools.length - bestPools.length;
+      const [decimals, blockTimestamp] = await Promise.all([
+        fetchDecimals(
+          provider,
+          bestPools.flatMap(pool => [pool.token0, pool.token1]),
+          context.blockNumber,
+          options.concurrency ?? 16,
+        ),
+        fetchBlockTimestamp(provider, context.blockNumber),
+      ]);
       const quoters = bestPools.map(pool => uniswapV2Quoter({
         networkId: options.networkId,
         pairAddress: pool.pairAddress,
         token0: pool.token0,
         token1: pool.token1,
-        confidence: confidence(pool.liquidity),
+        confidence: confidence(pool, decimals, blockTimestamp),
         identityPrefix: identity,
       }));
 
@@ -117,17 +133,29 @@ const deduplicatePools = (pools: readonly Pool[]): Pool[] => {
   return [...best.values()];
 };
 
-const confidence = (liquidity: bigint): number => Number(liquidity / CONFIDENCE_DIVISOR > 100n ? 100n : liquidity / CONFIDENCE_DIVISOR);
+const confidence = (pool: Pool, decimals: ReadonlyMap<string, number>, blockTimestamp: number): number => {
+  const units0 = Number(pool.reserve0) / 10 ** decimalsOf(decimals, pool.token0);
+  const units1 = Number(pool.reserve1) / 10 ** decimalsOf(decimals, pool.token1);
+  const freshness = pool.lastTradeTimestamp === undefined
+    ? 1
+    : freshnessMultiplier(blockTimestamp - pool.lastTradeTimestamp);
+
+  return Math.round(liquidityConfidence(Math.sqrt(units0 * units1)) * freshness);
+};
 const minBigInt = (left: bigint, right: bigint): bigint => (left < right ? left : right);
 const isAddress = (value: unknown): value is EvmAddress => typeof value === "string" && value.startsWith("0x");
-const normalizeReserves = (value: unknown): { reserve0: bigint; reserve1: bigint; } | undefined => {
+const normalizeReserves = (value: unknown): { reserve0: bigint; reserve1: bigint; blockTimestampLast: number | undefined; } | undefined => {
   if (Array.isArray(value) && typeof value[0] === "bigint" && typeof value[1] === "bigint") {
-    return { reserve0: value[0], reserve1: value[1] };
+    return { reserve0: value[0], reserve1: value[1], blockTimestampLast: decodedUint(value[2]) };
   }
 
   if (typeof value === "object" && value !== null && "reserve0" in value && "reserve1" in value
     && typeof value.reserve0 === "bigint" && typeof value.reserve1 === "bigint") {
-    return { reserve0: value.reserve0, reserve1: value.reserve1 };
+    return {
+      reserve0: value.reserve0,
+      reserve1: value.reserve1,
+      blockTimestampLast: "blockTimestampLast" in value ? decodedUint(value.blockTimestampLast) : undefined,
+    };
   }
 
   return undefined;

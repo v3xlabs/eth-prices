@@ -40,6 +40,19 @@ export const liquidity: AbiFunction = from({
   stateMutability: "view",
 });
 
+export const observations: AbiFunction = from({
+  name: "observations",
+  type: "function",
+  inputs: [{ name: "", type: "uint256" }],
+  outputs: [
+    { name: "blockTimestamp", type: "uint32" },
+    { name: "tickCumulative", type: "int56" },
+    { name: "secondsPerLiquidityCumulativeX128", type: "uint160" },
+    { name: "initialized", type: "bool" },
+  ],
+  stateMutability: "view",
+});
+
 export const factoryGetPool: AbiFunction = from({
   name: "getPool",
   type: "function",
