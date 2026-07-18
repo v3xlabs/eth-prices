@@ -178,15 +178,19 @@ impl Router {
                         continue;
                     };
 
+                    // A* costs parallel edges through the cheapest one, so the
+                    // hop must quote the highest-confidence quoter of the pair
+                    // rather than whichever was inserted first.
                     let quoter = self
                         .quoters
                         .iter()
-                        .find(|x| {
+                        .filter(|x| {
                             let (token_in, token_out) = x.tokens();
 
                             (token_in == *previous_token && token_out == *next_token)
                                 || (token_in == *next_token && token_out == *previous_token)
                         })
+                        .max_by_key(|x| x.confidence)
                         .ok_or_else(|| crate::error::EthPricesError::MissingQuoterInRoute)?;
 
                     path.push(RouteStep {
