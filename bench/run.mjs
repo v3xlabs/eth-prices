@@ -1,20 +1,80 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { promisify } from "node:util";
+import { parseArgs, promisify } from "node:util";
 
-import { implementationScore, parityScore } from "./score.mjs";
+import { renderReport } from "./report.mjs";
+import {
+  assessPrice,
+  implementationScore,
+  parityScore,
+  percentageError,
+  referenceStatistics,
+} from "./score.mjs";
 import { fetchUsdSources } from "./sources.mjs";
 
-const execFile = promisify(execFileCallback);
+const USAGE = `Usage: node bench/run.mjs [options]
+
+  --impl <rust|ts|both>   implementations to evaluate (default: both)
+  --refs <latest|path>    reuse references and block from a previous report
+                          instead of refetching the external price APIs
+  --baseline <latest|path> report to diff against (default: latest.json)
+  --block <number>        pin the evaluation block (default: snapshot block,
+                          then EVAL_BLOCK, then the chain head)
+  --iterations <number>   route-computation iterations (default: 1000)
+  --json                  print the full report JSON to stdout
+  --no-color              disable ANSI colors
+  --help                  show this message
+
+Environment: RPC_URL, EVAL_BLOCK, EVAL_ITERATIONS, EVAL_SOURCE_TIMEOUT_MS,
+EVAL_SKIP_TS_BUILD, EVAL_RUST_BINARY.`;
+
+const { values: options } = parseArgs({
+  options: {
+    impl: { type: "string", default: "both" },
+    refs: { type: "string" },
+    baseline: { type: "string" },
+    block: { type: "string" },
+    iterations: { type: "string" },
+    json: { type: "boolean", default: false },
+    "no-color": { type: "boolean", default: false },
+    help: { type: "boolean", default: false },
+  },
+});
+
+if (options.help) {
+  console.log(USAGE);
+  process.exit(0);
+}
+
+const IMPLEMENTATIONS = { rust: ["rust"], ts: ["typescript"], typescript: ["typescript"], both: ["rust", "typescript"] };
+const implementationsRun = IMPLEMENTATIONS[options.impl];
+if (implementationsRun === undefined) {
+  console.error(`unknown --impl ${options.impl}; expected rust, ts, or both`);
+  process.exit(2);
+}
+
 const root = new URL("../", import.meta.url);
+const outputDirectory = new URL("./target/evals/", root);
 const manifest = JSON.parse(await readFile(new URL("./cases.json", import.meta.url), "utf8"));
 const rpcUrl = process.env.RPC_URL ?? "https://ethereum.reth.rs/rpc";
-const iterations = process.env.EVAL_ITERATIONS ?? "1000";
-const shouldSkipTypeScriptBuild = process.env.EVAL_SKIP_TS_BUILD === "true";
-const rustBinary = process.env.EVAL_RUST_BINARY;
+const iterations = options.iterations ?? process.env.EVAL_ITERATIONS ?? "1000";
+const execFile = promisify(execFileCallback);
+const progress = message => process.stderr.write(`${message}\n`);
+
+function resolveReportUrl(value) {
+  return value === "latest" ? new URL("latest.json", outputDirectory) : new URL(value, `file://${process.cwd()}/`);
+}
+
+async function readReport(url) {
+  try {
+    return JSON.parse(await readFile(url, "utf8"));
+  } catch (error) {
+    if (error.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
 
 async function latestBlock() {
-  if (process.env.EVAL_BLOCK !== undefined) return Number(process.env.EVAL_BLOCK);
   const response = await fetch(rpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -36,118 +96,181 @@ async function command(file, args, environment = {}, parseJson = true) {
   return parseJson ? JSON.parse(stdout) : undefined;
 }
 
-function median(values) {
-  if (values.length === 0) return undefined;
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+const snapshot = options.refs === undefined ? undefined : await readReport(resolveReportUrl(options.refs));
+if (options.refs !== undefined && snapshot === undefined) {
+  console.error(`--refs ${options.refs}: report not found`);
+  process.exit(2);
 }
 
-function percentageError(actual, expected) {
-  return Math.abs(actual - expected) / expected * 100;
+const blockNumber = options.block !== undefined
+  ? Number(options.block)
+  : snapshot?.blockNumber
+    ?? (process.env.EVAL_BLOCK !== undefined ? Number(process.env.EVAL_BLOCK) : await latestBlock());
+
+let references;
+if (snapshot === undefined) {
+  progress(`fetching references for block ${blockNumber}…`);
+  references = {};
+  await Promise.all(Object.entries(manifest.assets).map(async ([name, asset]) => {
+    if (asset.reference === undefined) return;
+    references[name] = await fetchUsdSources(asset.reference, {
+      timeoutMs: Number(process.env.EVAL_SOURCE_TIMEOUT_MS ?? "10000"),
+    });
+  }));
+} else {
+  references = snapshot.references;
+  progress(`reusing references from ${options.refs} (block ${blockNumber})`);
+}
+
+const statisticsByAsset = Object.fromEntries(Object.entries(references)
+  .map(([asset, result]) => [asset, referenceStatistics(result.records)]));
+
+const environment = { EVAL_BLOCK: String(blockNumber), EVAL_ITERATIONS: iterations, RPC_URL: rpcUrl };
+const outputs = {};
+
+async function runImplementation(name, task) {
+  progress(`running ${name} autorouter…`);
+  try {
+    outputs[name] = await task();
+  } catch (error) {
+    console.error(`${name} runner failed: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+if (implementationsRun.includes("rust")) {
+  await runImplementation("rust", () => process.env.EVAL_RUST_BINARY === undefined
+    ? command("cargo", ["run", "--quiet", "--release", "-p", "eth-prices-bench"], environment)
+    : command(process.env.EVAL_RUST_BINARY, [], environment));
+}
+if (implementationsRun.includes("typescript")) {
+  if (process.env.EVAL_SKIP_TS_BUILD !== "true") await command("pnpm", ["--dir", "ts", "build"], {}, false);
+  await runImplementation("typescript", () => command("node", ["bench/typescript.mjs"], environment));
 }
 
 function quoteIndex(output) {
-  return new Map(output.runs.flatMap(run => run.quotes.map(quote => [`${run.name}:${quote.asset}`, { run, quote }])));
+  return new Map(output.runs.flatMap(run => run.quotes.map(quote => [`${run.name}:${quote.asset}`, quote])));
 }
 
-const blockNumber = await latestBlock();
-const references = {};
-await Promise.all(Object.entries(manifest.assets).map(async ([name, asset]) => {
-  if (asset.reference === undefined) return;
-  references[name] = await fetchUsdSources(asset.reference, {
-    timeoutMs: Number(process.env.EVAL_SOURCE_TIMEOUT_MS ?? "10000"),
-  });
-}));
+function usdAmount(quote) {
+  if (quote?.outputAmount === undefined) return undefined;
+  return Number(BigInt(quote.outputAmount)) / 10 ** manifest.assets[quote.outputAsset].decimals;
+}
 
-if (!shouldSkipTypeScriptBuild) await command("pnpm", ["--dir", "ts", "build"], {}, false);
-const environment = { EVAL_BLOCK: String(blockNumber), EVAL_ITERATIONS: iterations, RPC_URL: rpcUrl };
-const rust = rustBinary === undefined
-  ? await command("cargo", ["run", "--quiet", "--release", "-p", "eth-prices-bench"], environment)
-  : await command(rustBinary, [], environment);
-const typescript = await command("node", ["bench/typescript.mjs"], environment);
-const rustQuotes = quoteIndex(rust);
-const typescriptQuotes = quoteIndex(typescript);
-const comparisons = [];
+const indexes = Object.fromEntries(Object.entries(outputs).map(([name, output]) => [name, quoteIndex(output)]));
+const manifestKeys = manifest.runs.flatMap(run => run.quotes.map(asset => `${run.name}:${asset}`));
+const caseKeys = [...new Set([...manifestKeys, ...Object.values(indexes).flatMap(index => [...index.keys()])])];
 
-for (const key of new Set([...rustQuotes.keys(), ...typescriptQuotes.keys()])) {
-  const rustEntry = rustQuotes.get(key);
-  const typescriptEntry = typescriptQuotes.get(key);
-  const assetName = rustEntry?.quote.asset ?? typescriptEntry?.quote.asset;
-  const reference = references[assetName];
-  const consensusUsd = median(reference?.records.map(record => record.priceUsd) ?? []);
-  const rustUsd = rustEntry?.quote.outputAmount === undefined
-    ? undefined
-    : Number(BigInt(rustEntry.quote.outputAmount)) / 10 ** manifest.assets.usdc.decimals;
-  const typescriptUsd = typescriptEntry?.quote.outputAmount === undefined
-    ? undefined
-    : Number(BigInt(typescriptEntry.quote.outputAmount)) / 10 ** manifest.assets.usdc.decimals;
-  const sourceErrors = (reference?.records ?? []).map(record => ({
-    source: record.source,
-    priceUsd: record.priceUsd,
-    rustErrorPercent: rustUsd === undefined ? undefined : percentageError(rustUsd, record.priceUsd),
-    typescriptErrorPercent: typescriptUsd === undefined ? undefined : percentageError(typescriptUsd, record.priceUsd),
+const comparisons = caseKeys.map(key => {
+  const quotes = Object.fromEntries(implementationsRun
+    .map(name => [name, indexes[name]?.get(key)])
+    .filter(([, quote]) => quote !== undefined));
+  const asset = Object.values(quotes)[0]?.asset ?? key.split(":").at(-1);
+  const reference = statisticsByAsset[asset];
+  const implementations = Object.fromEntries(Object.entries(quotes).map(([name, quote]) => {
+    const priceUsd = usdAmount(quote);
+    return [name, {
+      ...priceUsd === undefined ? {} : { priceUsd },
+      ...quote.outputAmount === undefined ? {} : { outputAmount: quote.outputAmount },
+      assessment: assessPrice(priceUsd, reference),
+      sources: quote.sources ?? [],
+      ...quote.hops === undefined ? {} : { hops: quote.hops },
+      ...quote.routeComputeNs === undefined ? {} : { routeComputeNs: quote.routeComputeNs },
+      ...quote.quoteMs === undefined ? {} : { quoteMs: quote.quoteMs },
+      ...quote.rpcRequests === undefined ? {} : { rpcRequests: quote.rpcRequests },
+      ...quote.error === undefined ? {} : { error: quote.error },
+    }];
   }));
-  comparisons.push({
-    case: key,
-    asset: assetName,
-    consensusUsd,
-    rustUsd,
-    typescriptUsd,
-    rustErrorPercent: rustUsd === undefined || consensusUsd === undefined ? undefined : percentageError(rustUsd, consensusUsd),
-    typescriptErrorPercent: typescriptUsd === undefined || consensusUsd === undefined ? undefined : percentageError(typescriptUsd, consensusUsd),
-    crossLanguageDifferencePercent: rustUsd === undefined || typescriptUsd === undefined
-      ? undefined
-      : percentageError(rustUsd, typescriptUsd),
-    sourceErrors,
-    rustSources: rustEntry?.quote.sources ?? [],
-    typescriptSources: typescriptEntry?.quote.sources ?? [],
-    rustError: rustEntry?.quote.error,
-    typescriptError: typescriptEntry?.quote.error,
-  });
-}
+  const priced = implementationsRun
+    .map(name => implementations[name]?.priceUsd)
+    .filter(price => price !== undefined);
 
-const scores = {
-  rust: implementationScore(comparisons, "rustUsd", "rustErrorPercent"),
-  typescript: implementationScore(comparisons, "typescriptUsd", "typescriptErrorPercent"),
-  parity: parityScore(comparisons),
-};
+  return {
+    case: key,
+    asset,
+    reference,
+    implementations,
+    ...priced.length === 2 ? { crossDifferencePercent: percentageError(priced[0], priced[1]) } : {},
+  };
+});
+
+const scores = Object.fromEntries(implementationsRun.map(name => [name, implementationScore(comparisons, name)]));
+if (implementationsRun.length === 2) scores.parity = parityScore(comparisons);
+
+const baselineUrl = resolveReportUrl(options.baseline ?? "latest");
+const baselineReport = await readReport(baselineUrl);
+
+function baselineDelta(baseline) {
+  if (baseline?.comparisons?.[0]?.implementations === undefined) return undefined;
+  const pair = (from, to) => ({ from, to });
+  const scoreDeltas = implementationsRun
+    .filter(name => baseline.scores?.[name] !== undefined)
+    .map(name => ({
+      implementation: name,
+      priceScore: pair(baseline.scores[name].priceScore, scores[name].priceScore),
+      meanAbsolutePercentageError: pair(
+        baseline.scores[name].meanAbsolutePercentageError,
+        scores[name].meanAbsolutePercentageError,
+      ),
+      routeCoveragePercent: pair(baseline.scores[name].routeCoveragePercent, scores[name].routeCoveragePercent),
+    }));
+  const baselineCases = new Map(baseline.comparisons.map(comparison => [comparison.case, comparison]));
+  const caseDeltas = [];
+  for (const comparison of comparisons) {
+    for (const name of implementationsRun) {
+      const from = baselineCases.get(comparison.case)?.implementations?.[name]?.assessment?.errorPercent;
+      const to = comparison.implementations[name]?.assessment?.errorPercent;
+      if (from === undefined && to === undefined) continue;
+      if (from !== undefined && to !== undefined && Math.abs(from - to) < 0.0005) continue;
+      caseDeltas.push({ case: comparison.case, implementation: name, from, to });
+    }
+  }
+  caseDeltas.sort((left, right) => {
+    const magnitude = entry => entry.to === undefined || entry.from === undefined
+      ? Number.POSITIVE_INFINITY
+      : Math.abs(entry.to - entry.from);
+    return magnitude(right) - magnitude(left);
+  });
+  if (scoreDeltas.length === 0 && caseDeltas.length === 0) return undefined;
+
+  return {
+    path: baselineUrl.pathname,
+    generatedAt: baseline.generatedAt,
+    blockNumber: baseline.blockNumber,
+    scores: scoreDeltas,
+    caseDeltas,
+  };
+}
 
 const generatedAt = new Date();
+const timestamp = generatedAt.toISOString().replaceAll(":", "-");
+const reportUrl = new URL(`${timestamp}.json`, outputDirectory);
 const report = {
   generatedAt: generatedAt.toISOString(),
   blockNumber,
   rpcUrl,
+  iterations: Number(iterations),
+  implementationsRun,
+  ...options.refs === undefined ? {} : { referencesFrom: resolveReportUrl(options.refs).pathname },
+  reportPath: reportUrl.pathname,
   references,
-  implementations: { rust, typescript },
+  referenceStatistics: statisticsByAsset,
+  implementations: outputs,
   scores,
   comparisons,
+  baseline: baselineDelta(baselineReport),
 };
-const outputDirectory = new URL("../target/evals/", import.meta.url);
+
 await mkdir(outputDirectory, { recursive: true });
-const timestamp = generatedAt.toISOString().replaceAll(":", "-");
-const outputUrl = new URL(`${timestamp}.json`, outputDirectory);
-await writeFile(outputUrl, `${JSON.stringify(report, undefined, 2)}\n`);
-await writeFile(new URL("latest.json", outputDirectory), `${JSON.stringify(report, undefined, 2)}\n`);
+const serialized = `${JSON.stringify(report, undefined, 2)}\n`;
+await writeFile(reportUrl, serialized);
+await writeFile(new URL("latest.json", outputDirectory), serialized);
 
-console.log(`Block: ${blockNumber}`);
-console.log(`Report: ${outputUrl.pathname}`);
-console.table(Object.entries({ rust: scores.rust, typescript: scores.typescript }).map(([implementation, score]) => ({
-  implementation,
-  priceScore: score.priceScore?.toFixed(3) ?? "n/a",
-  mape: score.meanAbsolutePercentageError?.toFixed(3) ?? "n/a",
-  pricedRoutes: `${score.pricedRoutes}/${score.expectedPricedRoutes}`,
-  routeCoverage: `${score.routeCoveragePercent.toFixed(1)}%`,
-})));
-console.table(comparisons.map(comparison => ({
-  case: comparison.case,
-  reference: comparison.consensusUsd?.toFixed(2) ?? "n/a",
-  rust: comparison.rustUsd?.toFixed(2) ?? "error",
-  rustError: comparison.rustErrorPercent?.toFixed(3) ?? "n/a",
-  typescript: comparison.typescriptUsd?.toFixed(2) ?? "error",
-  typescriptError: comparison.typescriptErrorPercent?.toFixed(3) ?? "n/a",
-})));
-
-for (const [asset, result] of Object.entries(references)) {
-  for (const error of result.errors) console.warn(`${asset}/${error.source}: ${error.error}`);
+if (options.json) {
+  process.stdout.write(serialized);
+} else {
+  const colors = !options["no-color"]
+    && process.env.NO_COLOR === undefined
+    && (process.stdout.isTTY === true || process.env.FORCE_COLOR !== undefined);
+  console.log(renderReport(report, { colors }));
 }

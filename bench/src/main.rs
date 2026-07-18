@@ -1,12 +1,27 @@
 use std::{
-    collections::HashMap, env, fs, hint::black_box, path::PathBuf, str::FromStr, time::Instant,
+    collections::HashMap,
+    env, fs,
+    hint::black_box,
+    path::PathBuf,
+    str::FromStr,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
+    task::{Context, Poll},
+    time::Instant,
 };
 
 use alloy::{
     primitives::{Address, U256},
     providers::{Provider, ProviderBuilder},
+    rpc::{client::ClientBuilder, json_rpc::RequestPacket},
 };
-use eth_prices::{asset::AssetIdentifier, network::NetworkInstant, router::AutoRouter};
+use eth_prices::{
+    asset::AssetIdentifier,
+    network::NetworkInstant,
+    router::auto::{AutoRouter, DiscoveryReport},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -57,6 +72,10 @@ struct RunOutput {
     name: String,
     discovery_ms: f64,
     discovered_quoters: usize,
+    discovery_rpc_requests: u64,
+    total_rpc_requests: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    discovery_report: Option<DiscoveryReport>,
     quotes: Vec<QuoteOutput>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
@@ -76,9 +95,59 @@ struct QuoteOutput {
     quote_ms: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     hops: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    rpc_requests: Option<u64>,
     sources: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
+}
+
+#[derive(Clone, Default)]
+struct RequestCounter(Arc<AtomicU64>);
+
+impl RequestCounter {
+    fn count(&self) -> u64 {
+        self.0.load(Ordering::Relaxed)
+    }
+}
+
+impl<S> tower::Layer<S> for RequestCounter {
+    type Service = CountingService<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        CountingService {
+            inner,
+            counter: self.0.clone(),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct CountingService<S> {
+    inner: S,
+    counter: Arc<AtomicU64>,
+}
+
+impl<S> tower::Service<RequestPacket> for CountingService<S>
+where
+    S: tower::Service<RequestPacket>,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = S::Future;
+
+    fn poll_ready(&mut self, context: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(context)
+    }
+
+    fn call(&mut self, request: RequestPacket) -> Self::Future {
+        let requests = match &request {
+            RequestPacket::Single(_) => 1,
+            RequestPacket::Batch(batch) => batch.len() as u64,
+        };
+        self.counter.fetch_add(requests, Ordering::Relaxed);
+        self.inner.call(request)
+    }
 }
 
 fn elapsed_ms(started_at: Instant) -> f64 {
@@ -109,10 +178,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|value| value.parse::<u32>().ok())
         .unwrap_or(1_000)
         .max(1);
-    let provider = ProviderBuilder::new()
-        .connect(rpc_url.as_str())
-        .await?
-        .erased();
+    let counter = RequestCounter::default();
+    let client = ClientBuilder::default()
+        .layer(counter.clone())
+        .http(rpc_url.parse()?);
+    let provider = ProviderBuilder::new().connect_client(client).erased();
     let block_number = match env::var("EVAL_BLOCK") {
         Ok(value) => value.parse::<u64>()?,
         Err(_) => provider.get_block_number().await?,
@@ -138,6 +208,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .and_then(asset_identifier)
             })
             .collect::<Result<Vec<_>, _>>()?;
+        let requests_before = counter.count();
         let started_at = Instant::now();
         let router_result = AutoRouter::new(provider.clone(), tokens)
             .with_network_id(manifest.network_id.into())
@@ -147,17 +218,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .discover_uniswap_v2(run.protocols.v2)
             .discover_uniswap_v3(run.protocols.v3)
             .discover_erc4626(run.protocols.erc4626)
-            .build()
+            .build_with_report()
             .await;
         let discovery_ms = elapsed_ms(started_at);
+        let discovery_rpc_requests = counter.count() - requests_before;
 
-        let router = match router_result {
-            Ok(router) => router,
+        let (router, discovery_report) = match router_result {
+            Ok((router, report)) => (router, report),
             Err(error) => {
                 run_outputs.push(RunOutput {
                     name: run.name,
                     discovery_ms,
                     discovered_quoters: 0,
+                    discovery_rpc_requests,
+                    total_rpc_requests: counter.count() - requests_before,
+                    discovery_report: None,
                     quotes: Vec::new(),
                     error: Some(error.to_string()),
                 });
@@ -186,6 +261,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         route_compute_ns: None,
                         quote_ms: None,
                         hops: None,
+                        rpc_requests: None,
                         sources: Vec::new(),
                         error: Some(error.to_string()),
                     });
@@ -205,9 +281,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .iter()
                 .map(|step| step.quoter.to_string())
                 .collect();
+            let quote_requests_before = counter.count();
             let quote_started_at = Instant::now();
             let quote_result = route.quote(&network, amount_in).await;
             let quote_ms = elapsed_ms(quote_started_at);
+            let rpc_requests = Some(counter.count() - quote_requests_before);
 
             match quote_result {
                 Ok(amount_out) => quote_outputs.push(QuoteOutput {
@@ -218,6 +296,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     route_compute_ns: Some(route_compute_ns),
                     quote_ms: Some(quote_ms),
                     hops: Some(route.path.len()),
+                    rpc_requests,
                     sources,
                     error: None,
                 }),
@@ -229,6 +308,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     route_compute_ns: Some(route_compute_ns),
                     quote_ms: Some(quote_ms),
                     hops: Some(route.path.len()),
+                    rpc_requests,
                     sources,
                     error: Some(error.to_string()),
                 }),
@@ -239,6 +319,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             name: run.name,
             discovery_ms,
             discovered_quoters: router.quoters.len(),
+            discovery_rpc_requests,
+            total_rpc_requests: counter.count() - requests_before,
+            discovery_report: Some(discovery_report),
             quotes: quote_outputs,
             error: None,
         });

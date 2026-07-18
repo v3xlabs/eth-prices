@@ -64,7 +64,8 @@ for (const run of manifest.runs) {
       name: run.name,
       discoveryMs: performance.now() - discoveryStartedAt,
       discoveredQuoters: 0,
-      rpcRequests: rpcRequests - requestsBefore,
+      discoveryRpcRequests: rpcRequests - requestsBefore,
+      totalRpcRequests: rpcRequests - requestsBefore,
       quotes: [],
       error: errorMessage(error),
     });
@@ -102,6 +103,7 @@ for (const run of manifest.runs) {
     const routeComputeNs = Number(routeElapsed) / iterations;
     if (routeChecksum < 0) throw new Error("unreachable route checksum");
     const sources = route.path.map(step => step.quoter.identity);
+    const quoteRequestsBefore = rpcRequests;
     const quoteStartedAt = performance.now();
     try {
       const outputAmount = await result.router.quote(asset.address, outputAsset.address, { amountIn, context });
@@ -114,6 +116,7 @@ for (const run of manifest.runs) {
         quoteMs: performance.now() - quoteStartedAt,
         hops: route.path.length,
         sources,
+        rpcRequests: rpcRequests - quoteRequestsBefore,
       });
     }
     catch (error) {
@@ -125,6 +128,7 @@ for (const run of manifest.runs) {
         quoteMs: performance.now() - quoteStartedAt,
         hops: route.path.length,
         sources,
+        rpcRequests: rpcRequests - quoteRequestsBefore,
         error: errorMessage(error),
       });
     }
