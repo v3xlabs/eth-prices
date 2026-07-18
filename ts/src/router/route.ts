@@ -3,8 +3,8 @@ import type { QuoteParams, RouteStep } from "../quoter.js";
 
 export type Route = {
   path: readonly RouteStep[];
-  inputToken: string;
-  outputToken: string;
+  inputAsset: string;
+  outputAsset: string;
 };
 
 export const quoteRoute = async (route: Route, params: Omit<QuoteParams, "direction">): Promise<bigint> => {

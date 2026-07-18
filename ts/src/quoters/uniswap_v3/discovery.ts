@@ -5,7 +5,6 @@ import { failureMessage } from "../../router/discovery.js";
 import { settleMap } from "../../utils/concurrency.js";
 import { contractCall } from "../../utils/contract.js";
 import * as poolAbi from "./abi.js";
-import { getPool } from "./factoryAbi.js";
 import { uniswapV3Quoter } from "./index.js";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -49,7 +48,7 @@ export const uniswapV3Discoverer = (options: UniswapV3DiscovererOptions): Discov
       const queries = poolQueries(tokens, fees);
       const provider = context.getProvider(options.networkId);
       const settled = await settleMap(queries, options.concurrency ?? 16, async ([tokenA, tokenB, fee]): Promise<Pool | undefined> => {
-        const pool = await contractCall(provider, factoryAddress, getPool, [tokenA, tokenB, BigInt(fee)], context.blockNumber);
+        const pool = await contractCall(provider, factoryAddress, poolAbi.factoryGetPool, [tokenA, tokenB, BigInt(fee)], context.blockNumber);
 
         if (!isAddress(pool)) throw new TypeError("V3 factory returned malformed pool address");
 

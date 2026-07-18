@@ -27,3 +27,14 @@ export const token1: AbiFunction = from({
   outputs: [{ name: "", type: "address" }],
   stateMutability: "view",
 });
+
+export const factoryGetPair: AbiFunction = from({
+  name: "getPair",
+  type: "function",
+  inputs: [
+    { name: "", type: "address" },
+    { name: "", type: "address" },
+  ],
+  outputs: [{ name: "", type: "address" }],
+  stateMutability: "view",
+});

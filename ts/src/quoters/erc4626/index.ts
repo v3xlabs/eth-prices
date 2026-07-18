@@ -7,13 +7,13 @@ import * as abi from "./abi.js";
 export type ERC4626QuoterParams = {
   networkId: number;
   vaultAddress: `0x${string}`;
-  tokenAddress: `0x${string}`;
+  assetAddress: `0x${string}`;
   confidence?: number;
 };
 
 export const erc4626Quoter = (params: ERC4626QuoterParams): Quoter => ({
   identity: `erc4626:${canonicalizeAddress(params.vaultAddress)}`,
-  assets: [canonicalizeAddress(params.vaultAddress), canonicalizeAddress(params.tokenAddress)],
+  assets: [canonicalizeAddress(params.vaultAddress), canonicalizeAddress(params.assetAddress)],
   confidence: params.confidence ?? 0,
   quote: async ({ amountIn, direction, context }: QuoteParams) => {
     if (amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");

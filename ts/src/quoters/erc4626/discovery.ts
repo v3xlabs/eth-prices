@@ -28,7 +28,7 @@ export const erc4626Discoverer = (options: ERC4626DiscovererOptions): Discoverer
         quoter: erc4626Quoter({
           networkId: options.networkId,
           vaultAddress,
-          tokenAddress: underlyingAddress,
+          assetAddress: underlyingAddress,
           confidence: 50,
         }),
       };

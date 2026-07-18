@@ -4,7 +4,6 @@ import { failureMessage } from "../../router/discovery.js";
 import { settleMap } from "../../utils/concurrency.js";
 import { contractCall } from "../../utils/contract.js";
 import * as pairAbi from "./abi.js";
-import { getPair } from "./factoryAbi.js";
 import { uniswapV2Quoter } from "./index.js";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -36,7 +35,7 @@ export const uniswapV2Discoverer = (options: UniswapV2DiscovererOptions): Discov
       const pairs = tokenPairs(tokens);
       const provider = context.getProvider(options.networkId);
       const settled = await settleMap(pairs, options.concurrency ?? 16, async ([tokenA, tokenB]): Promise<Pool | undefined> => {
-        const pair = await contractCall(provider, factoryAddress, getPair, [tokenA, tokenB], context.blockNumber);
+        const pair = await contractCall(provider, factoryAddress, pairAbi.factoryGetPair, [tokenA, tokenB], context.blockNumber);
 
         if (!isAddress(pair)) throw new TypeError("V2 factory returned malformed pair address");
 
