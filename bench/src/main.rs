@@ -20,7 +20,7 @@ use alloy::{
 use eth_prices::{
     asset::AssetIdentifier,
     network::NetworkInstant,
-    router::auto::{AutoRouter, DiscoveryReport},
+    router::{AutoRouter, DiscoveryReport},
 };
 use serde::{Deserialize, Serialize};
 
@@ -212,6 +212,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let started_at = Instant::now();
         let router_result = AutoRouter::new(provider.clone(), tokens)
             .with_network_id(manifest.network_id.into())
+            .with_block_number(block_number)
             .with_uniswap_v2_factory(v2_factory)
             .with_uniswap_v3_factory(v3_factory)
             .with_uniswap_v3_fees(manifest.v3_fees.clone())
@@ -332,7 +333,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         serde_json::to_string(&EvalOutput {
             implementation: "rust",
             block_number,
-            discovery_block_pinned: false,
+            discovery_block_pinned: true,
             iterations,
             runs: run_outputs,
         })?

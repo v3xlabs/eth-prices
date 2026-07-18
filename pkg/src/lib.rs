@@ -38,6 +38,9 @@ Today, the main building blocks are:
 - [`asset::AssetIdentifier`] for identifying ERC-20, fiat, and native assets.
 - [`asset::Asset`] for asset metadata and amount formatting helpers.
 - [`network::NetworkInstant`] for managing network times and providers.
+- [`router::AutoRouter`] for discovering pools on-chain and assembling a
+  confidence-scored router automatically ([`router::discovery`] holds the
+  shared discovery model and scoring).
 
 # Quoters
 

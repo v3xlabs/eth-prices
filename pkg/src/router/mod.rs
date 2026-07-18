@@ -14,11 +14,15 @@ use crate::{
 use route::{Route, RouteStep};
 
 pub use auto::AutoRouter;
+pub use discovery::{DiscovererReport, DiscoveryFailure, DiscoveryReport};
 
 pub mod auto;
+pub mod discovery;
 pub mod route;
 
-const MAX_CONFIDENCE: u64 = 100;
+/// The upper bound for quoter confidence; routing treats any confidence at or
+/// above this value as fully trusted.
+pub const MAX_CONFIDENCE: u64 = 100;
 
 #[derive(Debug, Clone)]
 pub struct Router {
