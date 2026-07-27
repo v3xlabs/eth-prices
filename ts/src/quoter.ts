@@ -5,7 +5,7 @@ export type { AssetIdentifier } from "./asset.js";
 
 export type Direction = "forward" | "reverse";
 
-export type QuoteParams = {
+export type QuoteParameters = {
   amountIn: bigint;
   direction: Direction;
   context: NetworkContext;
@@ -23,7 +23,7 @@ export type Quoter = {
   readonly identity: string;
   readonly assets: readonly [AssetIdentifier, AssetIdentifier];
   readonly confidence: number;
-  quote(params: QuoteParams): Promise<bigint>;
+  quote(parameters: QuoteParameters): Promise<bigint>;
 };
 
 export type RouteStep = {

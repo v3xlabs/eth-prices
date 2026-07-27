@@ -1,5 +1,5 @@
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams, Quoter } from "../../quoter.js";
+import type { QuoteParameters, Quoter } from "../../quoter.js";
 import { mulDiv, pow10 } from "../../utils/math.js";
 
 const RATE_DECIMALS = 6;
@@ -30,21 +30,21 @@ export type EcbQuoterParams = {
   readonly confidence?: number;
 };
 
-export const ecbQuoter = (params: EcbQuoterParams): Quoter => {
-  const quoteSymbol = params.quoteSymbol.toLowerCase();
+export const ecbQuoter = (parameters: EcbQuoterParams): Quoter => {
+  const quoteSymbol = parameters.quoteSymbol.toLowerCase();
 
   return {
     identity: `ecb:fiat:eur:fiat:${quoteSymbol}`,
     assets: ["fiat:eur", `fiat:${quoteSymbol}`],
-    confidence: params.confidence ?? 0,
-    quote: async ({ amountIn, direction, context }: QuoteParams) => {
+    confidence: parameters.confidence ?? 0,
+    quote: async ({ amountIn, direction, context }: QuoteParameters) => {
       if (amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
 
       if (context.fiatTimestamp === undefined) {
         throw new EthPricesError("INVALID_INPUT", "ECB quoter requires a fiat timestamp");
       }
 
-      const rate = await params.rateSource.rateFor(quoteSymbol, context.fiatTimestamp);
+      const rate = await parameters.rateSource.rateFor(quoteSymbol, context.fiatTimestamp);
 
       return direction === "forward" ? mulDiv(amountIn, rate, RATE_SCALE) : mulDiv(amountIn, RATE_SCALE, rate);
     },
@@ -150,19 +150,19 @@ const parseRates = (body: string): Map<string, bigint> => {
 const parseCsvLine = (line: string): string[] => {
   const columns: string[] = [];
   let value = "";
-  let quoted = false;
+  let isQuoted = false;
 
   for (let index = 0; index < line.length; index++) {
     const character = line[index];
 
     if (character === "\"") {
-      if (quoted && line[index + 1] === "\"") {
+      if (isQuoted && line[index + 1] === "\"") {
         value += "\"";
         index += 1;
       }
-      else quoted = !quoted;
+      else isQuoted = !isQuoted;
     }
-    else if (character === "," && !quoted) {
+    else if (character === "," && !isQuoted) {
       columns.push(value);
       value = "";
     }
@@ -176,7 +176,7 @@ const parseCsvLine = (line: string): string[] => {
 const parseDecimalRate = (value: string): bigint => {
   if (!/^\d+(?:\.\d+)?$/u.test(value)) throw new EthPricesError("RATE_UNAVAILABLE", `Invalid ECB rate: ${value}`);
 
-  const [integer, fractional = ""] = value.split(".");
+  const [integer, fractional = ""] = value.split(".", 2);
 
   return BigInt(`${integer}${fractional.padEnd(RATE_DECIMALS, "0").slice(0, RATE_DECIMALS)}`);
 };

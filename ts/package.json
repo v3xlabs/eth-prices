@@ -44,7 +44,7 @@
     "@eslint/js": "^9.39.4",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^25.5.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.8.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
@@ -52,7 +52,7 @@
     "eslint-plugin-tailwindcss": "4.0.0-beta.0",
     "eslint-plugin-unicorn": "^70.0.0",
     "eslint-plugin-unused-imports": "^4.4.1",
-    "eslint-plugin-v3xlabs": "^1.7.14",
+    "eslint-plugin-v3xlabs": "^1.8.1",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.62.1",
     "vitest": "^3.2.4"

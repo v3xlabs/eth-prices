@@ -1,6 +1,6 @@
 import { canonicalizeAsset } from "../asset.js";
 import { EthPricesError } from "../error.js";
-import type { QuoteParams, Quoter, RouteStep } from "../quoter.js";
+import type { QuoteParameters, Quoter, RouteStep } from "../quoter.js";
 import { quoteRoute, type Route } from "./route.js";
 
 const MAX_CONFIDENCE = 100;
@@ -16,7 +16,7 @@ export type Router = {
   addQuoter(quoter: Quoter): void;
   addQuoters(quoters: Iterable<Quoter>): void;
   compute(inputAsset: string, outputAsset: string): Route;
-  quote(inputAsset: string, outputAsset: string, params: Omit<QuoteParams, "direction">): Promise<bigint>;
+  quote(inputAsset: string, outputAsset: string, parameters: Omit<QuoteParameters, "direction">): Promise<bigint>;
   quoters(): readonly Quoter[];
 };
 
@@ -80,10 +80,10 @@ export const createRouter = (initialQuoters: Iterable<Quoter> = []): Router => {
 
     while (pending.size > 0) {
       let current: string | undefined;
-      let currentDistance = Number.POSITIVE_INFINITY;
+      let currentDistance = Infinity;
 
       for (const candidate of pending) {
-        const distance = distances.get(candidate) ?? Number.POSITIVE_INFINITY;
+        const distance = distances.get(candidate) ?? Infinity;
 
         if (distance < currentDistance) {
           current = candidate;
@@ -91,7 +91,7 @@ export const createRouter = (initialQuoters: Iterable<Quoter> = []): Router => {
         }
       }
 
-      if (current === undefined || currentDistance === Number.POSITIVE_INFINITY) break;
+      if (current === undefined || currentDistance === Infinity) break;
 
       pending.delete(current);
 
@@ -101,7 +101,7 @@ export const createRouter = (initialQuoters: Iterable<Quoter> = []): Router => {
         if (!pending.has(edge.to)) continue;
 
         const candidateDistance = currentDistance + edgeCost(edge.quoter);
-        const knownDistance = distances.get(edge.to) ?? Number.POSITIVE_INFINITY;
+        const knownDistance = distances.get(edge.to) ?? Infinity;
 
         if (candidateDistance < knownDistance) {
           distances.set(edge.to, candidateDistance);
@@ -134,8 +134,8 @@ export const createRouter = (initialQuoters: Iterable<Quoter> = []): Router => {
   const quote = async (
     inputAsset: string,
     outputAsset: string,
-    params: Omit<QuoteParams, "direction">,
-  ): Promise<bigint> => quoteRoute(compute(inputAsset, outputAsset), params);
+    parameters: Omit<QuoteParameters, "direction">,
+  ): Promise<bigint> => quoteRoute(compute(inputAsset, outputAsset), parameters);
 
   const quoters = (): readonly Quoter[] => [...orderedQuoters];
 

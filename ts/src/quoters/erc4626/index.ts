@@ -1,6 +1,6 @@
 import { canonicalizeAddress } from "../../asset.js";
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams, Quoter } from "../../quoter.js";
+import type { QuoteParameters, Quoter } from "../../quoter.js";
 import { contractCall } from "../../utils/contract.js";
 import * as abi from "./abi.js";
 
@@ -11,15 +11,15 @@ export type ERC4626QuoterParams = {
   confidence?: number;
 };
 
-export const erc4626Quoter = (params: ERC4626QuoterParams): Quoter => ({
-  identity: `erc4626:${canonicalizeAddress(params.vaultAddress)}`,
-  assets: [canonicalizeAddress(params.vaultAddress), canonicalizeAddress(params.assetAddress)],
-  confidence: params.confidence ?? 0,
-  quote: async ({ amountIn, direction, context }: QuoteParams) => {
+export const erc4626Quoter = (parameters: ERC4626QuoterParams): Quoter => ({
+  identity: `erc4626:${canonicalizeAddress(parameters.vaultAddress)}`,
+  assets: [canonicalizeAddress(parameters.vaultAddress), canonicalizeAddress(parameters.assetAddress)],
+  confidence: parameters.confidence ?? 0,
+  quote: async ({ amountIn, direction, context }: QuoteParameters) => {
     if (amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
 
-    const fn = direction === "forward" ? abi.convertToAssets : abi.convertToShares;
-    const result = await contractCall(context.getProvider(params.networkId), params.vaultAddress, fn, [amountIn], context.blockNumber);
+    const function_ = direction === "forward" ? abi.convertToAssets : abi.convertToShares;
+    const result = await contractCall(context.getProvider(parameters.networkId), parameters.vaultAddress, function_, [amountIn], context.blockNumber);
 
     if (typeof result !== "bigint") throw new EthPricesError("CONTRACT_ERROR", "ERC-4626 returned a malformed amount");
 

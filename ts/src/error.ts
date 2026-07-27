@@ -1,13 +1,13 @@
-export type EthPricesErrorCode =
-  | "ASSET_NOT_FOUND"
-  | "AUTO_ROUTER_NO_QUOTERS"
-  | "CONTRACT_ERROR"
-  | "INVALID_ADDRESS"
-  | "INVALID_CONFIGURATION"
-  | "INVALID_INPUT"
-  | "INVALID_NETWORK"
-  | "NO_ROUTE_FOUND"
-  | "RATE_UNAVAILABLE";
+export type EthPricesErrorCode
+  = | "ASSET_NOT_FOUND"
+    | "AUTO_ROUTER_NO_QUOTERS"
+    | "CONTRACT_ERROR"
+    | "INVALID_ADDRESS"
+    | "INVALID_CONFIGURATION"
+    | "INVALID_INPUT"
+    | "INVALID_NETWORK"
+    | "NO_ROUTE_FOUND"
+    | "RATE_UNAVAILABLE";
 
 export class EthPricesError extends Error {
   readonly code: EthPricesErrorCode;

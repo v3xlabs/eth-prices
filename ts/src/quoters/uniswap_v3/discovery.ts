@@ -191,7 +191,7 @@ const readObservationTimestamp = (value: unknown): number | undefined => {
   return undefined;
 };
 
-// V3 liquidity L is sqrt(x·y) over the virtual reserves, so normalizing by the
+// V3 liquidity L is sqrt(x-y) over the virtual reserves, so normalizing by the
 // average token decimals yields the same whole-unit quantity scored for V2.
 const confidence = (
   pool: Pool,

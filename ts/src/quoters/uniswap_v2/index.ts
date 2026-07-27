@@ -1,6 +1,6 @@
 import { canonicalizeAddress } from "../../asset.js";
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams, Quoter } from "../../quoter.js";
+import type { QuoteParameters, Quoter } from "../../quoter.js";
 import { contractCall } from "../../utils/contract.js";
 import { mulDiv } from "../../utils/math.js";
 import * as abi from "./abi.js";
@@ -14,14 +14,14 @@ export type UniswapV2QuoterParams = {
   identityPrefix?: string;
 };
 
-export const uniswapV2Quoter = (params: UniswapV2QuoterParams): Quoter => ({
-  identity: `${params.identityPrefix ?? "uniswap_v2"}:${canonicalizeAddress(params.pairAddress)}`,
-  assets: [canonicalizeAddress(params.token0), canonicalizeAddress(params.token1)],
-  confidence: params.confidence ?? 0,
-  quote: async ({ amountIn, direction, context }: QuoteParams) => {
+export const uniswapV2Quoter = (parameters: UniswapV2QuoterParams): Quoter => ({
+  identity: `${parameters.identityPrefix ?? "uniswap_v2"}:${canonicalizeAddress(parameters.pairAddress)}`,
+  assets: [canonicalizeAddress(parameters.token0), canonicalizeAddress(parameters.token1)],
+  confidence: parameters.confidence ?? 0,
+  quote: async ({ amountIn, direction, context }: QuoteParameters) => {
     if (amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
 
-    const reserves = await contractCall(context.getProvider(params.networkId), params.pairAddress, abi.getReserves, [], context.blockNumber);
+    const reserves = await contractCall(context.getProvider(parameters.networkId), parameters.pairAddress, abi.getReserves, [], context.blockNumber);
 
     const normalized = normalizeReserves(reserves);
 
