@@ -1,6 +1,6 @@
 import { canonicalizeAddress, canonicalizeAsset } from "../../asset.js";
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams, Quoter } from "../../quoter.js";
+import type { QuoteParams as QuoteParameters, Quoter } from "../../quoter.js";
 import { contractCall } from "../../utils/contract.js";
 import { mulDiv, pow10 } from "../../utils/math.js";
 import * as abi from "./abi.js";
@@ -16,14 +16,14 @@ export type ChainlinkQuoterParams = {
   confidence?: number;
 };
 
-export const chainlinkQuoter = (params: ChainlinkQuoterParams): Quoter => ({
-  identity: `chainlink:${canonicalizeAddress(params.feedAddress)}:${params.token}:${params.quote}`,
-  assets: [canonicalizeAsset(params.token), canonicalizeAsset(params.quote)],
-  confidence: params.confidence ?? 0,
-  quote: async ({ amountIn, direction, context }: QuoteParams) => {
+export const chainlinkQuoter = (parameters: ChainlinkQuoterParams): Quoter => ({
+  identity: `chainlink:${canonicalizeAddress(parameters.feedAddress)}:${parameters.token}:${parameters.quote}`,
+  assets: [canonicalizeAsset(parameters.token), canonicalizeAsset(parameters.quote)],
+  confidence: parameters.confidence ?? 0,
+  quote: async ({ amountIn, direction, context }: QuoteParameters) => {
     if (amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
 
-    const round = await contractCall(context.getProvider(params.networkId), params.feedAddress, abi.latestRoundData, [], context.blockNumber);
+    const round = await contractCall(context.getProvider(parameters.networkId), parameters.feedAddress, abi.latestRoundData, [], context.blockNumber);
 
     const answer = readAnswer(round);
 
@@ -32,9 +32,9 @@ export const chainlinkQuoter = (params: ChainlinkQuoterParams): Quoter => ({
     if (answer < 0n) throw new EthPricesError("RATE_UNAVAILABLE", "Chainlink feed returned a negative answer");
 
     const rate = answer;
-    const tokenScale = pow10(params.tokenDecimals);
-    const rateScale = pow10(params.feedDecimals);
-    const quoteScale = pow10(params.quoteDecimals);
+    const tokenScale = pow10(parameters.tokenDecimals);
+    const rateScale = pow10(parameters.feedDecimals);
+    const quoteScale = pow10(parameters.quoteDecimals);
 
     return direction === "forward"
       ? mulDiv(amountIn, rate * quoteScale, rateScale * tokenScale)

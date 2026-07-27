@@ -4,34 +4,34 @@ import { fromNumber as hexFromNumber } from "ox/Hex";
 import { EthPricesError } from "../error.js";
 
 export type RpcProvider = {
-  request(params: { method: string; params?: unknown[]; }): Promise<unknown>;
+  request(parameters: { method: string; params?: unknown[]; }): Promise<unknown>;
 };
 
 export const contractCall = async (
   provider: RpcProvider,
   address: `0x${string}`,
-  fn: AbiFunction,
-  args: readonly unknown[] = [],
+  function_: AbiFunction,
+  arguments_: readonly unknown[] = [],
   blockNumber?: bigint,
 ): Promise<unknown> => {
   if (provider === undefined) throw new EthPricesError("INVALID_NETWORK", "A provider is required");
 
-  const data = encodeData(fn, args);
-  const blockParam = blockNumber === undefined
+  const data = encodeData(function_, arguments_);
+  const blockParameter = blockNumber === undefined
     ? "latest"
     : hexFromNumber(blockNumber);
 
   try {
     const result = await provider.request({
       method: "eth_call",
-      params: [{ to: address.toLowerCase(), data }, blockParam],
+      params: [{ to: address.toLowerCase(), data }, blockParameter],
     });
 
     if (!isHex(result)) {
       throw new EthPricesError("CONTRACT_ERROR", "RPC returned malformed eth_call data");
     }
 
-    return decodeResult(fn, result);
+    return decodeResult(function_, result);
   }
   catch (error: unknown) {
     if (error instanceof EthPricesError) throw error;
@@ -51,10 +51,10 @@ export const decodedUint = (value: unknown): number | undefined => {
 };
 
 export const fetchBlockTimestamp = async (provider: RpcProvider, blockNumber?: bigint): Promise<number> => {
-  const blockParam = blockNumber === undefined ? "latest" : hexFromNumber(blockNumber);
+  const blockParameter = blockNumber === undefined ? "latest" : hexFromNumber(blockNumber);
 
   try {
-    const block = await provider.request({ method: "eth_getBlockByNumber", params: [blockParam, false] });
+    const block = await provider.request({ method: "eth_getBlockByNumber", params: [blockParameter, false] });
 
     if (typeof block === "object" && block !== null && "timestamp" in block && isHex(block.timestamp)) {
       return Number(BigInt(block.timestamp));
@@ -65,7 +65,7 @@ export const fetchBlockTimestamp = async (provider: RpcProvider, blockNumber?: b
   catch (error: unknown) {
     if (error instanceof EthPricesError) throw error;
 
-    throw new EthPricesError("CONTRACT_ERROR", `Failed to fetch block ${blockParam}`, { cause: error });
+    throw new EthPricesError("CONTRACT_ERROR", `Failed to fetch block ${blockParameter}`, { cause: error });
   }
 };
 

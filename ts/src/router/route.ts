@@ -1,5 +1,5 @@
 import { EthPricesError } from "../error.js";
-import type { QuoteParams, RouteStep } from "../quoter.js";
+import type { QuoteParams as QuoteParameters, RouteStep } from "../quoter.js";
 
 export type Route = {
   path: readonly RouteStep[];
@@ -7,14 +7,14 @@ export type Route = {
   outputAsset: string;
 };
 
-export const quoteRoute = async (route: Route, params: Omit<QuoteParams, "direction">): Promise<bigint> => {
-  if (params.amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
+export const quoteRoute = async (route: Route, parameters: Omit<QuoteParameters, "direction">): Promise<bigint> => {
+  if (parameters.amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
 
-  let amountOut = params.amountIn;
+  let amountOut = parameters.amountIn;
 
   for (const step of route.path) {
     amountOut = await step.quoter.quote({
-      ...params,
+      ...parameters,
       amountIn: amountOut,
       direction: step.direction,
     });

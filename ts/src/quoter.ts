@@ -23,7 +23,7 @@ export type Quoter = {
   readonly identity: string;
   readonly assets: readonly [AssetIdentifier, AssetIdentifier];
   readonly confidence: number;
-  quote(params: QuoteParams): Promise<bigint>;
+  quote(parameters: QuoteParams): Promise<bigint>;
 };
 
 export type RouteStep = {

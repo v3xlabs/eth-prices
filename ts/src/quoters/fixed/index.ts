@@ -1,6 +1,6 @@
 import { canonicalizeAsset } from "../../asset.js";
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams, Quoter } from "../../quoter.js";
+import type { QuoteParams as QuoteParameters, Quoter } from "../../quoter.js";
 import { mulDiv, pow10 } from "../../utils/math.js";
 
 export type FixedQuoterParams = {
@@ -13,21 +13,21 @@ export type FixedQuoterParams = {
   confidence?: number;
 };
 
-export const fixedQuoter = (params: FixedQuoterParams): Quoter => ({
-  identity: `fixed:${params.inputAsset}:${params.outputAsset}`,
-  assets: [canonicalizeAsset(params.inputAsset), canonicalizeAsset(params.outputAsset)],
-  confidence: params.confidence ?? 0,
-  quote: async ({ amountIn, direction }: QuoteParams) => {
+export const fixedQuoter = (parameters: FixedQuoterParams): Quoter => ({
+  identity: `fixed:${parameters.inputAsset}:${parameters.outputAsset}`,
+  assets: [canonicalizeAsset(parameters.inputAsset), canonicalizeAsset(parameters.outputAsset)],
+  confidence: parameters.confidence ?? 0,
+  quote: async ({ amountIn, direction }: QuoteParameters) => {
     if (amountIn < 0n) throw new EthPricesError("INVALID_INPUT", "amountIn must not be negative");
 
-    if (params.fixedRate < 0n) throw new EthPricesError("INVALID_CONFIGURATION", "fixedRate must not be negative");
+    if (parameters.fixedRate < 0n) throw new EthPricesError("INVALID_CONFIGURATION", "fixedRate must not be negative");
 
-    const inputAssetScale = pow10(params.inputAssetDecimals);
-    const outputAssetScale = pow10(params.outputAssetDecimals);
-    const rateScale = pow10(params.fixedRateDecimals);
+    const inputAssetScale = pow10(parameters.inputAssetDecimals);
+    const outputAssetScale = pow10(parameters.outputAssetDecimals);
+    const rateScale = pow10(parameters.fixedRateDecimals);
 
     return direction === "forward"
-      ? mulDiv(amountIn, params.fixedRate * outputAssetScale, rateScale * inputAssetScale)
-      : mulDiv(amountIn, rateScale * inputAssetScale, params.fixedRate * outputAssetScale);
+      ? mulDiv(amountIn, parameters.fixedRate * outputAssetScale, rateScale * inputAssetScale)
+      : mulDiv(amountIn, rateScale * inputAssetScale, parameters.fixedRate * outputAssetScale);
   },
 });
