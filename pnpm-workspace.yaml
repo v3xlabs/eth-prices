@@ -1,6 +1,6 @@
 allowBuilds:
   esbuild: false
-  unrs-resolver: set this to true or false
+  unrs-resolver: true
 autoInstallPeers: false
 packages:
   - "bench"
