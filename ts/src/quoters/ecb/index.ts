@@ -1,5 +1,5 @@
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams as QuoteParameters, Quoter } from "../../quoter.js";
+import type { QuoteParameters, Quoter } from "../../quoter.js";
 import { mulDiv, pow10 } from "../../utils/math.js";
 
 const RATE_DECIMALS = 6;

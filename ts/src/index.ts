@@ -4,7 +4,7 @@ export type { EthPricesErrorCode } from "./error.js";
 export { EthPricesError } from "./error.js";
 export type { NetworkContext, NetworkContextOptions } from "./network.js";
 export { createNetworkContext } from "./network.js";
-export type { Direction, Quote, QuoteParams, Quoter, RouteStep } from "./quoter.js";
+export type { Direction, Quote, QuoteParameters, Quoter, RouteStep } from "./quoter.js";
 export type { ChainlinkQuoterParams } from "./quoters/chainlink/index.js";
 export { chainlinkQuoter } from "./quoters/chainlink/index.js";
 export type { EcbQuoterParams, EcbRateSource, EcbRateSourceOptions } from "./quoters/ecb/index.js";

@@ -1,6 +1,6 @@
 import { canonicalizeAsset } from "../asset.js";
 import { EthPricesError } from "../error.js";
-import type { QuoteParams as QuoteParameters, Quoter, RouteStep } from "../quoter.js";
+import type { QuoteParameters, Quoter, RouteStep } from "../quoter.js";
 import { quoteRoute, type Route } from "./route.js";
 
 const MAX_CONFIDENCE = 100;

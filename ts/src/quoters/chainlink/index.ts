@@ -1,6 +1,6 @@
 import { canonicalizeAddress, canonicalizeAsset } from "../../asset.js";
 import { EthPricesError } from "../../error.js";
-import type { QuoteParams as QuoteParameters, Quoter } from "../../quoter.js";
+import type { QuoteParameters, Quoter } from "../../quoter.js";
 import { contractCall } from "../../utils/contract.js";
 import { mulDiv, pow10 } from "../../utils/math.js";
 import * as abi from "./abi.js";

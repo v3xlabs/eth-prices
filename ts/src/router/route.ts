@@ -1,5 +1,5 @@
 import { EthPricesError } from "../error.js";
-import type { QuoteParams as QuoteParameters, RouteStep } from "../quoter.js";
+import type { QuoteParameters, RouteStep } from "../quoter.js";
 
 export type Route = {
   path: readonly RouteStep[];
