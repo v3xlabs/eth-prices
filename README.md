@@ -2,7 +2,7 @@
   <a href="https://github.com/v3xlabs/eth-prices">
     <picture>
       <source srcset="./typescript/public/eth-prices_logo_dark.svg" media="(prefers-color-scheme: dark)">
-      <img src="./typescript/public/eth-prices_logo_light.svg" alt="Open Lavatory" width="auto" height="60">
+      <img src="../typescript/public/eth-prices_logo_light.svg" alt="Open Lavatory" width="auto" height="60">
     </picture>
   </a>
 </p>
@@ -61,12 +61,12 @@ let quote = route.quote(block, amount_in).await.unwrap();
 
 Currently supported data sources include:
 
-- [Uniswap V2](./pkg/src/quoter/uniswap_v2/mod.rs) - for [Uniswap V2](https://uniswap.org/blog/uniswap-v2) pairs
-- [Uniswap V3](./pkg/src/quoter/uniswap_v3/mod.rs) - for [Uniswap V3](https://uniswap.org/blog/uniswap-v3) pools
-- [ERC-4626](./pkg/src/quoter/erc4626/mod.rs) - for [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626)-compatible vaults (Morpho, Aave, etc.)
-- [Fixed](./pkg/src/quoter/fixed/mod.rs) - for static rates, such as WETH to ETH, or USDC to USD
-- [European Central Bank](./pkg/src/quoter/ecb/mod.rs) - for fiat exchange rates (uses single HTTP call and requires feature flag `ecb`)
-- [Chainlink](./pkg/src/quoter/chainlink/mod.rs) - for [Chainlink Price Feeds](https://docs.chain.link/data-feeds)
+- [Uniswap V2](./cargo/src/quoter/uniswap_v2/mod.rs) - for [Uniswap V2](https://uniswap.org/blog/uniswap-v2) pairs
+- [Uniswap V3](./cargo/src/quoter/uniswap_v3/mod.rs) - for [Uniswap V3](https://uniswap.org/blog/uniswap-v3) pools
+- [ERC-4626](./cargo/src/quoter/erc4626/mod.rs) - for [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626)-compatible vaults (Morpho, Aave, etc.)
+- [Fixed](./cargo/src/quoter/fixed/mod.rs) - for static rates, such as WETH to ETH, or USDC to USD
+- [European Central Bank](./cargo/src/quoter/ecb/mod.rs) - for fiat exchange rates (uses single HTTP call and requires feature flag `ecb`)
+- [Chainlink](./cargo/src/quoter/chainlink/mod.rs) - for [Chainlink Price Feeds](https://docs.chain.link/data-feeds)
 
 ## Examples
 

@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-eth-prices = { path = "../../pkg" }
+eth-prices = { path = "../../cargo" }
 tokio = { version = "1", features = ["full"] }
 alloy = { version = "2", features = [
     "contract",

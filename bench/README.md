@@ -53,7 +53,7 @@ Every run writes a timestamped JSON report to `target/evals/` and updates
 The intended loop for a human or agent improving either implementation:
 
 1. `just eval` once to establish references and a baseline report.
-2. Edit the router (Rust in `pkg/`, TypeScript in `ts/`).
+2. Edit the router (Rust in `cargo/`, TypeScript in `typescript/`).
 3. `just eval --impl rust --refs latest` (or `--impl ts`). This skips the
    external price APIs, pins the same block, and auto-diffs against the
    previous report, so any score movement is caused by your change alone.

@@ -19,8 +19,8 @@ test:
     pnpm --sequential -r test
 
 build:
-    cd pkg && cargo build
-    cd ts && pnpm build
+    cd cargo && cargo build
+    cd typescript && pnpm build
 
 eval *ARGS:
     pnpm --dir bench eval -- {{ARGS}}

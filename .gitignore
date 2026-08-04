@@ -1,5 +1,5 @@
 target/
 node_modules/
-ts/dist/*
+typescript/dist/*
 .direnv
 .envrc
