@@ -1,11 +1,16 @@
 use alloy::{
+    eips::BlockId,
     primitives::{Address, U256},
     sol,
 };
 use async_stream::stream;
-use futures::Stream;
+use futures::{Stream, future::join_all};
 
-use crate::provider::RpcProvider;
+use crate::{
+    provider::RpcProvider,
+    quoter::uniswap_v2::pair::UniswapV2Pair,
+    router::discovery::{DiscoveredPool, DiscoveryFailure, PoolLiquidity, collect_discoveries},
+};
 
 sol! {
    #[sol(rpc)]
@@ -48,6 +53,89 @@ pub async fn fetch_pair(
 
     let pair = fr.getPair(token_from, token_to).call().await?;
     Ok(pair)
+}
+
+/// Probes the factory for every pairing of `addresses` at `block` and returns
+/// the live pools with their reserves, the number of pairings attempted, and
+/// any RPC failures.
+pub async fn discover_pools(
+    provider: &RpcProvider,
+    addresses: &[Address],
+    factory: Address,
+    block: BlockId,
+) -> (Vec<DiscoveredPool>, usize, Vec<DiscoveryFailure>) {
+    let mut pairs = Vec::new();
+    for i in 0..addresses.len() {
+        for j in (i + 1)..addresses.len() {
+            pairs.push((addresses[i], addresses[j]));
+        }
+    }
+    let attempted = pairs.len();
+
+    let results = join_all(pairs.into_iter().map(|(a, b)| {
+        let provider = provider.clone();
+        async move { discover_single_pool(&provider, factory, a, b, block).await }
+    }))
+    .await;
+
+    let (pools, failures) = collect_discoveries(results);
+    (pools, attempted, failures)
+}
+
+async fn discover_single_pool(
+    provider: &RpcProvider,
+    factory: Address,
+    token_a: Address,
+    token_b: Address,
+    block: BlockId,
+) -> Result<Option<DiscoveredPool>, DiscoveryFailure> {
+    let failure = |target: String, message: String| DiscoveryFailure { target, message };
+    let v2_factory = UniswapV2Factory::new(factory, provider);
+    let pair = v2_factory
+        .getPair(token_a, token_b)
+        .block(block)
+        .call()
+        .await
+        .map_err(|error| {
+            failure(
+                format!("{token_a}/{token_b}"),
+                format!("getPair failed: {error}"),
+            )
+        })?;
+    if pair.is_zero() {
+        return Ok(None);
+    }
+
+    let pair_contract = UniswapV2Pair::new(pair, provider);
+    let token0 = pair_contract
+        .token0()
+        .block(block)
+        .call()
+        .await
+        .map_err(|error| failure(pair.to_string(), format!("token0 failed: {error}")))?;
+    let token1 = pair_contract
+        .token1()
+        .block(block)
+        .call()
+        .await
+        .map_err(|error| failure(pair.to_string(), format!("token1 failed: {error}")))?;
+    let reserves = pair_contract
+        .getReserves()
+        .block(block)
+        .call()
+        .await
+        .map_err(|error| failure(pair.to_string(), format!("getReserves failed: {error}")))?;
+    let reserve0 = U256::from(reserves.reserve0);
+    let reserve1 = U256::from(reserves.reserve1);
+
+    Ok(Some(DiscoveredPool {
+        pool_address: pair,
+        token0,
+        token1,
+        score: std::cmp::min(reserve0, reserve1),
+        liquidity: PoolLiquidity::V2 { reserve0, reserve1 },
+        last_trade_timestamp: Some(u64::from(reserves.blockTimestampLast)),
+    }))
 }
 
 #[cfg(test)]

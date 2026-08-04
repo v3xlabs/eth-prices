@@ -103,10 +103,9 @@ The external APIs report current market prices, so accuracy comparisons must
 use a recent block (a snapshot via `--refs` keeps a whole iteration session
 coherent). They are evaluations, not stable CI assertions.
 
-TypeScript discovery is pinned through its network context. The current Rust
-`AutoRouter` API discovers against the provider's latest state, while resulting
-quotes use the shared pinned block. Reports expose this as `discoveryBlockPinned`
-instead of implying stronger reproducibility than the API provides.
+Both implementations pin discovery and quoting to the shared evaluation block:
+TypeScript through its network context, Rust through `AutoRouter`'s
+`with_block_number`. Reports expose this as `discoveryBlockPinned`.
 
 `cases.json` defines one production-style autorouter graph with V2, V3, and
 ERC-4626 discovery enabled together. Raw quote amounts remain decimal integer

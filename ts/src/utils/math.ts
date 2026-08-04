@@ -21,10 +21,11 @@ export const mulDiv = (value: bigint, numerator: bigint, denominator: bigint): b
 // Maps a pool's geometric-mean liquidity, expressed in whole token units so it
 // is comparable across tokens with different decimals, onto 0..100. Log-scaled
 // so pools rank by order of magnitude; saturates at one million whole units.
+// Returned unrounded so callers round once after applying the freshness decay.
 export const liquidityConfidence = (geometricMeanLiquidity: number): number => {
   if (!Number.isFinite(geometricMeanLiquidity) || geometricMeanLiquidity <= 0) return 0;
 
-  const points = Math.round((100 / 6) * Math.log10(1 + geometricMeanLiquidity));
+  const points = (100 / 6) * Math.log10(1 + geometricMeanLiquidity);
 
   return Math.min(100, Math.max(0, points));
 };

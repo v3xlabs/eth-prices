@@ -48,6 +48,8 @@ use crate::{
     quoter::{Quoter, RateDirection},
 };
 
+pub mod discovery;
+
 sol! {
     #[sol(rpc)]
     contract ERC4626 {
