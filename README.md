@@ -2,7 +2,7 @@
   <a href="https://github.com/v3xlabs/eth-prices">
     <picture>
       <source srcset="./typescript/public/eth-prices_logo_dark.svg" media="(prefers-color-scheme: dark)">
-      <img src="../typescript/public/eth-prices_logo_light.svg" alt="Open Lavatory" width="auto" height="60">
+      <img src="./typescript/public/eth-prices_logo_light.svg" alt="Open Lavatory" width="auto" height="60">
     </picture>
   </a>
 </p>
