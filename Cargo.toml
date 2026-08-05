@@ -1,3 +1,3 @@
 [workspace]
-members = ["pkg", "examples/pool", "examples/prometheus", "examples/fiat", "examples/auto_router", "examples/sink", "bench"]
+members = ["cargo", "examples/pool", "examples/prometheus", "examples/fiat", "examples/auto_router", "examples/sink", "bench"]
 resolver = "3"
