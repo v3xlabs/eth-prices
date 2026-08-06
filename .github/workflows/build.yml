@@ -57,25 +57,25 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build TypeScript package
-        run: pnpm --dir ts build
+        run: pnpm --dir typescript build
 
       - name: Upload TypeScript package
         uses: actions/upload-artifact@v4
         with:
           name: typescript-dist
-          path: ts/dist
+          path: typescript/dist
 
       - name: Lint TypeScript package
-        run: pnpm --dir ts lint
+        run: pnpm --dir typescript lint
 
       - name: Typecheck TypeScript package
-        run: pnpm --dir ts typecheck
+        run: pnpm --dir typescript typecheck
 
       - name: Test package
         run: pnpm --sequential -r test
 
       - name: Verify npm package
-        run: pnpm --dir ts test:package
+        run: pnpm --dir typescript test:package
 
   bench:
     needs: [rust, typescript]
@@ -113,7 +113,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: typescript-dist
-          path: ts/dist
+          path: typescript/dist
 
       - name: Run cross-language evaluation
         run: pnpm --dir bench eval
